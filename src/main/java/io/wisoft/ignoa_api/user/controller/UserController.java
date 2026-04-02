@@ -1,0 +1,79 @@
+package io.wisoft.ignoa_api.user.controller;
+
+import io.wisoft.ignoa_api.global.dto.ApiResponse;
+import io.wisoft.ignoa_api.user.dto.request.UpdateUserRequest;
+import io.wisoft.ignoa_api.user.dto.response.UserMeResponse;
+import io.wisoft.ignoa_api.user.service.UserService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+@RestController
+@RequestMapping("/api/users")
+@RequiredArgsConstructor
+public class UserController {
+
+    private final UserService userService;
+
+    @GetMapping("/email/duplicate")
+    public ResponseEntity<ApiResponse<Void>> checkDuplicateEmail(@RequestParam String email) {
+        userService.checkDuplicateEmail(email);
+        ApiResponse<Void> response = ApiResponse.of(null, "사용 가능한 이메일입니다.");
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/name/duplicate")
+    public ResponseEntity<ApiResponse<Void>> checkDuplicateName(@RequestParam String name) {
+        userService.checkDuplicateName(name);
+        ApiResponse<Void> response = ApiResponse.of(null, "사용 가능한 닉네임입니다.");
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<ApiResponse<UserMeResponse>> getMe(@AuthenticationPrincipal Long userId) {
+        UserMeResponse data = userService.getMe(userId);
+        ApiResponse<UserMeResponse> response = ApiResponse.of(data, "마이페이지 조회에 성공했습니다.");
+        return ResponseEntity.ok(response);
+    }
+
+    @PatchMapping(value = "/me/profile-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<UserMeResponse>> updateProfileImage(
+            @AuthenticationPrincipal Long userId,
+            @RequestPart MultipartFile image
+    ) {
+        UserMeResponse data = userService.updateProfileImage(userId, image);
+        ApiResponse<UserMeResponse> response = ApiResponse.of(data, "프로필 사진이 변경되었습니다.");
+        return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/me/profile-image")
+    public ResponseEntity<ApiResponse<Void>> deleteProfileImage(@AuthenticationPrincipal Long userId) {
+        userService.deleteProfileImage(userId);
+        ApiResponse<Void> response = ApiResponse.of(null, "프로필 사진이 삭제되었습니다.");
+        return ResponseEntity.ok(response);
+    }
+
+    @PatchMapping("/me")
+    public ResponseEntity<ApiResponse<UserMeResponse>> patchMe(
+            @AuthenticationPrincipal Long userId,
+            @Valid @RequestBody UpdateUserRequest request
+    ) {
+        UserMeResponse data = userService.patchMe(userId, request);
+        ApiResponse<UserMeResponse> response = ApiResponse.of(data, "유저 정보가 수정되었습니다.");
+        return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/me")
+    public ResponseEntity<ApiResponse<Void>> deleteMe(
+            @AuthenticationPrincipal Long userId,
+            @RequestHeader("Refresh-Token") String refreshToken
+    ) {
+        userService.deleteMe(userId, refreshToken);
+        ApiResponse<Void> response = ApiResponse.of(null, "회원 탈퇴가 되었습니다.");
+        return ResponseEntity.ok(response);
+    }
+}
