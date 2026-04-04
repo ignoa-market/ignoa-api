@@ -4,10 +4,15 @@ import io.wisoft.ignoa_api.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDateTime;
+
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
-@Table(name = "users")
+@Table(
+        name = "users",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"provider", "oauth_id"})
+)
 public class User extends BaseEntity {
 
     @Id
@@ -17,11 +22,11 @@ public class User extends BaseEntity {
     @Column(nullable = false, unique = true)
     private String email;
 
-    @Column(nullable = false)
+    @Column
     private String password;
 
     @Column(nullable = false, unique = true)
-    private String name;
+    private String nickname;
 
     @Column(nullable = false)
     private String address;
@@ -29,15 +34,25 @@ public class User extends BaseEntity {
     @Column
     private String profileImageUrl;
 
-    public User(String email, String password, String name, String address) {
+    @Column(nullable = false)
+    private String provider;
+
+    @Column(name = "oauth_id")
+    private String oauthId;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
+    public User(String email, String password, String nickname, String address) {
         this.email = email;
         this.password = password;
-        this.name = name;
+        this.nickname = nickname;
         this.address = address;
+        this.provider = "LOCAL";
     }
 
-    public void updateName(String name) {
-        this.name = name;
+    public void updateNickname(String nickname) {
+        this.nickname = nickname;
     }
 
     public void updateAddress(String address) {
@@ -50,8 +65,9 @@ public class User extends BaseEntity {
 
     public void withdraw() {
         this.email = "withdrawn_" + this.id + "@deleted.com";
-        this.name = "탈퇴한 사용자" + this.id;
+        this.nickname = "탈퇴한 사용자" + this.id;
         this.address = "";
-        this.password = "";
+        this.password = null;
+        this.deletedAt = LocalDateTime.now();
     }
 }

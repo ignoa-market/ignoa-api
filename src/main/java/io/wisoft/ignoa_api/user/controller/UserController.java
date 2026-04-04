@@ -26,9 +26,9 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/name/duplicate")
-    public ResponseEntity<ApiResponse<Void>> checkDuplicateName(@RequestParam String name) {
-        userService.checkDuplicateName(name);
+    @GetMapping("/nickname/duplicate")
+    public ResponseEntity<ApiResponse<Void>> checkDuplicateNickname(@RequestParam String nickname) {
+        userService.checkDuplicateNickname(nickname);
         ApiResponse<Void> response = ApiResponse.of(null, "사용 가능한 닉네임입니다.");
         return ResponseEntity.ok(response);
     }

@@ -1,4 +1,4 @@
-package io.wisoft.ignoa_api.product.entity;
+package io.wisoft.ignoa_api.item.entity;
 
 import io.wisoft.ignoa_api.user.entity.User;
 import io.wisoft.ignoa_api.global.entity.BaseEntity;
@@ -11,19 +11,19 @@ import java.time.LocalDateTime;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-@Table(name = "products")
-public class Product extends BaseEntity {
+@Table(name = "items")
+public class Item extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(nullable = false)
+    @JoinColumn(name = "seller_id", nullable = false)
     private User seller;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn
+    @JoinColumn(name = "winner_id")
     private User winner;
 
     @Column(nullable = false)
@@ -35,52 +35,59 @@ public class Product extends BaseEntity {
     @Column(nullable = false)
     private String category;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "item_condition", nullable = false)
+    private ItemCondition itemCondition;
+
     @Column(nullable = false)
     private Long startPrice;
 
     @Column(nullable = false)
     private Long currentPrice;
 
+    @Column
+    private Long buyNowPrice;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private ProductStatus status;
+    private ItemStatus status;
 
     @Column(nullable = false)
-    private LocalDateTime startTime;
+    private LocalDateTime endAt;
 
-    @Column(nullable = false)
-    private LocalDateTime endTime;
-
-    public static Product create(User seller, String title, String description, String category, Long startPrice, LocalDateTime endTime) {
-        return new Product(
+    public static Item create(User seller, String title, String description, String category,
+                              ItemCondition itemCondition, Long startPrice, Long buyNowPrice,
+                              LocalDateTime endAt) {
+        return new Item(
                 null,
                 seller,
                 null,
                 title,
                 description,
                 category,
+                itemCondition,
                 startPrice,
                 startPrice,
-                ProductStatus.ON_SALE,
-                LocalDateTime.now(),
-                endTime
+                buyNowPrice,
+                ItemStatus.ACTIVE,
+                endAt
         );
     }
 
-    public void updateInfo(String title, String description, String category, LocalDateTime endTime) {
+    public void updateInfo(String title, String description, String category, LocalDateTime endAt) {
         if (title != null) this.title = title;
         if (description != null) this.description = description;
         if (category != null) this.category = category;
-        if (endTime != null) this.endTime = endTime;
+        if (endAt != null) this.endAt = endAt;
     }
 
     public void raisePriceTo(Long newPrice) {
         this.currentPrice = newPrice;
     }
 
-    public boolean isOnSale() {
-        return this.status == ProductStatus.ON_SALE
-                && this.endTime.isAfter(LocalDateTime.now());
+    public boolean isActive() {
+        return this.status == ItemStatus.ACTIVE
+                && this.endAt.isAfter(LocalDateTime.now());
     }
 
     public boolean isSeller(Long userId) {
@@ -91,16 +98,16 @@ public class Product extends BaseEntity {
         return this.currentPrice < bidPrice;
     }
 
-    public void closeAsFailed() {
-        this.status = ProductStatus.FAILED;
+    public void closeAsNoBid() {
+        this.status = ItemStatus.NO_BID_CLOSED;
     }
 
     public void closeWithWinner(User winner) {
         this.winner = winner;
-        this.status = ProductStatus.ENDED;
+        this.status = ItemStatus.CLOSED;
     }
 
     public boolean isClosed() {
-        return this.status != ProductStatus.ON_SALE;
+        return this.status != ItemStatus.ACTIVE;
     }
 }

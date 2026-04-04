@@ -15,7 +15,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/products/{productId}/bids")
+@RequestMapping("/api/items/{itemId}/bids")
 @RequiredArgsConstructor
 public class BidController {
 
@@ -23,21 +23,21 @@ public class BidController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<BidResponse>> placeBid(
-            @PathVariable Long productId,
+            @PathVariable Long itemId,
             @Valid @RequestBody BidCreateRequest request,
             @AuthenticationPrincipal Long bidderId
     ) {
-        BidResponse data = bidService.placeBid(productId, bidderId, request);
+        BidResponse data = bidService.placeBid(itemId, bidderId, request);
         ApiResponse<BidResponse> response = ApiResponse.of(data, "입찰에 성공하였습니다.");
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @GetMapping
     public ResponseEntity<ApiResponse<SliceResponse<BidSummary>>> getBids(
-            @PathVariable Long productId,
+            @PathVariable Long itemId,
             @Valid @ModelAttribute BidListRequest request
     ) {
-        SliceResponse<BidSummary> data = bidService.getBids(productId, request);
+        SliceResponse<BidSummary> data = bidService.getBids(itemId, request);
         ApiResponse<SliceResponse<BidSummary>> response = ApiResponse.of(data, "입찰 내역을 조회했습니다.");
         return ResponseEntity.ok(response);
     }

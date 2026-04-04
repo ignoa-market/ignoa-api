@@ -24,8 +24,8 @@ public class AuctionExpiredListener implements MessageListener {
                 return;
             }
 
-            long productId = Long.parseLong(expiredKey.substring(AUCTION_KEY_PREFIX.length()));
-            auctionCloseManager.closeAuction(productId);
+            long itemId = Long.parseLong(expiredKey.substring(AUCTION_KEY_PREFIX.length()));
+            auctionCloseManager.closeAuction(itemId);
         } catch (Exception e) {
             log.error("경매 마감 처리 실패 expiredKey={}", message.toString(), e);
         }

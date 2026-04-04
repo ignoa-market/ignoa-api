@@ -17,12 +17,12 @@ public class BidEventListener {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onBidPlaced(BidPlaceEvent event) {
         BidBroadcast broadcast = new BidBroadcast(
-                event.productId(),
+                event.itemId(),
                 event.currentPrice(),
-                event.bidderName(),
+                event.bidderNickname(),
                 event.createdAt()
         );
 
-        messagingTemplate.convertAndSend("/topic/products/" + event.productId(), broadcast);
+        messagingTemplate.convertAndSend("/topic/items/" + event.itemId(), broadcast);
     }
 }

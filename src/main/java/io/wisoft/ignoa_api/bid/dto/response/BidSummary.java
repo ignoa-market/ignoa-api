@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 
 public record BidSummary(
         Long bidId,
-        String bidderName,
+        String bidderNickname,
         Long price,
         BidStatus status,
         LocalDateTime createdAt
@@ -15,7 +15,7 @@ public record BidSummary(
     public static BidSummary from(Bid bid) {
         return new BidSummary(
                 bid.getId(),
-                bid.getBidder().getName(),
+                bid.getBidder().getNickname(),
                 bid.getPrice(),
                 bid.getStatus(),
                 bid.getCreatedAt()

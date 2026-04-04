@@ -1,9 +1,9 @@
 package io.wisoft.ignoa_api.auction.scheduler;
 
 import io.wisoft.ignoa_api.auction.service.AuctionCloseManager;
-import io.wisoft.ignoa_api.product.entity.Product;
-import io.wisoft.ignoa_api.product.entity.ProductStatus;
-import io.wisoft.ignoa_api.product.repository.ProductRepository;
+import io.wisoft.ignoa_api.item.entity.Item;
+import io.wisoft.ignoa_api.item.entity.ItemStatus;
+import io.wisoft.ignoa_api.item.repository.ItemRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -19,18 +19,18 @@ import java.util.List;
 public class AuctionCloseService {
 
     private final AuctionCloseManager auctionCloseManager;
-    private final ProductRepository productRepository;
+    private final ItemRepository itemRepository;
 
     public void closeExpiredBids() {
-        List<Product> expiredProducts = productRepository.findAllByStatusAndEndTimeBefore(
-                ProductStatus.ON_SALE, LocalDateTime.now()
+        List<Item> expiredItems = itemRepository.findAllByStatusAndEndAtBefore(
+                ItemStatus.ACTIVE, LocalDateTime.now()
         );
 
-        for (Product product : expiredProducts) {
+        for (Item item : expiredItems) {
             try {
-                auctionCloseManager.closeAuction(product.getId());
+                auctionCloseManager.closeAuction(item.getId());
             } catch (Exception e) {
-                log.error("경매 마감 처리 실패 productId={}", product.getId(), e);
+                log.error("경매 마감 처리 실패 itemId={}", item.getId(), e);
             }
         }
     }

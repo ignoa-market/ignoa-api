@@ -11,16 +11,16 @@ import java.util.Optional;
 
 public interface WishRepository extends JpaRepository<Wish, Long> {
 
-    int countByProductId(Long productId);
+    int countByItemId(Long itemId);
 
-    boolean existsByUserIdAndProductId(Long userId, Long productId);
+    boolean existsByUserIdAndItemId(Long userId, Long itemId);
 
-    Optional<Wish> findByUserIdAndProductId(Long userId, Long productId);
+    Optional<Wish> findByUserIdAndItemId(Long userId, Long itemId);
 
-    @Query("SELECT w FROM Wish w JOIN FETCH w.product p JOIN FETCH p.seller WHERE w.user.id = :userId ORDER BY w.createdAt DESC")
-    Slice<Wish> findByUserIdWithProduct(@Param("userId") Long userId, Pageable pageable);
+    @Query("SELECT w FROM Wish w JOIN FETCH w.item i JOIN FETCH i.seller WHERE w.user.id = :userId ORDER BY w.createdAt DESC")
+    Slice<Wish> findByUserIdWithItem(@Param("userId") Long userId, Pageable pageable);
 
-    void deleteAllByProductId(Long productId);
+    void deleteAllByItemId(Long itemId);
 
     void deleteAllByUserId(Long userId);
 }

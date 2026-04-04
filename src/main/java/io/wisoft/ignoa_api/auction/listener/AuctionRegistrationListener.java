@@ -15,6 +15,6 @@ public class AuctionRegistrationListener {
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onAuctionRegistered(AuctionRegisteredEvent event) {
-        auctionRedisService.registerTtl(event.productId(), event.endTime());
+        auctionRedisService.registerTtl(event.itemId(), event.endAt());
     }
 }

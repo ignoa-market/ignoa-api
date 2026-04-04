@@ -1,7 +1,7 @@
 package io.wisoft.ignoa_api.wish.entity;
 
 import io.wisoft.ignoa_api.global.entity.BaseEntity;
-import io.wisoft.ignoa_api.product.entity.Product;
+import io.wisoft.ignoa_api.item.entity.Item;
 import io.wisoft.ignoa_api.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
@@ -11,7 +11,7 @@ import lombok.*;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Table(name = "wishes", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"user_id", "product_id"})
+        @UniqueConstraint(columnNames = {"user_id", "item_id"})
 })
 public class Wish extends BaseEntity {
 
@@ -24,10 +24,10 @@ public class Wish extends BaseEntity {
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "product_id", nullable = false)
-    private Product product;
+    @JoinColumn(name = "item_id", nullable = false)
+    private Item item;
 
-    public static Wish create(User user, Product product) {
-        return new Wish(null, user, product);
+    public static Wish create(User user, Item item) {
+        return new Wish(null, user, item);
     }
 }
