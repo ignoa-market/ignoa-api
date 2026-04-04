@@ -20,9 +20,9 @@ public class EmailTemplateBuilder {
 
                           <!-- 헤더 -->
                           <tr>
-                            <td align="center" style="background:linear-gradient(135deg,#6EF0A8,#3DD68C);padding:20px 0;">
-                              <div style="color:#ffffff;font-size:22px;font-weight:700;letter-spacing:-0.5px;">Ignoa</div>
-                              <div style="color:rgba(255,255,255,0.85);font-size:13px;margin-top:4px;">한밭대학교 중고 경매 플랫폼</div>
+                            <td align="center" style="background:linear-gradient(135deg,#2d2d2d,#111111);padding:20px 0;">
+                              <div style="color:#ffffff;font-size:22px;font-weight:700;letter-spacing:-0.5px;">IGNOA</div>
+                              <div style="color:rgba(255,255,255,0.6);font-size:13px;margin-top:4px;"></div>
                             </td>
                           </tr>
 
@@ -31,7 +31,7 @@ public class EmailTemplateBuilder {
                             <td style="padding:36px 40px 16px;">
                               <p style="margin:0 0 8px;font-size:20px;font-weight:700;color:#111827;">이메일 인증 코드</p>
                               <p style="margin:0;font-size:14px;color:#6b7280;line-height:1.6;">
-                                아래 인증 코드를 입력하면 한밭대학교 구성원으로 인증됩니다.<br/>
+                                아래 인증 코드를 입력하면 이메일 인증이 완료됩니다.<br/>
                                 코드는 <strong>5분간</strong> 유효합니다.
                               </p>
                             </td>
@@ -40,8 +40,8 @@ public class EmailTemplateBuilder {
                           <!-- 인증 코드 박스 -->
                           <tr>
                             <td style="padding:16px 40px;">
-                              <div style="background:#f0fdf4;border:2px dashed #4ade80;border-radius:12px;padding:24px;text-align:center;">
-                                <span style="font-size:36px;font-weight:800;letter-spacing:10px;color:#16a34a;">%s</span>
+                              <div style="background:#f5f5f5;border:2px dashed #9ca3af;border-radius:12px;padding:24px;text-align:center;">
+                                <span style="font-size:36px;font-weight:800;letter-spacing:10px;color:#111827;">%s</span>
                               </div>
                             </td>
                           </tr>
@@ -59,7 +59,7 @@ public class EmailTemplateBuilder {
                           <!-- 푸터 -->
                           <tr>
                             <td align="center" style="background:#f9fafb;padding:20px;border-top:1px solid #f3f4f6;">
-                              <p style="margin:0;font-size:12px;color:#9ca3af;">© 2025 Ignoa. All rights reserved.</p>
+                              <p style="margin:0;font-size:12px;color:#9ca3af;">© 2026 Ignoa. All rights reserved.</p>
                             </td>
                           </tr>
 

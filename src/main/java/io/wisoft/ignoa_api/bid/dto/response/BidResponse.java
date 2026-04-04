@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 
 public record BidResponse(
         Long bidId,
-        Long productId,
+        Long itemId,
         Long bidderId,
         Long price,
         LocalDateTime createdAt
@@ -14,7 +14,7 @@ public record BidResponse(
     public static BidResponse from(Bid bid) {
         return new BidResponse(
                 bid.getId(),
-                bid.getProduct().getId(),
+                bid.getItem().getId(),
                 bid.getBidder().getId(),
                 bid.getPrice(),
                 bid.getCreatedAt()

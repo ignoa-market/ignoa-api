@@ -27,16 +27,16 @@ public enum ErrorCode {
 
     // Email
     EMAIL_SEND_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "이메일 발송에 실패했습니다."),
-    INVALID_EMAIL_DOMAIN(HttpStatus.BAD_REQUEST, "한밭대학교 이메일만 가입 가능합니다."),
+    INVALID_EMAIL_DOMAIN(HttpStatus.BAD_REQUEST, "지원하지 않는 이메일 도메인입니다."),
     INVALID_VERIFICATION_CODE(HttpStatus.BAD_REQUEST, "인증 코드가 올바르지 않습니다."),
     EMAIL_NOT_VERIFIED(HttpStatus.BAD_REQUEST, "이메일 인증이 완료되지 않았습니다."),
 
-    // Product
-    PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "상품을 찾을 수 없습니다."),
-    PRODUCT_UPDATE_FORBIDDEN(HttpStatus.FORBIDDEN, "본인 상품만 수정할 수 있습니다."),
-    PRODUCT_DELETE_FORBIDDEN(HttpStatus.FORBIDDEN, "본인 상품만 삭제할 수 있습니다."),
-    PRODUCT_MEDIA_NOT_FOUND(HttpStatus.NOT_FOUND, "상품 미디어를 찾을 수 없습니다."),
-    PRODUCT_MEDIA_REQUIRED(HttpStatus.BAD_REQUEST, "상품 미디어는 최소 1개 이상이어야 합니다."),
+    // Item
+    ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "상품을 찾을 수 없습니다."),
+    ITEM_UPDATE_FORBIDDEN(HttpStatus.FORBIDDEN, "본인 상품만 수정할 수 있습니다."),
+    ITEM_DELETE_FORBIDDEN(HttpStatus.FORBIDDEN, "본인 상품만 삭제할 수 있습니다."),
+    ITEM_MEDIA_NOT_FOUND(HttpStatus.NOT_FOUND, "상품 미디어를 찾을 수 없습니다."),
+    ITEM_MEDIA_REQUIRED(HttpStatus.BAD_REQUEST, "상품 미디어는 최소 1개 이상이어야 합니다."),
     AUCTION_ALREADY_CLOSED(HttpStatus.BAD_REQUEST, "이미 마감된 경매입니다."),
 
     // Bid

@@ -4,9 +4,9 @@ import io.wisoft.ignoa_api.bid.entity.Bid;
 import io.wisoft.ignoa_api.bid.repository.BidRepository;
 import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
-import io.wisoft.ignoa_api.product.entity.Product;
-import io.wisoft.ignoa_api.product.entity.ProductStatus;
-import io.wisoft.ignoa_api.product.repository.ProductRepository;
+import io.wisoft.ignoa_api.item.entity.Item;
+import io.wisoft.ignoa_api.item.entity.ItemStatus;
+import io.wisoft.ignoa_api.item.repository.ItemRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -21,27 +21,27 @@ import java.util.Optional;
 public class AuctionCloseManager {
 
     private final BidRepository bidRepository;
-    private final ProductRepository productRepository;
+    private final ItemRepository itemRepository;
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void closeAuction(Long productId) {
-        Product lockedProduct = productRepository.findByIdWithLock(productId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
+    public void closeAuction(Long itemId) {
+        Item lockedItem = itemRepository.findByIdWithLock(itemId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.ITEM_NOT_FOUND));
 
-        if (lockedProduct.getStatus() != ProductStatus.ON_SALE) {
-            log.info("[중복 마감 방지] 이미 마감된 경매 productId={} status={}", productId, lockedProduct.getStatus());
+        if (lockedItem.getStatus() != ItemStatus.ACTIVE) {
+            log.info("[중복 마감 방지] 이미 마감된 경매 itemId={} status={}", itemId, lockedItem.getStatus());
             return;
         }
 
-        Optional<Bid> highestBid = bidRepository.findTopByProductIdOrderByPriceDesc(productId);
+        Optional<Bid> highestBid = bidRepository.findTopByItemIdOrderByPriceDesc(itemId);
 
         if (highestBid.isEmpty()) {
-            lockedProduct.closeAsFailed();
+            lockedItem.closeAsNoBid();
             return;
         }
 
         Bid winningBid = highestBid.get();
-        lockedProduct.closeWithWinner(winningBid.getBidder());
+        lockedItem.closeWithWinner(winningBid.getBidder());
         winningBid.closeAsWon();
     }
 }

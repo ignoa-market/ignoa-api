@@ -6,22 +6,22 @@ import java.time.LocalDateTime;
 
 public record WishSummary(
         Long wishId,
-        Long productId,
+        Long itemId,
         String title,
         String category,
         Long currentPrice,
-        LocalDateTime endTime,
+        LocalDateTime endAt,
         String mediaUrl,
         LocalDateTime wishedAt
 ) {
     public static WishSummary from(Wish wish, String mediaUrl) {
         return new WishSummary(
                 wish.getId(),
-                wish.getProduct().getId(),
-                wish.getProduct().getTitle(),
-                wish.getProduct().getCategory(),
-                wish.getProduct().getCurrentPrice(),
-                wish.getProduct().getEndTime(),
+                wish.getItem().getId(),
+                wish.getItem().getTitle(),
+                wish.getItem().getCategory(),
+                wish.getItem().getCurrentPrice(),
+                wish.getItem().getEndAt(),
                 mediaUrl,
                 wish.getCreatedAt()
         );

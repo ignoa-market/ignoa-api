@@ -4,8 +4,8 @@ import io.wisoft.ignoa_api.auth.service.RefreshTokenService;
 import io.wisoft.ignoa_api.bid.repository.BidRepository;
 import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
-import io.wisoft.ignoa_api.product.entity.ProductStatus;
-import io.wisoft.ignoa_api.product.repository.ProductRepository;
+import io.wisoft.ignoa_api.item.entity.ItemStatus;
+import io.wisoft.ignoa_api.item.repository.ItemRepository;
 import io.wisoft.ignoa_api.storage.service.StorageService;
 import io.wisoft.ignoa_api.user.dto.request.UpdateUserRequest;
 import io.wisoft.ignoa_api.user.dto.response.UserMeResponse;
@@ -28,7 +28,7 @@ public class UserService {
     private final StorageService storageService;
     private final ApplicationEventPublisher eventPublisher;
     private final UserRepository userRepository;
-    private final ProductRepository productRepository;
+    private final ItemRepository itemRepository;
     private final BidRepository bidRepository;
     private final WishRepository wishRepository;
 
@@ -38,8 +38,8 @@ public class UserService {
         }
     }
 
-    public void checkDuplicateName(String name) {
-        if (userRepository.existsByName(name)) {
+    public void checkDuplicateNickname(String nickname) {
+        if (userRepository.existsByNickname(nickname)) {
             throw new BusinessException(ErrorCode.DUPLICATE_NAME);
         }
     }
@@ -86,11 +86,11 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-        if (request.name() != null) {
-            if (userRepository.existsByName(request.name())) {
+        if (request.nickname() != null) {
+            if (userRepository.existsByNickname(request.nickname())) {
                 throw new BusinessException(ErrorCode.DUPLICATE_NAME);
             }
-            user.updateName(request.name());
+            user.updateNickname(request.nickname());
         }
         if (request.address() != null) user.updateAddress(request.address());
 
@@ -102,11 +102,11 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-        if (productRepository.existsBySellerIdAndStatus(userId, ProductStatus.ON_SALE)) {
+        if (itemRepository.existsBySellerIdAndStatus(userId, ItemStatus.ACTIVE)) {
             throw new BusinessException(ErrorCode.HAS_ACTIVE_AUCTION);
         }
 
-        if (bidRepository.existsByBidderIdAndProductOnSale(userId)) {
+        if (bidRepository.existsByBidderIdAndItemActive(userId)) {
             throw new BusinessException(ErrorCode.HAS_ACTIVE_BID);
         }
 

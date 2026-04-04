@@ -3,9 +3,9 @@ package io.wisoft.ignoa_api.bid.dto.response;
 import java.time.LocalDateTime;
 
 public record BidBroadcast(
-        Long productId,
+        Long itemId,
         Long currentPrice,
-        String bidderName,
+        String bidderNickname,
         LocalDateTime createdAt
 ) {
 }

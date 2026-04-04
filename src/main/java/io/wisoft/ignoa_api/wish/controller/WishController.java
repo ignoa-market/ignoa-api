@@ -19,22 +19,22 @@ public class WishController {
 
     private final WishService wishService;
 
-    @PostMapping("/{productId}")
+    @PostMapping("/{itemId}")
     public ResponseEntity<ApiResponse<Void>> addWish(
-            @PathVariable Long productId,
+            @PathVariable Long itemId,
             @AuthenticationPrincipal Long userId
     ) {
-        wishService.addWish(productId, userId);
+        wishService.addWish(itemId, userId);
         ApiResponse<Void> response = ApiResponse.of(null, "찜 등록에 성공하였습니다.");
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @DeleteMapping("/{productId}")
+    @DeleteMapping("/{itemId}")
     public ResponseEntity<ApiResponse<Void>> removeWish(
-            @PathVariable Long productId,
+            @PathVariable Long itemId,
             @AuthenticationPrincipal Long userId
     ) {
-        wishService.removeWish(productId, userId);
+        wishService.removeWish(itemId, userId);
         ApiResponse<Void> response = ApiResponse.of(null, "찜 취소에 성공하였습니다.");
         return ResponseEntity.ok(response);
     }

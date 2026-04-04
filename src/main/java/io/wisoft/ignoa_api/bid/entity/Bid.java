@@ -1,6 +1,6 @@
 package io.wisoft.ignoa_api.bid.entity;
 
-import io.wisoft.ignoa_api.product.entity.Product;
+import io.wisoft.ignoa_api.item.entity.Item;
 import io.wisoft.ignoa_api.user.entity.User;
 import io.wisoft.ignoa_api.global.entity.BaseEntity;
 import jakarta.persistence.*;
@@ -18,8 +18,8 @@ public class Bid extends BaseEntity {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(nullable = false)
-    private Product product;
+    @JoinColumn(name = "item_id", nullable = false)
+    private Item item;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "bidder_id", nullable = false)
@@ -32,8 +32,8 @@ public class Bid extends BaseEntity {
     @Column(nullable = false)
     private BidStatus status;
 
-    public static Bid place(Product product, User bidder, Long price) {
-        return new Bid(null, product, bidder, price, BidStatus.ACTIVE);
+    public static Bid place(Item item, User bidder, Long price) {
+        return new Bid(null, item, bidder, price, BidStatus.ACTIVE);
     }
 
     public void closeAsWon() {

@@ -12,12 +12,12 @@ package io.wisoft.ignoa_api.bid.listener;
 //     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
 //     public void onBidPlaced(BidPlaceEvent event) {
 //         BidBroadcast broadcast = new BidBroadcast(
-//                 event.productId(),
+//                 event.itemId(),
 //                 event.currentPrice(),
-//                 event.bidderName(),
+//                 event.bidderNickname(),
 //                 event.createdAt()
 //         );
 //
-//         sseEmitterManager.send(event.productId(), broadcast);
+//         sseEmitterManager.send(event.itemId(), broadcast);
 //     }
 // }

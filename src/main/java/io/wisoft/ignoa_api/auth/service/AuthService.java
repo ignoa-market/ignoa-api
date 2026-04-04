@@ -40,14 +40,14 @@ public class AuthService {
             throw new BusinessException(ErrorCode.DUPLICATE_EMAIL);
         }
 
-        if (userRepository.existsByName(request.name())) {
+        if (userRepository.existsByNickname(request.nickname())) {
             throw new BusinessException(ErrorCode.DUPLICATE_NAME);
         }
 
         User user = new User(
                 email,
                 passwordEncoder.encode(request.password()),
-                request.name(),
+                request.nickname(),
                 request.address()
         );
         userRepository.save(user);
