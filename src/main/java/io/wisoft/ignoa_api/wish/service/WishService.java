@@ -1,6 +1,6 @@
 package io.wisoft.ignoa_api.wish.service;
 
-import io.wisoft.ignoa_api.global.dto.SliceResponse;
+import io.wisoft.ignoa_api.global.common.SliceResponse;
 import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
 import io.wisoft.ignoa_api.item.entity.Item;

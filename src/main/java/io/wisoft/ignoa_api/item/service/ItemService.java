@@ -3,12 +3,13 @@ package io.wisoft.ignoa_api.item.service;
 import io.wisoft.ignoa_api.auction.event.AuctionRegisteredEvent;
 import io.wisoft.ignoa_api.auction.service.AuctionRedisService;
 import io.wisoft.ignoa_api.bid.repository.BidRepository;
-import io.wisoft.ignoa_api.global.dto.SliceResponse;
+import io.wisoft.ignoa_api.global.common.SliceResponse;
 import io.wisoft.ignoa_api.item.dto.request.ItemCreateRequest;
 import io.wisoft.ignoa_api.item.dto.request.ItemListRequest;
 import io.wisoft.ignoa_api.item.dto.request.ItemUpdateRequest;
 import io.wisoft.ignoa_api.item.dto.response.*;
 import io.wisoft.ignoa_api.item.entity.Item;
+import io.wisoft.ignoa_api.item.event.ItemDeletedEvent;
 import io.wisoft.ignoa_api.item.repository.ItemRepository;
 import io.wisoft.ignoa_api.wish.repository.WishRepository;
 import io.wisoft.ignoa_api.user.entity.User;
@@ -32,7 +33,6 @@ import java.util.List;
 public class ItemService {
 
     private final ItemMediaService itemMediaService;
-    private final AuctionRedisService auctionRedisService;
     private final ApplicationEventPublisher eventPublisher;
 
     private final ItemRepository itemRepository;
@@ -156,7 +156,7 @@ public class ItemService {
         bidRepository.deleteAllByItemId(itemId);
         wishRepository.deleteAllByItemId(itemId);
         itemRepository.delete(item);
-        auctionRedisService.deleteTtl(itemId);
+        eventPublisher.publishEvent(new ItemDeletedEvent(itemId));
 
         return new ItemResponse(item.getId());
     }

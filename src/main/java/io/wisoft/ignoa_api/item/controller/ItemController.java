@@ -1,6 +1,6 @@
 package io.wisoft.ignoa_api.item.controller;
 
-import io.wisoft.ignoa_api.global.dto.SliceResponse;
+import io.wisoft.ignoa_api.global.common.SliceResponse;
 import io.wisoft.ignoa_api.item.dto.request.ItemCreateRequest;
 import io.wisoft.ignoa_api.item.dto.request.ItemListRequest;
 import io.wisoft.ignoa_api.item.dto.request.ItemUpdateRequest;
@@ -8,7 +8,7 @@ import io.wisoft.ignoa_api.item.dto.response.ItemResponse;
 import io.wisoft.ignoa_api.item.dto.response.ItemDetailResponse;
 import io.wisoft.ignoa_api.item.dto.response.ItemSummary;
 import io.wisoft.ignoa_api.item.service.ItemService;
-import io.wisoft.ignoa_api.global.dto.ApiResponse;
+import io.wisoft.ignoa_api.global.common.ApiResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.RequiredArgsConstructor;

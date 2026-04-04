@@ -1,4 +1,4 @@
-package io.wisoft.ignoa_api.item.entity;
+package io.wisoft.ignoa_api.item.entity.enums;
 
 public enum ItemStatus {
     ACTIVE,

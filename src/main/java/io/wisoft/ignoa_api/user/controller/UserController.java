@@ -1,6 +1,6 @@
 package io.wisoft.ignoa_api.user.controller;
 
-import io.wisoft.ignoa_api.global.dto.ApiResponse;
+import io.wisoft.ignoa_api.global.common.ApiResponse;
 import io.wisoft.ignoa_api.user.dto.request.UpdateUserRequest;
 import io.wisoft.ignoa_api.user.dto.response.UserMeResponse;
 import io.wisoft.ignoa_api.user.service.UserService;

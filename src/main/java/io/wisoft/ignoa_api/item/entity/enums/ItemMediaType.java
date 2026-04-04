@@ -1,4 +1,4 @@
-package io.wisoft.ignoa_api.item.entity;
+package io.wisoft.ignoa_api.item.entity.enums;
 
 import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;

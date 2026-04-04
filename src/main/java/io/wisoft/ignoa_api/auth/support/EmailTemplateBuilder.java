@@ -1,4 +1,4 @@
-package io.wisoft.ignoa_api.auth.util;
+package io.wisoft.ignoa_api.auth.support;
 
 public class EmailTemplateBuilder {
 

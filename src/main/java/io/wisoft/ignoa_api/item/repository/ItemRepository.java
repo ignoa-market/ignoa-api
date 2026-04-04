@@ -1,7 +1,7 @@
 package io.wisoft.ignoa_api.item.repository;
 
 import io.wisoft.ignoa_api.item.entity.Item;
-import io.wisoft.ignoa_api.item.entity.ItemStatus;
+import io.wisoft.ignoa_api.item.entity.enums.ItemStatus;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;

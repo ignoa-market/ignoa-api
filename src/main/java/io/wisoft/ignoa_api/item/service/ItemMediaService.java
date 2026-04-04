@@ -5,7 +5,7 @@ import io.wisoft.ignoa_api.global.exception.ErrorCode;
 import io.wisoft.ignoa_api.item.dto.response.ItemMediaInfo;
 import io.wisoft.ignoa_api.item.entity.Item;
 import io.wisoft.ignoa_api.item.entity.ItemMedia;
-import io.wisoft.ignoa_api.item.entity.ItemMediaType;
+import io.wisoft.ignoa_api.item.entity.enums.ItemMediaType;
 import io.wisoft.ignoa_api.item.repository.ItemMediaRepository;
 import io.wisoft.ignoa_api.storage.service.StorageService;
 import lombok.RequiredArgsConstructor;

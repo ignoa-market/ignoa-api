@@ -1,6 +1,6 @@
 package io.wisoft.ignoa_api.item.dto.request;
 
-import io.wisoft.ignoa_api.item.entity.ItemCondition;
+import io.wisoft.ignoa_api.item.entity.enums.ItemCondition;
 import jakarta.validation.constraints.*;
 
 import java.time.LocalDateTime;

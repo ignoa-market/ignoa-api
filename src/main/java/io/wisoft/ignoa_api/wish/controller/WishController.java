@@ -1,7 +1,7 @@
 package io.wisoft.ignoa_api.wish.controller;
 
-import io.wisoft.ignoa_api.global.dto.ApiResponse;
-import io.wisoft.ignoa_api.global.dto.SliceResponse;
+import io.wisoft.ignoa_api.global.common.ApiResponse;
+import io.wisoft.ignoa_api.global.common.SliceResponse;
 import io.wisoft.ignoa_api.wish.dto.request.WishListRequest;
 import io.wisoft.ignoa_api.wish.dto.response.WishSummary;
 import io.wisoft.ignoa_api.wish.service.WishService;

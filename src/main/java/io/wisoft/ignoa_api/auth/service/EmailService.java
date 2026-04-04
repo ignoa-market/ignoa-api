@@ -4,7 +4,7 @@ package io.wisoft.ignoa_api.auth.service;
 import io.wisoft.ignoa_api.auth.dto.request.EmailVerifyCodeRequest;
 import io.wisoft.ignoa_api.auth.dto.request.EmailVerifyRequest;
 import io.wisoft.ignoa_api.auth.dto.response.EmailVerifyResponse;
-import io.wisoft.ignoa_api.auth.util.EmailTemplateBuilder;
+import io.wisoft.ignoa_api.auth.support.EmailTemplateBuilder;
 import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
 import jakarta.mail.MessagingException;

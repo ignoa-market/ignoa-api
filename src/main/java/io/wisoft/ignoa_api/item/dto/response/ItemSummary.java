@@ -1,7 +1,7 @@
 package io.wisoft.ignoa_api.item.dto.response;
 
 import io.wisoft.ignoa_api.item.entity.Item;
-import io.wisoft.ignoa_api.item.entity.ItemStatus;
+import io.wisoft.ignoa_api.item.entity.enums.ItemStatus;
 
 import java.time.LocalDateTime;
 

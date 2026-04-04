@@ -1,6 +1,6 @@
 package io.wisoft.ignoa_api.wish.entity;
 
-import io.wisoft.ignoa_api.global.entity.BaseEntity;
+import io.wisoft.ignoa_api.global.common.BaseEntity;
 import io.wisoft.ignoa_api.item.entity.Item;
 import io.wisoft.ignoa_api.user.entity.User;
 import jakarta.persistence.*;

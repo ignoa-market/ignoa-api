@@ -1,4 +1,4 @@
-package io.wisoft.ignoa_api.global.dto;
+package io.wisoft.ignoa_api.global.common;
 
 public record ApiResponse<T>(
         T data,

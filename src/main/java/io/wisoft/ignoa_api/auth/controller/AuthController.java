@@ -7,7 +7,7 @@ import io.wisoft.ignoa_api.auth.dto.response.RefreshResponse;
 import io.wisoft.ignoa_api.auth.dto.response.SignupResponse;
 import io.wisoft.ignoa_api.auth.service.AuthService;
 import io.wisoft.ignoa_api.auth.service.EmailService;
-import io.wisoft.ignoa_api.global.dto.ApiResponse;
+import io.wisoft.ignoa_api.global.common.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

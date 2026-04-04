@@ -1,4 +1,4 @@
-package io.wisoft.ignoa_api.global.entity;
+package io.wisoft.ignoa_api.global.common;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.EntityListeners;

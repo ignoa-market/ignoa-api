@@ -1,6 +1,7 @@
 package io.wisoft.ignoa_api.item.entity;
 
-import io.wisoft.ignoa_api.global.entity.BaseEntity;
+import io.wisoft.ignoa_api.global.common.BaseEntity;
+import io.wisoft.ignoa_api.item.entity.enums.ItemMediaType;
 import jakarta.persistence.*;
 import lombok.*;
 

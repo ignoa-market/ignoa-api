@@ -1,7 +1,5 @@
 package io.wisoft.ignoa_api.storage.service;
 
-import io.wisoft.ignoa_api.storage.dto.request.PresignedUrlRequest;
-import io.wisoft.ignoa_api.storage.dto.response.PresignedUrlResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -9,15 +7,12 @@ import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
-import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import org.springframework.beans.factory.annotation.Value;
-import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
 
 import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
 
 import java.io.IOException;
-import java.time.Duration;
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -25,7 +20,6 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class StorageService {
 
-    private final S3Presigner s3Presigner;
     private final S3Client s3Client;
 
     @Value("${cloud.aws.s3.bucket}")
@@ -33,9 +27,6 @@ public class StorageService {
 
     @Value("${cloud.aws.s3.endpoint}")
     private String endpoint;
-
-    @Value("${cloud.aws.s3.presigned-url-expiration}")
-    private long presignedUrlExpiration;
 
     public String upload(MultipartFile file) {
         try {
@@ -66,25 +57,5 @@ public class StorageService {
                         .key(key)
                         .build()
         );
-    }
-
-    public PresignedUrlResponse generatePresignedUrl(PresignedUrlRequest request) {
-        String extension = request.fileName().substring(request.fileName().lastIndexOf("."));
-        String key = LocalDate.now() + "/" + UUID.randomUUID() + extension;
-
-        PresignedPutObjectRequest presignedRequest = s3Presigner
-                .presignPutObject(p -> p.signatureDuration(Duration.ofSeconds(presignedUrlExpiration))
-                        .putObjectRequest(por -> por
-                                .bucket(bucket)
-                                .key(key)
-                                .contentType(request.contentType())
-                                .build())
-                        .build()
-                );
-
-        String presignedUrl = presignedRequest.url().toString();
-        String objectUrl = endpoint + "/" + bucket + "/" + key;
-
-        return new PresignedUrlResponse(presignedUrl, objectUrl);
     }
 }

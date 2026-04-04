@@ -6,7 +6,7 @@ import io.wisoft.ignoa_api.bid.dto.response.BidSummary;
 import io.wisoft.ignoa_api.bid.dto.response.BidResponse;
 import io.wisoft.ignoa_api.bid.entity.Bid;
 import io.wisoft.ignoa_api.bid.event.BidPlaceEvent;
-import io.wisoft.ignoa_api.global.dto.SliceResponse;
+import io.wisoft.ignoa_api.global.common.SliceResponse;
 import io.wisoft.ignoa_api.item.entity.Item;
 import io.wisoft.ignoa_api.bid.repository.BidRepository;
 import io.wisoft.ignoa_api.item.repository.ItemRepository;
