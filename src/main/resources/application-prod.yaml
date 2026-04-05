@@ -14,10 +14,3 @@ spring:
     redis:
       host: redis
       port: 6379
-
-springdoc:
-  swagger-ui:
-    config-url: /ignoa/v3/api-docs/swagger-config
-    url: /ignoa/v3/api-docs
-  servers:
-    - url: https://task-api.wisoft.io/ignoa
