@@ -18,7 +18,6 @@ import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
 import java.time.Duration;
-import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -28,18 +27,9 @@ public class EmailService {
     private static final String VERIFIED_PREFIX = "email:verified:";
     private final JavaMailSender mailSender;
     private final StringRedisTemplate redisTemplate;
-    private static final Set<String> VALID_DOMAINS = Set.of(
-            "edu.hanbat.ac.kr",
-            "o365.hanbat.ac.kr"
-    );
 
     public void sendEmailCode(EmailVerifyCodeRequest request) {
         String email = request.email();
-        String domain = email.split("@")[1];
-
-        if (!VALID_DOMAINS.contains(domain)) {
-            throw new BusinessException(ErrorCode.INVALID_EMAIL_DOMAIN);
-        }
 
         String code = String.format("%06d", new SecureRandom().nextInt(1000000));
         redisTemplate.opsForValue().set(VERIFY_PREFIX + email, code, Duration.ofMinutes(5));

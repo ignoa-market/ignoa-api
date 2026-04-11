@@ -6,7 +6,7 @@ import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
 import io.wisoft.ignoa_api.item.entity.enums.ItemStatus;
 import io.wisoft.ignoa_api.item.repository.ItemRepository;
-import io.wisoft.ignoa_api.storage.service.StorageService;
+import io.wisoft.ignoa_api.global.infra.storage.StorageService;
 import io.wisoft.ignoa_api.user.dto.request.UpdateUserRequest;
 import io.wisoft.ignoa_api.user.dto.response.UserMeResponse;
 import io.wisoft.ignoa_api.user.entity.User;

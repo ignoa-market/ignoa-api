@@ -1,6 +1,6 @@
 package io.wisoft.ignoa_api.user.listener;
 
-import io.wisoft.ignoa_api.storage.service.StorageService;
+import io.wisoft.ignoa_api.global.infra.storage.StorageService;
 import io.wisoft.ignoa_api.user.event.ProfileImageDeletedEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;

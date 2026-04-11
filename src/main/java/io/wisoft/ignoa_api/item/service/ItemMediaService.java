@@ -7,7 +7,7 @@ import io.wisoft.ignoa_api.item.entity.Item;
 import io.wisoft.ignoa_api.item.entity.ItemMedia;
 import io.wisoft.ignoa_api.item.entity.enums.ItemMediaType;
 import io.wisoft.ignoa_api.item.repository.ItemMediaRepository;
-import io.wisoft.ignoa_api.storage.service.StorageService;
+import io.wisoft.ignoa_api.global.infra.storage.StorageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

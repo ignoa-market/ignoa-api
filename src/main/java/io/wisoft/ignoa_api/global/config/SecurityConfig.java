@@ -28,11 +28,16 @@ public class SecurityConfig {
                         session
                                 -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/logout").authenticated()
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/users/email/duplicate").permitAll()
-                        .requestMatchers("/api/users/nickname/duplicate").permitAll()
-                        .requestMatchers("/ws/**").permitAll()
+                        .requestMatchers(
+                                "/api/auth/login",
+                                "/api/auth/signup",
+                                "/api/auth/refresh",
+                                "/api/auth/email/send",
+                                "/api/auth/email/verify",
+                                "/api/users/email/duplicate",
+                                "/api/users/nickname/duplicate"
+                        ).permitAll()
+                        .requestMatchers("/ws").permitAll()
                         .anyRequest().authenticated()
                 ).addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();

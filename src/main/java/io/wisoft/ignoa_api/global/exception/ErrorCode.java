@@ -27,7 +27,6 @@ public enum ErrorCode {
 
     // Email
     EMAIL_SEND_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "이메일 발송에 실패했습니다."),
-    INVALID_EMAIL_DOMAIN(HttpStatus.BAD_REQUEST, "지원하지 않는 이메일 도메인입니다."),
     INVALID_VERIFICATION_CODE(HttpStatus.BAD_REQUEST, "인증 코드가 올바르지 않습니다."),
     EMAIL_NOT_VERIFIED(HttpStatus.BAD_REQUEST, "이메일 인증이 완료되지 않았습니다."),
 
