@@ -20,7 +20,10 @@ public class RefreshTokenService {
 
     public void save(String refreshToken, Long userId) {
         redisTemplate.opsForValue()
-                .set(REFRESH_TOKEN_PREFIX + refreshToken, String.valueOf(userId), Duration.ofMillis(jwtProperties.refreshExpiration()));
+                .set(REFRESH_TOKEN_PREFIX + refreshToken,
+                        String.valueOf(userId),
+                        Duration.ofMillis(jwtProperties.refreshExpiration())
+                );
     }
 
     public Long getUserId(String refreshToken) {

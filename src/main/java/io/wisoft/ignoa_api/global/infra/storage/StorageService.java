@@ -1,4 +1,4 @@
-package io.wisoft.ignoa_api.storage.service;
+package io.wisoft.ignoa_api.global.infra.storage;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

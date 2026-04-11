@@ -28,10 +28,6 @@ public class EmailService {
     private static final String VERIFIED_PREFIX = "email:verified:";
     private final JavaMailSender mailSender;
     private final StringRedisTemplate redisTemplate;
-    private static final Set<String> VALID_DOMAINS = Set.of(
-            "edu.hanbat.ac.kr",
-            "o365.hanbat.ac.kr"
-    );
 
     public void sendEmailCode(EmailVerifyCodeRequest request) {
         String email = request.email();
