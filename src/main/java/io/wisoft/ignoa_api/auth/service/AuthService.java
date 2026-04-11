@@ -24,6 +24,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final RefreshTokenService refreshTokenService;
     private final EmailService emailService;
+    private final TokenBlacklistService tokenBlacklistService;
 
     @Transactional
     public AuthTokens signup(SignupRequest request) {
@@ -76,8 +77,9 @@ public class AuthService {
         return new AuthTokens(userId, accessToken, refreshToken);
     }
 
-    public void logout(String refreshToken) {
+    public void logout(String accessToken, String refreshToken) {
         jwtTokenProvider.parseToken(refreshToken);
+        tokenBlacklistService.blacklist(accessToken);
         refreshTokenService.delete(refreshToken);
     }
 

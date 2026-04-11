@@ -1,6 +1,7 @@
 package io.wisoft.ignoa_api.auth.jwt;
 
 import io.jsonwebtoken.JwtException;
+import io.wisoft.ignoa_api.auth.service.TokenBlacklistService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -25,6 +26,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final String BEARER_PREFIX = "Bearer ";
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final TokenBlacklistService tokenBlacklistService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
@@ -40,9 +42,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private void authenticate(String token) {
         try {
             long userId = Long.parseLong(jwtTokenProvider.parseToken(token).getSubject());
+
+            if (tokenBlacklistService.isBlacklisted(token)) {
+                return;
+            }
+
             SecurityContextHolder.getContext().setAuthentication(
-                    new UsernamePasswordAuthenticationToken(userId, null, List.of()
-                    ));
+                    new UsernamePasswordAuthenticationToken(userId, null, List.of())
+            );
+
         } catch (JwtException e) {
             log.warn("Invalid JWT token: {}", e.getMessage());
         }
@@ -50,9 +58,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private String resolveToken(HttpServletRequest request) {
         String bearerToken = request.getHeader(AUTHORIZATION_HEADER);
+
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith(BEARER_PREFIX)) {
             return bearerToken.substring(BEARER_PREFIX.length());
         }
+
         return null;
     }
 }
