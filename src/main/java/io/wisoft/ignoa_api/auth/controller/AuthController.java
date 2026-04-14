@@ -56,9 +56,14 @@ public class AuthController {
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse<Void>> logout(
             @RequestHeader("Authorization") String authHeader,
-            @CookieValue("refresh_token") String refreshToken
+            @CookieValue("refresh_token") String refreshToken,
+            HttpServletResponse response
     ) {
         authService.logout(authHeader.substring(7), refreshToken);
+
+        ResponseCookie clearCookie = createClearRefreshTokenCookie();
+        response.addHeader(HttpHeaders.SET_COOKIE, clearCookie.toString());
+
         return ResponseEntity.ok(ApiResponse.of(null, "로그아웃이 완료되었습니다."));
     }
 
@@ -94,13 +99,22 @@ public class AuthController {
     }
 
     private static ResponseCookie createRefreshTokenCookie(String refreshToken) {
-        ResponseCookie cookie = ResponseCookie.from("refresh_token", refreshToken)
+        return ResponseCookie.from("refresh_token", refreshToken)
                 .httpOnly(true)
                 .secure(true)
                 .sameSite("Strict")
                 .maxAge(Duration.ofDays(7))
                 .path("/api/auth")
                 .build();
-        return cookie;
+    }
+
+    private static ResponseCookie createClearRefreshTokenCookie() {
+        return ResponseCookie.from("refresh_token", "")
+                .httpOnly(true)
+                .secure(true)
+                .sameSite("Strict")
+                .maxAge(0)
+                .path("/api/auth")
+                .build();
     }
 }
