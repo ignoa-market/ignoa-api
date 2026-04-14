@@ -27,6 +27,8 @@ public enum ErrorCode {
     DUPLICATE_NAME(HttpStatus.CONFLICT, "이미 사용 중인 닉네임입니다."),
     HAS_ACTIVE_AUCTION(HttpStatus.CONFLICT, "진행 중인 경매가 있어 탈퇴할 수 없습니다."),
     HAS_ACTIVE_BID(HttpStatus.CONFLICT, "진행 중인 경매에 입찰 중이어서 탈퇴할 수 없습니다."),
+    ACCOUNT_PENDING_DELETION(HttpStatus.FORBIDDEN, "탈퇴 처리 중인 계정입니다."),
+    ACCOUNT_NOT_RECOVERABLE(HttpStatus.BAD_REQUEST, "복구 가능한 계정이 아닙니다."),
 
     // Email
     EMAIL_SEND_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "이메일 발송에 실패했습니다."),
