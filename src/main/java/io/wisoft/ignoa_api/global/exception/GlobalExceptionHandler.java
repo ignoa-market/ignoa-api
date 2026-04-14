@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingRequestCookieException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
@@ -56,6 +57,14 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(ErrorCode.METHOD_NOT_ALLOWED.getHttpStatus())
                 .body(ErrorResponse.of(ErrorCode.METHOD_NOT_ALLOWED));
+    }
+
+    @ExceptionHandler(MissingRequestCookieException.class)
+    public ResponseEntity<ErrorResponse> handleMissingRequestCookie(MissingRequestCookieException e) {
+        log.warn("MissingRequestCookieException: {}", e.getMessage());
+        return ResponseEntity
+                .status(ErrorCode.MISSING_REFRESH_TOKEN.getHttpStatus())
+                .body(ErrorResponse.of(ErrorCode.MISSING_REFRESH_TOKEN));
     }
 
     @ExceptionHandler(Exception.class)
