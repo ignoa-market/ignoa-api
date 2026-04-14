@@ -64,6 +64,10 @@ public class AuthService {
         User user = userRepository.findByEmail(request.email())
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_CREDENTIALS));
 
+        if (user.isDeleted()) {
+            throw new BusinessException(ErrorCode.ACCOUNT_PENDING_DELETION);
+        }
+
         if (!passwordEncoder.matches(request.password(), user.getPassword())) {
             throw new BusinessException(ErrorCode.INVALID_CREDENTIALS);
         }
@@ -95,4 +99,28 @@ public class AuthService {
 
         return new AuthTokens(userId, accessToken, refreshToken);
     }
+
+    @Transactional
+    public AuthTokens recover(LoginRequest request) {
+        User user = userRepository.findByEmail(request.email())
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        if (!user.isDeleted()) {
+            throw new BusinessException(ErrorCode.ACCOUNT_NOT_RECOVERABLE);
+        }
+
+        if (!passwordEncoder.matches(request.password(), user.getPassword())) {
+            throw new BusinessException(ErrorCode.INVALID_CREDENTIALS);
+        }
+
+        user.restore();
+
+        Long userId = user.getId();
+        String accessToken = jwtTokenProvider.createAccessToken(userId);
+        String refreshToken = jwtTokenProvider.createRefreshToken(userId);
+        refreshTokenService.save(refreshToken, userId);
+
+        return new AuthTokens(userId, accessToken, refreshToken);
+    }
 }
+

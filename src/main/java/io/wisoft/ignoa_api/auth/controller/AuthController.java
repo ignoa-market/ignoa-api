@@ -15,7 +15,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.Duration;
+import static io.wisoft.ignoa_api.global.common.CookieUtils.createClearRefreshTokenCookie;
+import static io.wisoft.ignoa_api.global.common.CookieUtils.createRefreshTokenCookie;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -31,6 +32,7 @@ public class AuthController {
             HttpServletResponse response
     ) {
         AuthTokens tokens = authService.signup(request);
+
         ResponseCookie cookie = createRefreshTokenCookie(tokens.refreshToken());
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
@@ -46,6 +48,7 @@ public class AuthController {
             HttpServletResponse response
     ) {
         AuthTokens tokens = authService.login(request);
+
         ResponseCookie cookie = createRefreshTokenCookie(tokens.refreshToken());
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
@@ -73,6 +76,7 @@ public class AuthController {
             HttpServletResponse response
     ) {
         AuthTokens tokens = authService.refresh(refreshToken);
+
         ResponseCookie cookie = createRefreshTokenCookie(tokens.refreshToken());
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
@@ -80,13 +84,26 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.of(data, "액세스 토큰이 재발급되었습니다."));
     }
 
+    @PostMapping("/recover")
+    public ResponseEntity<ApiResponse<LoginResponse>> recover(
+            @Valid @RequestBody LoginRequest request,
+            HttpServletResponse response
+    ) {
+        AuthTokens tokens = authService.recover(request);
+
+        ResponseCookie cookie = createRefreshTokenCookie(tokens.refreshToken());
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+
+        LoginResponse data = new LoginResponse(tokens.userId(), tokens.accessToken());
+        return ResponseEntity.ok(ApiResponse.of(data, "계정을 복구하였습니다."));
+    }
+
     @PostMapping("/email/send")
     public ResponseEntity<ApiResponse<Void>> sendEmailCode(
             @Valid @RequestBody EmailVerifyCodeRequest request
     ) {
         emailService.sendEmailCode(request);
-        ApiResponse<Void> response = ApiResponse.of(null, "이메일 인증 코드를 보냈습니다.");
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(ApiResponse.of(null, "이메일 인증 코드를 보냈습니다."));
     }
 
     @PostMapping("/email/verify")
@@ -94,27 +111,6 @@ public class AuthController {
             @Valid @RequestBody EmailVerifyRequest request
     ) {
         EmailVerifyResponse data = emailService.verifyEmailCode(request);
-        ApiResponse<EmailVerifyResponse> response = ApiResponse.of(data, "이메일 인증에 성공했습니다.");
-        return ResponseEntity.ok(response);
-    }
-
-    private static ResponseCookie createRefreshTokenCookie(String refreshToken) {
-        return ResponseCookie.from("refresh_token", refreshToken)
-                .httpOnly(true)
-                .secure(true)
-                .sameSite("Strict")
-                .maxAge(Duration.ofDays(7))
-                .path("/api/auth")
-                .build();
-    }
-
-    private static ResponseCookie createClearRefreshTokenCookie() {
-        return ResponseCookie.from("refresh_token", "")
-                .httpOnly(true)
-                .secure(true)
-                .sameSite("Strict")
-                .maxAge(0)
-                .path("/api/auth")
-                .build();
+        return ResponseEntity.ok(ApiResponse.of(data, "이메일 인증에 성공했습니다."));
     }
 }
