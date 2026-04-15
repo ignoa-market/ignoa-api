@@ -7,6 +7,7 @@ import io.wisoft.ignoa_api.auth.dto.response.EmailVerifyResponse;
 import io.wisoft.ignoa_api.auth.support.EmailTemplateBuilder;
 import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
+import io.wisoft.ignoa_api.user.repository.UserRepository;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
@@ -27,9 +28,14 @@ public class EmailService {
     private static final String VERIFIED_PREFIX = "email:verified:";
     private final JavaMailSender mailSender;
     private final StringRedisTemplate redisTemplate;
+    private final UserRepository userRepository;
 
     public void sendEmailCode(EmailVerifyCodeRequest request) {
         String email = request.email();
+
+        if (userRepository.existsByEmail(email)) {
+            throw new BusinessException(ErrorCode.DUPLICATE_EMAIL);
+        }
 
         String code = String.format("%06d", new SecureRandom().nextInt(1000000));
         redisTemplate.opsForValue().set(VERIFY_PREFIX + email, code, Duration.ofMinutes(5));
