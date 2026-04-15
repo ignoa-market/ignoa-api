@@ -88,8 +88,12 @@ public class AuthService {
     }
 
     public AuthTokens refresh(String token) {
-        jwtTokenProvider.parseToken(token);
-        Long userId = refreshTokenService.getUserId(token);
+        Long userId = Long.parseLong(jwtTokenProvider.parseToken(token).getSubject());
+
+        if (!refreshTokenService.exists(token)) {
+            refreshTokenService.deleteAllByUserId(userId);
+            throw new BusinessException(ErrorCode.INVALID_TOKEN);
+        }
 
         String accessToken = jwtTokenProvider.createAccessToken(userId);
         String refreshToken = jwtTokenProvider.createRefreshToken(userId);
