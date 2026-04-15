@@ -1,5 +1,6 @@
 package io.wisoft.ignoa_api.auth.jwt;
 
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.wisoft.ignoa_api.auth.service.TokenBlacklistService;
 import jakarta.servlet.FilterChain;
@@ -45,10 +46,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 return;
             }
 
-            long userId = Long.parseLong(jwtTokenProvider.parseToken(token).getSubject());
+            Claims claims = jwtTokenProvider.parseToken(token);
+            long userId = Long.parseLong(claims.getSubject());
 
             SecurityContextHolder.getContext().setAuthentication(
-                    new UsernamePasswordAuthenticationToken(userId, null, List.of())
+                    new UsernamePasswordAuthenticationToken(userId, claims, List.of())
             );
 
         } catch (JwtException e) {

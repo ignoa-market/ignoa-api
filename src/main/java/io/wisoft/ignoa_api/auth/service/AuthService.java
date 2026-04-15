@@ -82,7 +82,7 @@ public class AuthService {
     }
 
     public void logout(String accessToken, String refreshToken) {
-        jwtTokenProvider.parseToken(refreshToken);
+        jwtTokenProvider.validateToken(refreshToken);
         tokenBlacklistService.blacklist(accessToken);
         refreshTokenService.delete(refreshToken);
     }
