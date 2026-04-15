@@ -4,6 +4,7 @@ import io.wisoft.ignoa_api.auth.jwt.JwtProperties;
 import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -38,4 +39,22 @@ public class RefreshTokenService {
     public void delete(String refreshToken) {
         redisTemplate.delete(REFRESH_TOKEN_PREFIX + refreshToken);
     }
+
+    public boolean exists(String refreshToken) {
+        return Boolean.TRUE.equals(redisTemplate.hasKey(REFRESH_TOKEN_PREFIX + refreshToken));
+    }
+
+    public void deleteAllByUserId(Long userId) {
+        String pattern = REFRESH_TOKEN_PREFIX + "*";
+        String targetUserId = String.valueOf(userId);
+
+        redisTemplate.scan(ScanOptions.scanOptions().match(pattern).build())
+                .forEachRemaining(key -> {
+                    if(targetUserId.equals(redisTemplate.opsForValue().get(key))) {
+                        redisTemplate.delete(key);
+                    }
+                });
+    }
 }
+
+
