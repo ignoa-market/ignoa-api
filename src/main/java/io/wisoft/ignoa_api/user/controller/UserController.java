@@ -1,16 +1,21 @@
 package io.wisoft.ignoa_api.user.controller;
 
-import io.wisoft.ignoa_api.global.dto.ApiResponse;
+import io.wisoft.ignoa_api.global.common.ApiResponse;
 import io.wisoft.ignoa_api.user.dto.request.UpdateUserRequest;
 import io.wisoft.ignoa_api.user.dto.response.UserMeResponse;
 import io.wisoft.ignoa_api.user.service.UserService;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import static io.wisoft.ignoa_api.global.common.CookieUtils.createClearRefreshTokenCookie;
 
 @RestController
 @RequestMapping("/api/users")
@@ -70,10 +75,15 @@ public class UserController {
     @DeleteMapping("/me")
     public ResponseEntity<ApiResponse<Void>> deleteMe(
             @AuthenticationPrincipal Long userId,
-            @RequestHeader("Refresh-Token") String refreshToken
+            @RequestHeader("Authorization") String authHeader,
+            @CookieValue("refresh_token") String refreshToken,
+            HttpServletResponse response
     ) {
-        userService.deleteMe(userId, refreshToken);
-        ApiResponse<Void> response = ApiResponse.of(null, "회원 탈퇴가 되었습니다.");
-        return ResponseEntity.ok(response);
+        userService.deleteMe(userId, authHeader.substring(7), refreshToken);
+
+        ResponseCookie clearCookie = createClearRefreshTokenCookie();
+        response.addHeader(HttpHeaders.SET_COOKIE, clearCookie.toString());
+
+        return ResponseEntity.ok(ApiResponse.of(null, "회원 탈퇴가 되었습니다."));
     }
 }

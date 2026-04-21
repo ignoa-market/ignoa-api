@@ -17,7 +17,5 @@ spring:
   data:
     redis:
       host: localhost
+      port: 36379
 
-springdoc:
-  servers:
-    - url: http://localhost:38080

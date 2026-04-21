@@ -1,7 +1,9 @@
 package io.wisoft.ignoa_api.item.entity;
 
+import io.wisoft.ignoa_api.item.entity.enums.ItemCondition;
+import io.wisoft.ignoa_api.item.entity.enums.ItemStatus;
 import io.wisoft.ignoa_api.user.entity.User;
-import io.wisoft.ignoa_api.global.entity.BaseEntity;
+import io.wisoft.ignoa_api.global.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 

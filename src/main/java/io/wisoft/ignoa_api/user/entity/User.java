@@ -1,6 +1,6 @@
 package io.wisoft.ignoa_api.user.entity;
 
-import io.wisoft.ignoa_api.global.entity.BaseEntity;
+import io.wisoft.ignoa_api.global.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -19,7 +19,7 @@ public class User extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @Column(unique = true)
     private String email;
 
     @Column
@@ -28,7 +28,7 @@ public class User extends BaseEntity {
     @Column(nullable = false, unique = true)
     private String nickname;
 
-    @Column(nullable = false)
+    @Column
     private String address;
 
     @Column
@@ -64,10 +64,22 @@ public class User extends BaseEntity {
     }
 
     public void withdraw() {
-        this.email = "withdrawn_" + this.id + "@deleted.com";
-        this.nickname = "탈퇴한 사용자" + this.id;
-        this.address = "";
-        this.password = null;
         this.deletedAt = LocalDateTime.now();
+    }
+
+    public void purgePersonalData() {
+        this.email = null;
+        this.password = null;
+        this.nickname = "탈퇴한 사용자_" + this.id;
+        this.address = null;
+        this.profileImageUrl = null;
+    }
+
+    public boolean isDeleted() {
+        return deletedAt != null;
+    }
+
+    public void restore() {
+        this.deletedAt = null;
     }
 }

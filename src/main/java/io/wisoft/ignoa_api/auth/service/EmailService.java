@@ -4,9 +4,10 @@ package io.wisoft.ignoa_api.auth.service;
 import io.wisoft.ignoa_api.auth.dto.request.EmailVerifyCodeRequest;
 import io.wisoft.ignoa_api.auth.dto.request.EmailVerifyRequest;
 import io.wisoft.ignoa_api.auth.dto.response.EmailVerifyResponse;
-import io.wisoft.ignoa_api.auth.util.EmailTemplateBuilder;
+import io.wisoft.ignoa_api.auth.support.EmailTemplateBuilder;
 import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
+import io.wisoft.ignoa_api.user.repository.UserRepository;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
@@ -18,7 +19,6 @@ import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
 import java.time.Duration;
-import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -28,17 +28,13 @@ public class EmailService {
     private static final String VERIFIED_PREFIX = "email:verified:";
     private final JavaMailSender mailSender;
     private final StringRedisTemplate redisTemplate;
-    private static final Set<String> VALID_DOMAINS = Set.of(
-            "edu.hanbat.ac.kr",
-            "o365.hanbat.ac.kr"
-    );
+    private final UserRepository userRepository;
 
     public void sendEmailCode(EmailVerifyCodeRequest request) {
         String email = request.email();
-        String domain = email.split("@")[1];
 
-        if (!VALID_DOMAINS.contains(domain)) {
-            throw new BusinessException(ErrorCode.INVALID_EMAIL_DOMAIN);
+        if (userRepository.existsByEmail(email)) {
+            throw new BusinessException(ErrorCode.DUPLICATE_EMAIL);
         }
 
         String code = String.format("%06d", new SecureRandom().nextInt(1000000));

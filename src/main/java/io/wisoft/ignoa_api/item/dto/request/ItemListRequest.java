@@ -1,6 +1,6 @@
 package io.wisoft.ignoa_api.item.dto.request;
 
-import io.wisoft.ignoa_api.item.entity.ItemViewType;
+import io.wisoft.ignoa_api.item.entity.enums.ItemViewType;
 import jakarta.validation.constraints.Min;
 
 public record ItemListRequest(

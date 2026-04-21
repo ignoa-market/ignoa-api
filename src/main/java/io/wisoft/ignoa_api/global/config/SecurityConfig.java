@@ -1,6 +1,7 @@
 package io.wisoft.ignoa_api.global.config;
 
 import io.wisoft.ignoa_api.auth.jwt.JwtAuthenticationFilter;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -28,14 +29,24 @@ public class SecurityConfig {
                         session
                                 -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/logout").authenticated()
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/users/email/duplicate").permitAll()
-                        .requestMatchers("/api/users/nickname/duplicate").permitAll()
-                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                        .requestMatchers("/ws/**").permitAll()
+                        .requestMatchers(
+                                "/api/auth/login",
+                                "/api/auth/recover",
+                                "/api/auth/signup",
+                                "/api/auth/refresh",
+                                "/api/auth/email/send",
+                                "/api/auth/email/verify",
+                                "/api/users/email/duplicate",
+                                "/api/users/nickname/duplicate"
+                        ).permitAll()
+                        .requestMatchers("/ws").permitAll()
                         .anyRequest().authenticated()
-                ).addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                ).exceptionHandling(exception -> exception
+                        .authenticationEntryPoint((request, response, authException) ->
+                                response.sendError(HttpServletResponse.SC_UNAUTHORIZED))
+                        .accessDeniedHandler((request, response, accessDeniedException) ->
+                                response.sendError(HttpServletResponse.SC_FORBIDDEN)))
+        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 

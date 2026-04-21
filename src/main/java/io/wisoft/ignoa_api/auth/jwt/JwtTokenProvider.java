@@ -43,4 +43,8 @@ public class JwtTokenProvider {
     public Claims parseToken(String token) {
         return jwtParser.parseSignedClaims(token).getPayload();
     }
+
+    public void validateToken(String token) {
+        jwtParser.parseSignedClaims(token);
+    }
 }

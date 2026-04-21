@@ -1,12 +1,13 @@
 package io.wisoft.ignoa_api.user.service;
 
 import io.wisoft.ignoa_api.auth.service.RefreshTokenService;
+import io.wisoft.ignoa_api.auth.service.TokenBlacklistService;
 import io.wisoft.ignoa_api.bid.repository.BidRepository;
 import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
-import io.wisoft.ignoa_api.item.entity.ItemStatus;
+import io.wisoft.ignoa_api.item.entity.enums.ItemStatus;
 import io.wisoft.ignoa_api.item.repository.ItemRepository;
-import io.wisoft.ignoa_api.storage.service.StorageService;
+import io.wisoft.ignoa_api.global.infra.storage.StorageService;
 import io.wisoft.ignoa_api.user.dto.request.UpdateUserRequest;
 import io.wisoft.ignoa_api.user.dto.response.UserMeResponse;
 import io.wisoft.ignoa_api.user.entity.User;
@@ -14,19 +15,27 @@ import io.wisoft.ignoa_api.user.event.ProfileImageDeletedEvent;
 import io.wisoft.ignoa_api.user.repository.UserRepository;
 import io.wisoft.ignoa_api.wish.repository.WishRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class UserService {
 
     private final RefreshTokenService refreshTokenService;
+    private final TokenBlacklistService tokenBlacklistService;
     private final StorageService storageService;
+
     private final ApplicationEventPublisher eventPublisher;
+
     private final UserRepository userRepository;
     private final ItemRepository itemRepository;
     private final BidRepository bidRepository;
@@ -98,7 +107,7 @@ public class UserService {
     }
 
     @Transactional
-    public void deleteMe(Long userId, String refreshToken) {
+    public void deleteMe(Long userId, String accessToken, String refreshToken) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
@@ -110,13 +119,22 @@ public class UserService {
             throw new BusinessException(ErrorCode.HAS_ACTIVE_BID);
         }
 
-        wishRepository.deleteAllByUserId(userId);
+        tokenBlacklistService.blacklist(accessToken);
         refreshTokenService.delete(refreshToken);
-
-        if (user.getProfileImageUrl() != null) {
-            eventPublisher.publishEvent(new ProfileImageDeletedEvent(user.getProfileImageUrl()));
-        }
-
         user.withdraw();
+    }
+
+    @Transactional
+    public void purgeExpiredWithdrawals() {
+        List<User> expiredUsers = userRepository.findAllByDeletedAtBefore(LocalDateTime.now().minusDays(30));
+
+        for (User user: expiredUsers) {
+            if (user.getProfileImageUrl() != null) {
+                eventPublisher.publishEvent(new ProfileImageDeletedEvent(user.getProfileImageUrl()));
+            }
+            wishRepository.deleteAllByUserId(user.getId());
+            user.purgePersonalData();
+            log.info("탈퇴 회원 개인정보 파기 완료 - userId: {}", user.getId());
+        }
     }
 }
