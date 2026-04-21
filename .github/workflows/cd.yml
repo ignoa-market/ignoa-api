@@ -1,0 +1,26 @@
+name: CD
+
+# main 브랜치에 push(머지)될 때 트리거
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      # appleboy/ssh-action: SSH 접속 + 명령어 실행 액션
+      - name: Deploy to RPI
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.RPI_HOST }}
+          username: ${{ secrets.RPI_USER }}
+          key: ${{ secrets.RPI_SSH_KEY }}
+          port: ${{ secrets.RPI_PORT }}
+          script: |
+            cd ~/ignoa/ignoa-api
+            git pull origin main
+            docker compose down
+            docker compose up --build -d

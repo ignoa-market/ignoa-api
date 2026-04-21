@@ -1,9 +1,9 @@
 name: CI
 
-# Event: main으로 PR이 열릴 때 트리거
+# Event: develop, main으로 PR이 열릴 때 트리거
 on:
   pull_request:
-    branches: [ main ]
+    branches: [ main, develop ]
 
 jobs:
   build:
