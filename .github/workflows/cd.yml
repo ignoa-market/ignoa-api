@@ -11,6 +11,14 @@ jobs:
     timeout-minutes: 30
 
     steps:
+      # Runner를 Tailscale 네트워크에 참여시켜 RPI 접속 가능하게 함
+      - name: Connect Tailscale
+        uses: tailscale/github-action@v3
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:ci
+
       # appleboy/ssh-action: SSH 접속 + 명령어 실행 액션
       - name: Deploy to RPI
         uses: appleboy/ssh-action@v1
