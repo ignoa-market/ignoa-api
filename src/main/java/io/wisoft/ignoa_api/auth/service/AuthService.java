@@ -82,13 +82,13 @@ public class AuthService {
     }
 
     public void logout(String accessToken, String refreshToken) {
-        jwtTokenProvider.validateToken(refreshToken);
+        jwtTokenProvider.parseRefreshToken(refreshToken);
         tokenBlacklistService.blacklist(accessToken);
         refreshTokenService.delete(refreshToken);
     }
 
     public AuthTokens refresh(String token) {
-        Long userId = Long.parseLong(jwtTokenProvider.parseToken(token).getSubject());
+        Long userId = Long.parseLong(jwtTokenProvider.parseRefreshToken(token).getSubject());
 
         if (!refreshTokenService.exists(token)) {
             refreshTokenService.deleteAllByUserId(userId);
