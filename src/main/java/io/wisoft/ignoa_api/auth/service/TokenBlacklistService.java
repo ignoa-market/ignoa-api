@@ -17,7 +17,7 @@ public class TokenBlacklistService {
     private final JwtTokenProvider jwtTokenProvider;
 
     public void blacklist(String accessToken) {
-        Claims claims = jwtTokenProvider.parseToken(accessToken);
+        Claims claims = jwtTokenProvider.parseAccessToken(accessToken);
         long remainingMillis =
                 claims.getExpiration().getTime() - System.currentTimeMillis();
 
