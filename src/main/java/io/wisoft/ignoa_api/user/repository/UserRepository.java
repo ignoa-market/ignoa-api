@@ -16,4 +16,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByEmail(String email);
 
     List<User> findAllByDeletedAtBefore(LocalDateTime deletedAtBefore);
+
+    Optional<User> findByProviderAndOauthId(String provider, String oauthId);
 }

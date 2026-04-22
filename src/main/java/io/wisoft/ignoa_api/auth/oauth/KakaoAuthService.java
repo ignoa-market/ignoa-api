@@ -11,6 +11,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.UUID;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -29,27 +31,48 @@ public class KakaoAuthService {
 
         // 2. 카카오 AT로 사용자 정보 조회
         KakaoUserInfoResponse userInfo = kakaoOAuthClient.getUserInfo(kakaoAccessToken);
+        validateEmail(userInfo.email());
+        String nickname = resolveNickname(userInfo.nickname());
 
-        // 3. 이메일로 기존 유저 조회 -> 없으면 자동 가입
-        User user = userRepository.findByEmail(userInfo.email())
-                .orElseGet(() -> userRepository.save(User.ofKakao(
-                        userInfo.email(),
-                        userInfo.nickname(),
-                        userInfo.profileImageUrl(),
-                        String.valueOf(userInfo.id())))
-                );
+        // 3. OAuth(Provider + OAuthId) 기존 유저 조회 -> 없으면 자동 가입
+        User user = findOrCreateUser(userInfo, nickname);
 
+        // 4. 탈퇴한 회원 처리 로직
         if (user.isDeleted()) {
             throw new BusinessException(ErrorCode.ACCOUNT_PENDING_DELETION);
         }
 
-        // 4. JWT 발급
+        // 5. JWT 발급
         Long userId = user.getId();
         String accessToken = jwtTokenProvider.createAccessToken(userId);
-        String refreshToken = jwtTokenProvider.createRefreshToken((userId));
+        String refreshToken = jwtTokenProvider.createRefreshToken(userId);
         refreshTokenService.save(refreshToken, userId);
 
-        // 5. AuthTokens 발급
         return new AuthTokens(userId, accessToken, refreshToken);
+    }
+
+    private User findOrCreateUser(KakaoUserInfoResponse userInfo, String nickname) {
+        return userRepository.findByProviderAndOauthId("KAKAO", String.valueOf(userInfo.id()))
+                .orElseGet(() -> userRepository.save(User.ofKakao(
+                        userInfo.email(),
+                        nickname,
+                        userInfo.profileImageUrl(),
+                        String.valueOf(userInfo.id()))));
+    }
+
+    private void validateEmail(String email) {
+        if (email == null) {
+            throw new BusinessException(ErrorCode.KAKAO_EMAIL_REQUIRED);
+        }
+    }
+
+    private String resolveNickname(String kakaoNickname) {
+        String base = kakaoNickname != null ? kakaoNickname : "카카오 사용자";
+
+        if (!userRepository.existsByNickname(base)) {
+            return base;
+        }
+
+        return base + "_" + UUID.randomUUID().toString().substring(0, 6);
     }
 }

@@ -32,6 +32,7 @@ public enum ErrorCode {
 
     // OAuth
     KAKAO_AUTH_FAILED(HttpStatus.UNAUTHORIZED, "카카오 인증에 실패했습니다."),
+    KAKAO_EMAIL_REQUIRED(HttpStatus.BAD_REQUEST, "카카오 계정의 이메일 제공 동의가 필요합니다."),
 
     // Email
     EMAIL_SEND_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "이메일 발송에 실패했습니다."),

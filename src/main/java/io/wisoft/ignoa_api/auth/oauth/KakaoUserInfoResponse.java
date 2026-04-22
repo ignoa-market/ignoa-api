@@ -8,14 +8,23 @@ public record KakaoUserInfoResponse(
 ) {
 
     public String email() {
+        if (kakaoAccount() == null) {
+            return null;
+        }
         return kakaoAccount().email();
     }
 
     public String nickname() {
+        if (kakaoAccount() == null || kakaoAccount().profile() == null) {
+            return null;
+        }
         return kakaoAccount().profile().nickname();
     }
 
     public String profileImageUrl() {
+        if (kakaoAccount() == null || kakaoAccount().profile() == null) {
+            return null;
+        }
         return kakaoAccount().profile().profileImageUrl();
     }
 
