@@ -36,6 +36,7 @@ public class SecurityConfig {
                                 "/api/auth/refresh",
                                 "/api/auth/email/send",
                                 "/api/auth/email/verify",
+                                "/api/auth/oauth/kakao",
                                 "/api/users/email/duplicate",
                                 "/api/users/nickname/duplicate"
                         ).permitAll()

@@ -51,6 +51,16 @@ public class User extends BaseEntity {
         this.provider = "LOCAL";
     }
 
+    public static User ofKakao(String email, String nickname, String profileImageUrl, String oauthId) {
+        User user = new User();
+        user.email = email;
+        user.nickname =nickname;
+        user.profileImageUrl = profileImageUrl;
+        user.provider = "KAKAO";
+        user.oauthId = oauthId;
+        return user;
+    }
+
     public void updateNickname(String nickname) {
         this.nickname = nickname;
     }
