@@ -88,20 +88,21 @@ public class AuthService {
     }
 
     public AuthTokens refresh(String token) {
-        Long userId = Long.parseLong(jwtTokenProvider.parseRefreshToken(token).getSubject());
+        jwtTokenProvider.parseRefreshToken(token);
 
-        if (!refreshTokenService.exists(token)) {
+        Long consumedUserId = refreshTokenService.consumeToken(token);
+
+        if (consumedUserId == null) {
+            long userId = Long.parseLong(jwtTokenProvider.parseRefreshToken(token).getSubject());
             refreshTokenService.deleteAllByUserId(userId);
             throw new BusinessException(ErrorCode.INVALID_TOKEN);
         }
 
-        String accessToken = jwtTokenProvider.createAccessToken(userId);
-        String refreshToken = jwtTokenProvider.createRefreshToken(userId);
+        String accessToken = jwtTokenProvider.createAccessToken(consumedUserId);
+        String refreshToken = jwtTokenProvider.createRefreshToken(consumedUserId);
+        refreshTokenService.save(refreshToken, consumedUserId);
 
-        refreshTokenService.delete(token);
-        refreshTokenService.save(refreshToken, userId);
-
-        return new AuthTokens(userId, accessToken, refreshToken);
+        return new AuthTokens(consumedUserId, accessToken, refreshToken);
     }
 
     @Transactional
