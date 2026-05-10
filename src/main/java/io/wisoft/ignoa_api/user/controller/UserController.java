@@ -3,6 +3,7 @@ package io.wisoft.ignoa_api.user.controller;
 import io.wisoft.ignoa_api.global.common.ApiResponse;
 import io.wisoft.ignoa_api.user.dto.request.UpdateUserRequest;
 import io.wisoft.ignoa_api.user.dto.response.UserMeResponse;
+import io.wisoft.ignoa_api.user.facade.UserFacade;
 import io.wisoft.ignoa_api.user.service.UserService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -23,6 +24,7 @@ import static io.wisoft.ignoa_api.global.common.CookieUtils.createClearRefreshTo
 public class UserController {
 
     private final UserService userService;
+    private final UserFacade userFacade;
 
     @GetMapping("/email/duplicate")
     public ResponseEntity<ApiResponse<Void>> checkDuplicateEmail(@RequestParam String email) {
@@ -50,7 +52,7 @@ public class UserController {
             @AuthenticationPrincipal Long userId,
             @RequestPart MultipartFile image
     ) {
-        UserMeResponse data = userService.updateProfileImage(userId, image);
+        UserMeResponse data = userFacade.updateProfileImage(userId, image);
         ApiResponse<UserMeResponse> response = ApiResponse.of(data, "프로필 사진이 변경되었습니다.");
         return ResponseEntity.ok(response);
     }
