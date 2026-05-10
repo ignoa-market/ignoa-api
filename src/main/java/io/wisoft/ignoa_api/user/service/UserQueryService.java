@@ -6,8 +6,12 @@ import io.wisoft.ignoa_api.user.entity.User;
 import io.wisoft.ignoa_api.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -16,9 +20,13 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserQueryService {
     private final UserRepository userRepository;
 
-    @Transactional
     public User findById(Long userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+    }
+
+    public List<User> findPurgeTargets(LocalDateTime startDateTime, LocalDateTime endDateTime, Long lastId, int batchSize) {
+        return userRepository.findPurgeTargets(startDateTime, endDateTime, lastId, PageRequest.of(0, batchSize)
+        );
     }
 }
