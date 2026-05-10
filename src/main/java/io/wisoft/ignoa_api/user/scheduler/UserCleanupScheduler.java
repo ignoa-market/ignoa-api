@@ -18,7 +18,7 @@ public class UserCleanupScheduler {
     @Scheduled(cron = "0 0 0 * * *")
     public void purgeExpiredWithdrawals() {
         log.info("탈퇴 회원 개인정보 파기 스케줄러 실행");
-        userService.purgeExpiredWithdrawals();
+        // userService.purgeExpiredWithdrawals();
         userFacade.purgeExpiredWithdrawals();
     }
 }

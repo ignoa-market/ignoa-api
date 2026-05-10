@@ -26,7 +26,6 @@ public class UserQueryService {
     }
 
     public List<User> findPurgeTargets(LocalDateTime startDateTime, LocalDateTime endDateTime, Long lastId, int batchSize) {
-        return userRepository.findPurgeTargets(startDateTime, endDateTime, lastId, PageRequest.of(0, batchSize)
-        );
+        return userRepository.findPurgeTargets(startDateTime, endDateTime, lastId, PageRequest.of(0, batchSize));
     }
 }
