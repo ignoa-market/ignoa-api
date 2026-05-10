@@ -38,36 +38,34 @@ public class BidFacade {
         final User bidder = userRepository.findById(bidderId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-        if (!redisLockUtils.acquireLock(
+        return redisLockUtils.executeWithLock(
                 getPlaceBidKey(itemId),
                 "",
-                Duration.ofMinutes(1)
-        )) {
-            throw new BusinessException(ErrorCode.AUCTION_ALREADY_CLOSED);
-        } else {
-            Item item = itemRepository.findById(itemId)
-                    .orElseThrow(() -> new BusinessException(ErrorCode.ITEM_NOT_FOUND));
+                Duration.ofMinutes(1),
+                () -> {
+                    Item item = itemRepository.findById(itemId)
+                            .orElseThrow(() -> new BusinessException(ErrorCode.ITEM_NOT_FOUND));
 
-            if (item.isSeller(bidderId)) {
-                throw new BusinessException(ErrorCode.SELF_BID_NOT_ALLOWED);
-            }
+                    if (item.isSeller(bidderId)) {
+                        throw new BusinessException(ErrorCode.SELF_BID_NOT_ALLOWED);
+                    }
 
-            if (!item.isActive()) {
-                throw new BusinessException(ErrorCode.AUCTION_CLOSED);
-            }
+                    if (!item.isActive()) {
+                        throw new BusinessException(ErrorCode.AUCTION_CLOSED);
+                    }
 
-            if (!item.isValidBidPrice(request.price())) {
-                throw new BusinessException(ErrorCode.INVALID_BID_PRICE);
-            }
+                    if (!item.isValidBidPrice(request.price())) {
+                        throw new BusinessException(ErrorCode.INVALID_BID_PRICE);
+                    }
 
-            item.raisePriceTo(request.price());
+                    item.raisePriceTo(request.price());
 
-            final Bid bid = Bid.place(item, bidder, request.price());
-            bidRepository.save(bid);
-            eventPublisher.publishEvent(BidPlaceEvent.of(bid, item, bidder));
+                    final Bid bid = Bid.place(item, bidder, request.price());
+                    bidRepository.save(bid);
+                    eventPublisher.publishEvent(BidPlaceEvent.of(bid, item, bidder));
 
-            return BidResponse.from(bid);
-        }
+                    return BidResponse.from(bid);
+                });
     }
 
     private static String getPlaceBidKey(Long itemId) {
