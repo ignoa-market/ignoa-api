@@ -19,13 +19,18 @@ public class UserCleanupScheduler {
 
     @Scheduled(cron = "0 0 0 * * *")
     public void purgeExpiredWithdrawals() {
+        final String lockName = "UserCleanupScheduler-purgeExpiredWithdrawals";
         if (redisLockUtils.acquireLock(
-                "UserCleanupScheduler-purgeExpiredWithdrawals",
+                lockName,
                 "",
                 Duration.ofSeconds(3L))
         ) {
-            log.info("탈퇴 회원 개인정보 파기 실행");
-            userService.purgeExpiredWithdrawals();
+            try {
+                log.info("탈퇴 회원 개인정보 파기 실행");
+                userService.purgeExpiredWithdrawals();
+            } finally {
+                redisLockUtils.release(lockName);
+            }
         } else {
             log.info("탈퇴 회원 개인정보 파기 생략 (다른 서버에서 진행)");
         }

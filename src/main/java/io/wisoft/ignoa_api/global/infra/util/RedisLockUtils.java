@@ -23,6 +23,10 @@ public class RedisLockUtils {
         return getLock != null && getLock;
     }
 
+    public void release(String lockName) {
+        redisTemplate.unlink(generateLockKey(lockName));
+    }
+
     private String generateLockKey(String lockName) {
         return "ignoa-api" + lockName;
     }
