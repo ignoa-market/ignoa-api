@@ -1,6 +1,6 @@
 package io.wisoft.ignoa_api.user.scheduler;
 
-import io.wisoft.ignoa_api.user.service.UserService;
+import io.wisoft.ignoa_api.user.service.UserCommandService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class UserCleanupScheduler {
 
-    private final UserService userService;
+    private final UserCommandService userService;
 
     @Scheduled(cron = "0 0 0 * * *")
     public void purgeExpiredWithdrawals() {
