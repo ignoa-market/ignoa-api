@@ -16,7 +16,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserQueryService {
     private final UserRepository userRepository;
 
-    @Transactional
     public User findById(Long userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
