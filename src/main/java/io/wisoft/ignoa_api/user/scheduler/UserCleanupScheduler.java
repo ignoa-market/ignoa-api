@@ -1,10 +1,13 @@
 package io.wisoft.ignoa_api.user.scheduler;
 
+import io.wisoft.ignoa_api.global.infra.util.RedisLockUtils;
 import io.wisoft.ignoa_api.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+
+import java.time.Duration;
 
 @Slf4j
 @Component
@@ -12,10 +15,24 @@ import org.springframework.stereotype.Component;
 public class UserCleanupScheduler {
 
     private final UserService userService;
+    private final RedisLockUtils redisLockUtils;
 
     @Scheduled(cron = "0 0 0 * * *")
     public void purgeExpiredWithdrawals() {
-        log.info("탈퇴 회원 개인정보 파기 스케줄러 실행");
-        userService.purgeExpiredWithdrawals();
+
+        final String result = redisLockUtils.executeWithLock(
+                "UserCleanupScheduler-purgeExpiredWithdrawals",
+                "",
+                Duration.ofMinutes(10),
+                () -> {
+                    log.info("탈퇴 회원 개인정보 파기 실행");
+                    userService.purgeExpiredWithdrawals();
+                    return "SUCCESS";
+                }
+        );
+
+        if (result == null) {
+            log.info("탈퇴 회원 개인정보 파기 생략 (다른 서버에서 진행)");
+        }
     }
 }
