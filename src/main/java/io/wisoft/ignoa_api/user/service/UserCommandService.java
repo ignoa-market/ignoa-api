@@ -14,13 +14,9 @@ import io.wisoft.ignoa_api.wish.repository.WishRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.List;
 
 @Slf4j
 @Service
@@ -83,11 +79,14 @@ public class UserCommandService {
     }
 
     public void purgeUser(User user) {
+        String profileImageUrl = user.getProfileImageUrl();
+
         wishRepository.deleteAllByUserId(user.getId());
         user.purgePersonalData();
+        userRepository.save(user);
 
-        if (user.getProfileImageUrl() != null) {
-            eventPublisher.publishEvent(new ProfileImageDeletedEvent(user.getProfileImageUrl()));
+        if (profileImageUrl != null) {
+            eventPublisher.publishEvent(new ProfileImageDeletedEvent(profileImageUrl));
         }
     }
 }
