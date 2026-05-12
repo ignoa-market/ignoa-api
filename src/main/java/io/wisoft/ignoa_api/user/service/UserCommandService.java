@@ -14,9 +14,11 @@ import io.wisoft.ignoa_api.wish.repository.WishRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -54,7 +56,7 @@ public class UserCommandService {
         eventPublisher.publishEvent(new ProfileImageDeletedEvent(profileImageUrl));
     }
 
-    public UserMeResponse patchMe(Long userId, UpdateUserRequest request) {
+    public UserMeResponse updateProfile(Long userId, UpdateUserRequest request) {
         User user = userQueryService.findById(userId);
 
         if (request.nickname() != null && userRepository.existsByNickname(request.nickname())) {
@@ -80,16 +82,12 @@ public class UserCommandService {
         user.withdraw();
     }
 
-    public void purgeExpiredWithdrawals() {
-        List<User> expiredUsers = userRepository.findAllByDeletedAtBefore(LocalDateTime.now().minusDays(30));
+    public void purgeUser(User user) {
+        wishRepository.deleteAllByUserId(user.getId());
+        user.purgePersonalData();
 
-        for (User user : expiredUsers) {
-            if (user.getProfileImageUrl() != null) {
-                eventPublisher.publishEvent(new ProfileImageDeletedEvent(user.getProfileImageUrl()));
-            }
-            wishRepository.deleteAllByUserId(user.getId());
-            user.purgePersonalData();
-            log.info("탈퇴 회원 개인정보 파기 완료 - userId: {}", user.getId());
+        if (user.getProfileImageUrl() != null) {
+            eventPublisher.publishEvent(new ProfileImageDeletedEvent(user.getProfileImageUrl()));
         }
     }
 }

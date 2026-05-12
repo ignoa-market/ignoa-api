@@ -67,11 +67,11 @@ public class UserController {
     }
 
     @PatchMapping("/me")
-    public ResponseEntity<ApiResponse<UserMeResponse>> patchMe(
+    public ResponseEntity<ApiResponse<UserMeResponse>> updateProfile(
             @AuthenticationPrincipal Long userId,
             @Valid @RequestBody UpdateUserRequest request
     ) {
-        UserMeResponse data = userCommandService.patchMe(userId, request);
+        UserMeResponse data = userCommandService.updateProfile(userId, request);
         ApiResponse<UserMeResponse> response = ApiResponse.of(data, "유저 정보가 수정되었습니다.");
         return ResponseEntity.ok(response);
     }
