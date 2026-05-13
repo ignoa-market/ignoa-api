@@ -50,5 +50,6 @@ public class UserPurgeJob {
                 }
             }
         }
+        log.info("탈퇴 회원 개인정보 파기 완료 - 총: {}건, 성공: {}건, 실패: {}건", totalTargetCount, successCount, failCount);
     }
 }

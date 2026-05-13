@@ -3,6 +3,7 @@ package io.wisoft.ignoa_api.user.service;
 import io.wisoft.ignoa_api.bid.repository.BidRepository;
 import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
+import io.wisoft.ignoa_api.global.outbox.service.OutboxAppender;
 import io.wisoft.ignoa_api.item.entity.enums.ItemStatus;
 import io.wisoft.ignoa_api.item.repository.ItemRepository;
 import io.wisoft.ignoa_api.user.dto.request.UpdateUserRequest;
@@ -25,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserCommandService {
 
     private final UserQueryService userQueryService;
+    private final OutboxAppender outboxAppender;
     private final ApplicationEventPublisher eventPublisher;
 
     private final UserRepository userRepository;
@@ -86,7 +88,7 @@ public class UserCommandService {
         userRepository.save(user);
 
         if (profileImageUrl != null) {
-            eventPublisher.publishEvent(new ProfileImageDeletedEvent(profileImageUrl));
+            outboxAppender.save(user.getId(), profileImageUrl);
         }
     }
 }
