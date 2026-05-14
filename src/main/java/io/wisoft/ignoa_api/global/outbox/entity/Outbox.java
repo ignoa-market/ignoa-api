@@ -49,5 +49,18 @@ public class Outbox extends BaseEntity {
     public static Outbox create(String aggregateId, String aggregateType, String eventType, String payload) {
         return new Outbox(aggregateId, aggregateType, eventType, payload);
     }
+
+    public void markDone() {
+        this.status = OutboxStatus.DONE;
+        this.processedAt = LocalDateTime.now();
+    }
+
+    public void markDead() {
+        this.status = OutboxStatus.DEAD;
+    }
+
+    public void incrementRetryCount() {
+        this.retryCount++;
+    }
 }
 
