@@ -13,7 +13,7 @@ public class OutboxScheduler {
 
     private final OutboxWorker outboxWorker;
 
-    @Scheduled(cron = "0 0 3 * * *")
+    @Scheduled(cron = "0 0 2 * * *")
     public void run() {
         log.info("탈퇴 회원 프로필 사진 파기 스케줄러 실행");
         outboxWorker.execute();

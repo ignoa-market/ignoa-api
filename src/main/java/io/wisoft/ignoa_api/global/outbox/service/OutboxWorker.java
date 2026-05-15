@@ -10,6 +10,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+
 
 @Slf4j
 @Component
@@ -23,8 +25,9 @@ public class OutboxWorker {
     private final ObjectMapper objectMapper;
 
     public void execute() {
-        outboxRepository.findByStatus(OutboxStatus.PENDING)
-                .forEach(this::process);
+        List<Outbox> outboxList = outboxRepository.findByStatus(OutboxStatus.PENDING);
+        log.info("Outbox 처리 시작 - 대상: {}건", outboxList.size());
+        outboxList.forEach(this::process);
     }
 
     private void process(Outbox outbox) {
@@ -40,6 +43,7 @@ public class OutboxWorker {
             storageService.delete(payload.imageUrl());
             outbox.markDone();
             outboxRepository.save(outbox);
+            log.info("Outbox 처리 완료 - outboxId: {}", outbox.getId());
 
         } catch (Exception e) {
             outbox.incrementRetryCount();

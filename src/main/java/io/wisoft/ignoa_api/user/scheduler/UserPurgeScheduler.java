@@ -9,11 +9,11 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class UserCleanupScheduler {
+public class UserPurgeScheduler {
 
     private final UserPurgeJob userPurgeJob;
 
-    @Scheduled(cron = "0 */1 * * * *")
+    @Scheduled(cron = "0 0 1 * * *")
     public void purgeExpiredWithdrawals() {
         log.info("탈퇴 회원 개인정보 파기 스케줄러 실행");
         userPurgeJob.execute();
