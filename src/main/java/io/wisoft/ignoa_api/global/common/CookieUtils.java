@@ -12,7 +12,7 @@ public class CookieUtils {
         return ResponseCookie.from("refresh_token", refreshToken)
                 .httpOnly(true)
                 .secure(true)
-                .sameSite("Strict")
+                .sameSite("Lax")
                 .maxAge(Duration.ofDays(7))
                 .path("/api")
                 .build();
@@ -22,7 +22,7 @@ public class CookieUtils {
         return ResponseCookie.from("refresh_token", "")
                 .httpOnly(true)
                 .secure(true)
-                .sameSite("Strict")
+                .sameSite("Lax")
                 .maxAge(0)
                 .path("/api")
                 .build();
