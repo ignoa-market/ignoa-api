@@ -3,6 +3,7 @@ package io.wisoft.ignoa_api.global.outbox.scheduler;
 import io.wisoft.ignoa_api.global.outbox.service.OutboxWorker;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -14,6 +15,7 @@ public class OutboxScheduler {
     private final OutboxWorker outboxWorker;
 
     @Scheduled(cron = "0 0 2 * * *")
+    @SchedulerLock(name = "outboxScheduler")
     public void run() {
         log.info("탈퇴 회원 프로필 사진 파기 스케줄러 실행");
         outboxWorker.execute();

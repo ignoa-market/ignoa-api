@@ -49,6 +49,10 @@ dependencies {
 	implementation 'software.amazon.awssdk:s3:2.26.12'
 	implementation 'org.springframework.boot:spring-boot-starter-mail'
 
+	// Shedlock
+	implementation 'net.javacrumbs.shedlock:shedlock-spring:6.0.2'
+	implementation 'net.javacrumbs.shedlock:shedlock-provider-redis-spring:6.0.2'
+
 	// 개발 편의
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
