@@ -3,7 +3,7 @@ package io.wisoft.ignoa_api.user.service;
 import io.wisoft.ignoa_api.auth.service.RefreshTokenService;
 import io.wisoft.ignoa_api.auth.service.TokenBlacklistService;
 import io.wisoft.ignoa_api.global.infra.storage.StorageService;
-import io.wisoft.ignoa_api.user.dto.response.UserMeResponse;
+import io.wisoft.ignoa_api.user.dto.response.MyProfile;
 import io.wisoft.ignoa_api.user.entity.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,7 +21,7 @@ public class UserFacade {
     private final UserCommandService userCommandService;
     private final UserQueryService userQueryService;
 
-    public UserMeResponse updateProfileImage(Long userId, MultipartFile image) {
+    public MyProfile updateProfileImage(Long userId, MultipartFile image) {
         User user = userQueryService.findById(userId);
 
         String oldImageUrl = user.getProfileImageUrl();
@@ -29,7 +29,7 @@ public class UserFacade {
         user.updateProfileImage(newImageUrl);
         userCommandService.saveProfileImage(user, oldImageUrl);
 
-        return UserMeResponse.from(user);
+        return MyProfile.from(user);
     }
 
     public void deleteMe(Long userId, String accessToken, String refreshToken) {

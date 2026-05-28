@@ -3,7 +3,7 @@ package io.wisoft.ignoa_api.wish.controller;
 import io.wisoft.ignoa_api.global.common.ApiResponse;
 import io.wisoft.ignoa_api.global.common.SliceResponse;
 import io.wisoft.ignoa_api.wish.dto.request.WishListRequest;
-import io.wisoft.ignoa_api.wish.dto.response.WishSummary;
+import io.wisoft.ignoa_api.wish.dto.response.WishPreview;
 import io.wisoft.ignoa_api.wish.service.WishService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -40,12 +40,12 @@ public class WishController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<SliceResponse<WishSummary>>> getWishes(
+    public ResponseEntity<ApiResponse<SliceResponse<WishPreview>>> getWishes(
             @Valid @ModelAttribute WishListRequest request,
             @AuthenticationPrincipal Long userId
     ) {
-        SliceResponse<WishSummary> data = wishService.getWishes(userId, request);
-        ApiResponse<SliceResponse<WishSummary>> response = ApiResponse.of(data, "찜 목록을 조회했습니다.");
+        SliceResponse<WishPreview> data = wishService.getWishes(userId, request);
+        ApiResponse<SliceResponse<WishPreview>> response = ApiResponse.of(data, "찜 목록을 조회했습니다.");
         return ResponseEntity.ok(response);
     }
 }

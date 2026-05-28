@@ -7,7 +7,7 @@ import io.wisoft.ignoa_api.item.entity.Item;
 import io.wisoft.ignoa_api.item.repository.ItemRepository;
 import io.wisoft.ignoa_api.item.service.ItemMediaService;
 import io.wisoft.ignoa_api.wish.dto.request.WishListRequest;
-import io.wisoft.ignoa_api.wish.dto.response.WishSummary;
+import io.wisoft.ignoa_api.wish.dto.response.WishPreview;
 import io.wisoft.ignoa_api.wish.entity.Wish;
 import io.wisoft.ignoa_api.wish.repository.WishRepository;
 import io.wisoft.ignoa_api.user.entity.User;
@@ -53,11 +53,14 @@ public class WishService {
         wishRepository.delete(wish);
     }
 
-    public SliceResponse<WishSummary> getWishes(Long userId, WishListRequest request) {
+    public SliceResponse<WishPreview> getWishes(Long userId, WishListRequest request) {
         Slice<Wish> wishSlice = wishRepository.findByUserIdWithItem(userId, PageRequest.of(request.page(), request.size()));
 
-        List<WishSummary> wishSummaries = wishSlice.getContent().stream()
-                .map(wish -> WishSummary.from(wish, itemMediaService.getFirstMediaUrl(wish.getItem().getId())))
+        List<WishPreview> wishSummaries = wishSlice.getContent().stream()
+                .map(wish -> WishPreview.from(
+                        wish,
+                        itemMediaService.getFirstMediaUrl(wish.getItem().getId()),
+                        wishRepository.countByItemId(wish.getItem().getId())))
                 .toList();
 
         return SliceResponse.of(wishSummaries, wishSlice.hasNext());

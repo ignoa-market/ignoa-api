@@ -5,25 +5,27 @@ import io.wisoft.ignoa_api.item.entity.enums.ItemStatus;
 
 import java.time.LocalDateTime;
 
-public record ItemSummary(
+public record ItemPreview(
         Long itemId,
+        String brand,
         String title,
         String mediaUrl,
         Long currentPrice,
         Integer wishCount,
-        Integer bidCount,
+        Long viewCount,
         ItemStatus status,
         LocalDateTime endAt
 ) {
 
-    public static ItemSummary from(Item item, String mediaUrl, int wishCount, int bidCount) {
-        return new ItemSummary(
+    public static ItemPreview from(Item item, String mediaUrl, int wishCount) {
+        return new ItemPreview(
                 item.getId(),
+                item.getBrand(),
                 item.getTitle(),
                 mediaUrl,
                 item.getCurrentPrice(),
                 wishCount,
-                bidCount,
+                item.getViewCount(),
                 item.getStatus(),
                 item.getEndAt()
         );

@@ -4,23 +4,25 @@ import io.wisoft.ignoa_api.wish.entity.Wish;
 
 import java.time.LocalDateTime;
 
-public record WishSummary(
+public record WishPreview(
         Long wishId,
         Long itemId,
         String title,
         String category,
         Long currentPrice,
+        Integer wishCount,
         LocalDateTime endAt,
         String mediaUrl,
         LocalDateTime wishedAt
 ) {
-    public static WishSummary from(Wish wish, String mediaUrl) {
-        return new WishSummary(
+    public static WishPreview from(Wish wish, String mediaUrl, int wishCount) {
+        return new WishPreview(
                 wish.getId(),
                 wish.getItem().getId(),
                 wish.getItem().getTitle(),
                 wish.getItem().getCategory(),
                 wish.getItem().getCurrentPrice(),
+                wishCount,
                 wish.getItem().getEndAt(),
                 mediaUrl,
                 wish.getCreatedAt()
