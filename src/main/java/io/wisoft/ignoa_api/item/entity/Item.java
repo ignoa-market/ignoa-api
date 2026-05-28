@@ -47,8 +47,11 @@ public class Item extends BaseEntity {
     @Column(nullable = false)
     private Long currentPrice;
 
-    @Column
+    @Column(nullable = false)
     private Long buyNowPrice;
+
+    @Column(nullable = false)
+    private String brand;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -57,9 +60,12 @@ public class Item extends BaseEntity {
     @Column(nullable = false)
     private LocalDateTime endAt;
 
+    @Column(nullable = false)
+    private Long viewCount = 0L;
+
     public static Item create(User seller, String title, String description, String category,
                               ItemCondition itemCondition, Long startPrice, Long buyNowPrice,
-                              LocalDateTime endAt) {
+                              String brand, LocalDateTime endAt) {
         return new Item(
                 null,
                 seller,
@@ -71,15 +77,25 @@ public class Item extends BaseEntity {
                 startPrice,
                 startPrice,
                 buyNowPrice,
+                brand,
                 ItemStatus.ACTIVE,
-                endAt
+                endAt,
+                0L
         );
     }
 
-    public void updateInfo(String title, String description, String category, LocalDateTime endAt) {
+    public void increaseViewCount() {
+        this.viewCount++;
+    }
+
+    public void updateInfo(String title, String description, String category, String brand,
+                          ItemCondition itemCondition, Long buyNowPrice, LocalDateTime endAt) {
         if (title != null) this.title = title;
         if (description != null) this.description = description;
         if (category != null) this.category = category;
+        if (brand != null) this.brand = brand;
+        if (itemCondition != null) this.itemCondition = itemCondition;
+        if (buyNowPrice != null) this.buyNowPrice = buyNowPrice;
         if (endAt != null) this.endAt = endAt;
     }
 

@@ -1,7 +1,7 @@
 package io.wisoft.ignoa_api.auction.scheduler;
 
 
-import io.wisoft.ignoa_api.auction.service.AuctionCloseProcessor;
+import io.wisoft.ignoa_api.auction.service.AuctionCloseJob;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class AuctionCloseScheduler {
 
-    private final AuctionCloseProcessor auctionCloseProcessor;
+    private final AuctionCloseJob auctionCloseProcessor;
 
     @Scheduled(cron = "0 */5 * * * *")
     @SchedulerLock(name = "auctionCloseScheduler")

@@ -2,7 +2,7 @@ package io.wisoft.ignoa_api.user.service;
 
 import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
-import io.wisoft.ignoa_api.user.dto.response.UserMeResponse;
+import io.wisoft.ignoa_api.user.dto.response.MyProfile;
 import io.wisoft.ignoa_api.user.entity.User;
 import io.wisoft.ignoa_api.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -39,8 +39,9 @@ public class UserQueryService {
         }
     }
 
-    public UserMeResponse getMe(Long userId) {
-        return UserMeResponse.from(findById(userId));
+    public MyProfile getMe(Long userId) {
+        User user = findById(userId);
+        return MyProfile.from(user);
     }
 
     public List<User> findPurgeTargets(LocalDateTime startDateTime, LocalDateTime endDateTime, Long lastId, int batchSize) {

@@ -15,7 +15,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class AuctionCloseProcessor {
+public class AuctionCloseJob {
 
     private final AuctionCloseService auctionCloseService;
     private final ItemRepository itemRepository;

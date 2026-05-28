@@ -2,7 +2,7 @@ package io.wisoft.ignoa_api.user.controller;
 
 import io.wisoft.ignoa_api.global.common.ApiResponse;
 import io.wisoft.ignoa_api.user.dto.request.UpdateUserRequest;
-import io.wisoft.ignoa_api.user.dto.response.UserMeResponse;
+import io.wisoft.ignoa_api.user.dto.response.MyProfile;
 import io.wisoft.ignoa_api.user.service.UserCommandService;
 import io.wisoft.ignoa_api.user.service.UserFacade;
 import io.wisoft.ignoa_api.user.service.UserQueryService;
@@ -43,19 +43,19 @@ public class UserController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<ApiResponse<UserMeResponse>> getMe(@AuthenticationPrincipal Long userId) {
-        UserMeResponse data = userQueryService.getMe(userId);
-        ApiResponse<UserMeResponse> response = ApiResponse.of(data, "마이페이지 조회에 성공했습니다.");
+    public ResponseEntity<ApiResponse<MyProfile>> getMe(@AuthenticationPrincipal Long userId) {
+        MyProfile data = userQueryService.getMe(userId);
+        ApiResponse<MyProfile> response = ApiResponse.of(data, "마이페이지 조회에 성공했습니다.");
         return ResponseEntity.ok(response);
     }
 
     @PatchMapping(value = "/me/profile-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ApiResponse<UserMeResponse>> updateProfileImage(
+    public ResponseEntity<ApiResponse<MyProfile>> updateProfileImage(
             @AuthenticationPrincipal Long userId,
             @RequestPart MultipartFile image
     ) {
-        UserMeResponse data = userFacade.updateProfileImage(userId, image);
-        ApiResponse<UserMeResponse> response = ApiResponse.of(data, "프로필 사진이 변경되었습니다.");
+        MyProfile data = userFacade.updateProfileImage(userId, image);
+        ApiResponse<MyProfile> response = ApiResponse.of(data, "프로필 사진이 변경되었습니다.");
         return ResponseEntity.ok(response);
     }
 
@@ -67,12 +67,12 @@ public class UserController {
     }
 
     @PatchMapping("/me")
-    public ResponseEntity<ApiResponse<UserMeResponse>> updateProfile(
+    public ResponseEntity<ApiResponse<MyProfile>> updateProfile(
             @AuthenticationPrincipal Long userId,
             @Valid @RequestBody UpdateUserRequest request
     ) {
-        UserMeResponse data = userCommandService.updateProfile(userId, request);
-        ApiResponse<UserMeResponse> response = ApiResponse.of(data, "유저 정보가 수정되었습니다.");
+        MyProfile data = userCommandService.updateProfile(userId, request);
+        ApiResponse<MyProfile> response = ApiResponse.of(data, "유저 정보가 수정되었습니다.");
         return ResponseEntity.ok(response);
     }
 

@@ -7,7 +7,7 @@ import io.wisoft.ignoa_api.global.outbox.service.OutboxAppender;
 import io.wisoft.ignoa_api.item.entity.enums.ItemStatus;
 import io.wisoft.ignoa_api.item.repository.ItemRepository;
 import io.wisoft.ignoa_api.user.dto.request.UpdateUserRequest;
-import io.wisoft.ignoa_api.user.dto.response.UserMeResponse;
+import io.wisoft.ignoa_api.user.dto.response.MyProfile;
 import io.wisoft.ignoa_api.user.entity.User;
 import io.wisoft.ignoa_api.user.event.ProfileImageDeletedEvent;
 import io.wisoft.ignoa_api.user.repository.UserRepository;
@@ -54,7 +54,7 @@ public class UserCommandService {
         eventPublisher.publishEvent(new ProfileImageDeletedEvent(profileImageUrl));
     }
 
-    public UserMeResponse updateProfile(Long userId, UpdateUserRequest request) {
+    public MyProfile updateProfile(Long userId, UpdateUserRequest request) {
         User user = userQueryService.findById(userId);
 
         if (request.nickname() != null && userRepository.existsByNickname(request.nickname())) {
@@ -63,7 +63,7 @@ public class UserCommandService {
 
         user.updateProfile(request.nickname(), request.address());
 
-        return UserMeResponse.from(user);
+        return MyProfile.from(user);
     }
 
     public void withdraw(Long userId) {

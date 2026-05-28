@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -45,6 +46,7 @@ public class SecurityConfig {
                                 "/api/users/email/duplicate",
                                 "/api/users/nickname/duplicate"
                         ).permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/items", "/api/items/{itemId}", "/api/items/{itemId}/bids").permitAll()
                         .requestMatchers("/ws").permitAll()
                         .anyRequest().authenticated()
                 ).exceptionHandling(exception -> exception

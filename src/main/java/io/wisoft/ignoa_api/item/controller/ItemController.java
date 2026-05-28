@@ -5,8 +5,8 @@ import io.wisoft.ignoa_api.item.dto.request.ItemCreateRequest;
 import io.wisoft.ignoa_api.item.dto.request.ItemListRequest;
 import io.wisoft.ignoa_api.item.dto.request.ItemUpdateRequest;
 import io.wisoft.ignoa_api.item.dto.response.ItemResponse;
-import io.wisoft.ignoa_api.item.dto.response.ItemDetailResponse;
-import io.wisoft.ignoa_api.item.dto.response.ItemSummary;
+import io.wisoft.ignoa_api.item.dto.response.ItemDetail;
+import io.wisoft.ignoa_api.item.dto.response.ItemPreview;
 import io.wisoft.ignoa_api.item.service.ItemService;
 import io.wisoft.ignoa_api.global.common.ApiResponse;
 import jakarta.validation.Valid;
@@ -41,34 +41,34 @@ public class ItemController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<SliceResponse<ItemSummary>>> getItems(
+    public ResponseEntity<ApiResponse<SliceResponse<ItemPreview>>> getItems(
             @Valid @ModelAttribute ItemListRequest request,
             @AuthenticationPrincipal Long userId
     ) {
-        SliceResponse<ItemSummary> data = itemService.getItems(userId, request);
-        ApiResponse<SliceResponse<ItemSummary>> response = ApiResponse.of(data, "상품 리스트를 조회했습니다.");
+        SliceResponse<ItemPreview> data = itemService.getItems(userId, request);
+        ApiResponse<SliceResponse<ItemPreview>> response = ApiResponse.of(data, "상품 리스트를 조회했습니다.");
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{itemId}")
-    public ResponseEntity<ApiResponse<ItemDetailResponse>> getItem(
+    public ResponseEntity<ApiResponse<ItemDetail>> getItem(
             @PathVariable Long itemId,
             @AuthenticationPrincipal Long userId
     ) {
-        ItemDetailResponse data = itemService.getItemDetail(itemId, userId);
-        ApiResponse<ItemDetailResponse> response = ApiResponse.of(data, "상품 상세 정보를 조회했습니다.");
+        ItemDetail data = itemService.getItemDetail(itemId, userId);
+        ApiResponse<ItemDetail> response = ApiResponse.of(data, "상품 상세 정보를 조회했습니다.");
         return ResponseEntity.ok(response);
     }
 
     @PatchMapping(value = "/{itemId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ApiResponse<ItemDetailResponse>> updateItem(
+    public ResponseEntity<ApiResponse<ItemDetail>> updateItem(
             @PathVariable Long itemId,
             @Valid @RequestPart ItemUpdateRequest request,
             @RequestPart(required = false) List<MultipartFile> files,
             @AuthenticationPrincipal Long userId
     ) {
-        ItemDetailResponse data = itemService.updateItem(itemId, userId, request, files);
-        ApiResponse<ItemDetailResponse> response = ApiResponse.of(data, "상품 정보를 수정했습니다.");
+        ItemDetail data = itemService.updateItem(itemId, userId, request, files);
+        ApiResponse<ItemDetail> response = ApiResponse.of(data, "상품 정보를 수정했습니다.");
         return ResponseEntity.ok(response);
     }
 

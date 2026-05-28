@@ -1,7 +1,7 @@
 package io.wisoft.ignoa_api.item.service;
 
 import io.wisoft.ignoa_api.auction.event.AuctionRegisteredEvent;
-import io.wisoft.ignoa_api.auction.service.AuctionRedisService;
+import io.wisoft.ignoa_api.bid.entity.Bid;
 import io.wisoft.ignoa_api.bid.repository.BidRepository;
 import io.wisoft.ignoa_api.global.common.SliceResponse;
 import io.wisoft.ignoa_api.item.dto.request.ItemCreateRequest;
@@ -26,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -53,6 +54,7 @@ public class ItemService {
                 request.itemCondition(),
                 request.startPrice(),
                 request.buyNowPrice(),
+                request.brand(),
                 request.endAt()
         );
 
@@ -63,18 +65,17 @@ public class ItemService {
         return new ItemResponse(item.getId());
     }
 
-    public SliceResponse<ItemSummary> getItems(Long userId, ItemListRequest request) {
+    public SliceResponse<ItemPreview> getItems(Long userId, ItemListRequest request) {
         Slice<Item> itemSlice = getItemsByView(request, userId, PageRequest.of(request.page(), request.size()));
 
-        List<ItemSummary> itemSummaries = itemSlice.getContent().stream()
-                .map(item -> ItemSummary.from(
+        List<ItemPreview> itemPreviews = itemSlice.getContent().stream()
+                .map(item -> ItemPreview.from(
                         item,
                         itemMediaService.getFirstMediaUrl(item.getId()),
-                        getWishCount(item.getId()),
-                        getBidCount(item.getId())
+                        getWishCount(item.getId())
                 )).toList();
 
-        return SliceResponse.of(itemSummaries, itemSlice.hasNext());
+        return SliceResponse.of(itemPreviews, itemSlice.hasNext());
     }
 
     private Slice<Item> getItemsByView(ItemListRequest request, Long userId, Pageable pageable) {
@@ -99,23 +100,31 @@ public class ItemService {
         return bidRepository.countDistinctBidderByItemId(itemId);
     }
 
-    public ItemDetailResponse getItemDetail(Long itemId, Long userId) {
+    @Transactional
+    public ItemDetail getItemDetail(Long itemId, Long userId) {
         Item item = itemRepository.findByIdWithSeller(itemId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ITEM_NOT_FOUND));
 
-        boolean isTopBidder = bidRepository.findTopByBidderIdAndItemIdOrderByPriceDesc(userId, itemId)
-                .map(bid -> bid.getPrice().equals(item.getCurrentPrice()))
-                .orElse(false);
+        item.increaseViewCount();
+
+        SellerProfile sellerInfo = SellerProfile.from(item.getSeller());
+
+        Optional<Bid> topBid = userId != null
+                ? bidRepository.findTopByBidderIdAndItemIdOrderByPriceDesc(userId, itemId)
+                : Optional.empty();
+        boolean isBidder = topBid.isPresent();
+        boolean isTopBidder = topBid.map(bid -> bid.getPrice().equals(item.getCurrentPrice())).orElse(false);
+        boolean isSeller = userId != null && item.isSeller(userId);
         List<ItemMediaInfo> mediaUrls = itemMediaService.getMediaInfoByItemId(itemId);
         int wishCount = getWishCount(itemId);
         int bidCount = getBidCount(itemId);
-        boolean isWished = wishRepository.existsByUserIdAndItemId(userId, itemId);
+        boolean isWished = userId != null && wishRepository.existsByUserIdAndItemId(userId, itemId);
 
-        return ItemDetailResponse.of(item, isTopBidder, mediaUrls, wishCount, bidCount, isWished);
+        return ItemDetail.of(item, sellerInfo, isTopBidder, isBidder, isSeller, mediaUrls, wishCount, bidCount, isWished);
     }
 
     @Transactional
-    public ItemDetailResponse updateItem(Long itemId, Long userId, ItemUpdateRequest request, List<MultipartFile> files) {
+    public ItemDetail updateItem(Long itemId, Long userId, ItemUpdateRequest request, List<MultipartFile> files) {
         Item item = itemRepository.findByIdWithSeller(itemId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ITEM_NOT_FOUND));
 
@@ -127,7 +136,12 @@ public class ItemService {
             throw new BusinessException(ErrorCode.AUCTION_ALREADY_CLOSED);
         }
 
-        item.updateInfo(request.title(), request.description(), request.category(), request.endAt());
+        if (request.buyNowPrice() != null && request.buyNowPrice() < item.getCurrentPrice()) {
+            throw new BusinessException(ErrorCode.INVALID_BUY_NOW_PRICE);
+        }
+
+        item.updateInfo(request.title(), request.description(), request.category(), request.brand(),
+                request.itemCondition(), request.buyNowPrice(), request.endAt());
 
         if (request.deleteMediaIds() != null && !request.deleteMediaIds().isEmpty()) {
             itemMediaService.validateMinimumMediaCount(itemId, request.deleteMediaIds(), files);
