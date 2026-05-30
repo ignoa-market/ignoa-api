@@ -34,7 +34,7 @@ public class OutboxWorker {
         if (outbox.getRetryCount() >= MAX_RETRY_COUNT) {
             outbox.markDead();
             outboxRepository.save(outbox);
-            log.warn("Outbox 최대 재시도 초과 - outboxId: {}", outbox.getId());
+            log.warn("Outbox 최대 재시도 초과 - outboxId: {}, eventType: {}", outbox.getId(), outbox.getEventType());
             return;
         }
 
@@ -43,12 +43,12 @@ public class OutboxWorker {
             storageService.delete(payload.imageUrl());
             outbox.markDone();
             outboxRepository.save(outbox);
-            log.info("Outbox 처리 완료 - outboxId: {}", outbox.getId());
+            log.info("Outbox 처리 완료 - outboxId: {}, eventType: {}", outbox.getId(), outbox.getEventType());
 
         } catch (Exception e) {
             outbox.incrementRetryCount();
             outboxRepository.save(outbox);
-            log.warn("Outbox 재시도 처리 실패 - outboxId: {}, retryCount: {}", outbox.getId(), outbox.getRetryCount(), e);
+            log.warn("Outbox 재시도 처리 실패 - outboxId: {}, eventType: {}, retryCount: {}", outbox.getId(), outbox.getEventType(), outbox.getRetryCount(), e);
         }
     }
 }

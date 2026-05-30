@@ -17,7 +17,7 @@ public class OutboxScheduler {
     @Scheduled(cron = "0 0 2 * * *")
     @SchedulerLock(name = "outboxScheduler")
     public void run() {
-        log.info("탈퇴 회원 프로필 사진 파기 스케줄러 실행");
+        log.info("Outbox 스케줄러 실행");
         outboxWorker.execute();
     }
 }
