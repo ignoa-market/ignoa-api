@@ -23,8 +23,9 @@ public class Outbox extends BaseEntity {
     @Column(nullable = false, updatable = false)
     private String aggregateType;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, updatable = false)
-    private String eventType;
+    private OutboxEventType eventType;
 
     @Column(columnDefinition = "TEXT", nullable = false, updatable = false)
     private String payload;
@@ -37,7 +38,7 @@ public class Outbox extends BaseEntity {
 
     private LocalDateTime processedAt;
 
-    private Outbox(String aggregateId, String aggregateType, String eventType, String payload) {
+    private Outbox(String aggregateId, String aggregateType, OutboxEventType eventType, String payload) {
         this.aggregateId = aggregateId;
         this.aggregateType = aggregateType;
         this.eventType = eventType;
@@ -46,7 +47,7 @@ public class Outbox extends BaseEntity {
         this.retryCount = 0;
     }
 
-    public static Outbox create(String aggregateId, String aggregateType, String eventType, String payload) {
+    public static Outbox create(String aggregateId, String aggregateType, OutboxEventType eventType, String payload) {
         return new Outbox(aggregateId, aggregateType, eventType, payload);
     }
 
