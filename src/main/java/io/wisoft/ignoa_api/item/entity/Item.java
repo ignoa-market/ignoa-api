@@ -88,8 +88,8 @@ public class Item extends BaseEntity {
         this.viewCount++;
     }
 
-    public void updateInfo(String title, String description, String category, String brand,
-                          ItemCondition itemCondition, Long buyNowPrice, LocalDateTime endAt) {
+    public void update(String title, String description, String category, String brand,
+                       ItemCondition itemCondition, Long buyNowPrice, LocalDateTime endAt) {
         if (title != null) this.title = title;
         if (description != null) this.description = description;
         if (category != null) this.category = category;
@@ -122,10 +122,19 @@ public class Item extends BaseEntity {
 
     public void closeWithWinner(User winner) {
         this.winner = winner;
-        this.status = ItemStatus.CLOSED;
+        this.status = ItemStatus.BID_CLOSED;
     }
 
     public boolean isClosed() {
         return this.status != ItemStatus.ACTIVE;
+    }
+
+    public boolean isValidBuyNowPrice(Long buyNowPrice) {
+        return buyNowPrice == null || buyNowPrice > this.currentPrice;
+    }
+
+    public boolean isCompleted() {
+        return this.status == ItemStatus.BID_CLOSED
+                || this.status == ItemStatus.BUY_NOW_CLOSED;
     }
 }

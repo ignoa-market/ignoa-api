@@ -27,7 +27,7 @@ public record ItemDetail(
         Integer wishCount,
         Integer bidCount,
         Long viewCount,
-        List<ItemMediaInfo> mediaUrls
+        List<ItemMediaUrl> mediaUrls
 ) {
     public static ItemDetail of(
             Item item,
@@ -35,7 +35,7 @@ public record ItemDetail(
             boolean isTopBidder,
             boolean isBidder,
             boolean isSeller,
-            List<ItemMediaInfo> mediaUrls,
+            List<ItemMediaUrl> mediaUrls,
             int wishCount,
             int bidCount,
             boolean isWished

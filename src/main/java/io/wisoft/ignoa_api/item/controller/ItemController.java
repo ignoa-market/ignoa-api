@@ -2,12 +2,13 @@ package io.wisoft.ignoa_api.item.controller;
 
 import io.wisoft.ignoa_api.global.common.SliceResponse;
 import io.wisoft.ignoa_api.item.dto.request.ItemCreateRequest;
-import io.wisoft.ignoa_api.item.dto.request.ItemListRequest;
+import io.wisoft.ignoa_api.item.dto.request.ItemPreviewRequest;
 import io.wisoft.ignoa_api.item.dto.request.ItemUpdateRequest;
-import io.wisoft.ignoa_api.item.dto.response.ItemResponse;
+import io.wisoft.ignoa_api.item.dto.response.ItemIdResponse;
 import io.wisoft.ignoa_api.item.dto.response.ItemDetail;
 import io.wisoft.ignoa_api.item.dto.response.ItemPreview;
-import io.wisoft.ignoa_api.item.service.ItemService;
+import io.wisoft.ignoa_api.item.service.ItemCommandService;
+import io.wisoft.ignoa_api.item.service.ItemQueryService;
 import io.wisoft.ignoa_api.global.common.ApiResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
@@ -27,25 +28,25 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ItemController {
 
-    private final ItemService itemService;
+    private final ItemQueryService itemQueryService;
+    private final ItemCommandService itemCommandService;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ApiResponse<ItemResponse>> createItem(
+    public ResponseEntity<ApiResponse<ItemIdResponse>> createItem(
             @Valid @RequestPart ItemCreateRequest request,
             @RequestPart @NotEmpty(message = "상품 이미지는 최소 1개 이상이어야 합니다.") List<MultipartFile> files,
             @AuthenticationPrincipal Long sellerId
     ) {
-        ItemResponse data = itemService.createItem(sellerId, request, files);
-        ApiResponse<ItemResponse> response = ApiResponse.of(data, "상품이 등록되었습니다.");
+        ItemIdResponse data = itemCommandService.createItem(sellerId, request, files);
+        ApiResponse<ItemIdResponse> response = ApiResponse.of(data, "상품이 등록되었습니다.");
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @GetMapping
     public ResponseEntity<ApiResponse<SliceResponse<ItemPreview>>> getItems(
-            @Valid @ModelAttribute ItemListRequest request,
-            @AuthenticationPrincipal Long userId
+            @Valid @ModelAttribute ItemPreviewRequest request
     ) {
-        SliceResponse<ItemPreview> data = itemService.getItems(userId, request);
+        SliceResponse<ItemPreview> data = itemQueryService.getItems(request);
         ApiResponse<SliceResponse<ItemPreview>> response = ApiResponse.of(data, "상품 리스트를 조회했습니다.");
         return ResponseEntity.ok(response);
     }
@@ -55,7 +56,7 @@ public class ItemController {
             @PathVariable Long itemId,
             @AuthenticationPrincipal Long userId
     ) {
-        ItemDetail data = itemService.getItemDetail(itemId, userId);
+        ItemDetail data = itemQueryService.getItem(itemId, userId);
         ApiResponse<ItemDetail> response = ApiResponse.of(data, "상품 상세 정보를 조회했습니다.");
         return ResponseEntity.ok(response);
     }
@@ -67,18 +68,18 @@ public class ItemController {
             @RequestPart(required = false) List<MultipartFile> files,
             @AuthenticationPrincipal Long userId
     ) {
-        ItemDetail data = itemService.updateItem(itemId, userId, request, files);
+        ItemDetail data = itemCommandService.updateItem(itemId, userId, request, files);
         ApiResponse<ItemDetail> response = ApiResponse.of(data, "상품 정보를 수정했습니다.");
         return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/{itemId}")
-    public ResponseEntity<ApiResponse<ItemResponse>> deleteItem(
+    public ResponseEntity<ApiResponse<ItemIdResponse>> deleteItem(
             @PathVariable Long itemId,
             @AuthenticationPrincipal Long userId
     ) {
-        ItemResponse data = itemService.deleteItem(itemId, userId);
-        ApiResponse<ItemResponse> response = ApiResponse.of(data, "상품을 삭제했습니다.");
+        ItemIdResponse data = itemCommandService.deleteItem(itemId, userId);
+        ApiResponse<ItemIdResponse> response = ApiResponse.of(data, "상품을 삭제했습니다.");
         return ResponseEntity.ok(response);
     }
 }

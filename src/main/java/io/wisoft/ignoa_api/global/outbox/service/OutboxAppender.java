@@ -1,8 +1,5 @@
 package io.wisoft.ignoa_api.global.outbox.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import io.wisoft.ignoa_api.global.outbox.dto.PurgePersonalPayload;
 import io.wisoft.ignoa_api.global.outbox.entity.Outbox;
 import io.wisoft.ignoa_api.global.outbox.entity.OutboxEventType;
 import io.wisoft.ignoa_api.global.outbox.repository.OutboxRepository;
@@ -16,17 +13,10 @@ import org.springframework.stereotype.Component;
 public class OutboxAppender {
 
     private final OutboxRepository outboxRepository;
-    private final ObjectMapper objectMapper;
 
-    public void save(Long userId, String profileImageUrl, OutboxEventType eventType) {
-        try {
-            String payload = objectMapper.writeValueAsString(new PurgePersonalPayload(userId, profileImageUrl));
-            Outbox outbox = Outbox.create(userId.toString(), "USER", eventType, payload);
-
+    public void save(String aggregateId, String aggregateType, String imageUrl, OutboxEventType eventType) {
+            Outbox outbox = Outbox.create(aggregateId, aggregateType, eventType, imageUrl);
             outboxRepository.save(outbox);
-            log.info("Outbox 저장 완료 - userId: {}, eventType: {}", userId, eventType);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
+            log.info("Outbox 저장 완료 - aggregateId: {}, eventType: {}", aggregateId, eventType);
     }
 }

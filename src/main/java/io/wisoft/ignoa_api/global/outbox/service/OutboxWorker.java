@@ -1,8 +1,6 @@
 package io.wisoft.ignoa_api.global.outbox.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.wisoft.ignoa_api.global.infra.storage.StorageService;
-import io.wisoft.ignoa_api.global.outbox.dto.PurgePersonalPayload;
 import io.wisoft.ignoa_api.global.outbox.entity.Outbox;
 import io.wisoft.ignoa_api.global.outbox.entity.OutboxStatus;
 import io.wisoft.ignoa_api.global.outbox.repository.OutboxRepository;
@@ -22,7 +20,6 @@ public class OutboxWorker {
 
     private final StorageService storageService;
     private final OutboxRepository outboxRepository;
-    private final ObjectMapper objectMapper;
 
     public void execute() {
         List<Outbox> outboxList = outboxRepository.findByStatus(OutboxStatus.PENDING);
@@ -39,8 +36,7 @@ public class OutboxWorker {
         }
 
         try {
-            PurgePersonalPayload payload = objectMapper.readValue(outbox.getPayload(), PurgePersonalPayload.class);
-            storageService.delete(payload.imageUrl());
+            storageService.delete(outbox.getPayload());
             outbox.markDone();
             outboxRepository.save(outbox);
             log.info("Outbox 처리 완료 - outboxId: {}, eventType: {}", outbox.getId(), outbox.getEventType());
