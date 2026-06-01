@@ -84,10 +84,6 @@ public class Item extends BaseEntity {
         );
     }
 
-    public void increaseViewCount() {
-        this.viewCount++;
-    }
-
     public void update(String title, String description, String category, String brand,
                        ItemCondition itemCondition, Long buyNowPrice, LocalDateTime endAt) {
         if (title != null) this.title = title;

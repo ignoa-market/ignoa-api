@@ -38,18 +38,15 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
     Slice<Item> findLatestItems(@Param("category") String category, Pageable pageable);
 
     @Query("SELECT i FROM Item i " +
-            "WHERE i.seller.id = :userId " +
-            "AND (:category IS NULL OR i.category = :category) " +
+            "WHERE i.seller.id = :sellerId " +
             "ORDER BY i.createdAt DESC")
-    Slice<Item> findMyItems(@Param("category") String category, @Param("userId") Long userId, Pageable pageable);
+    List<Item> findItemsBySellerId(@Param("sellerId") Long sellerId);
 
     @Query("SELECT DISTINCT i FROM Item i " +
             "JOIN Bid b ON b.item = i " +
-            "WHERE b.bidder.id = :userId " +
-            "AND i.status = 'ACTIVE' " +
-            "AND (:category IS NULL OR i.category = :category) " +
+            "WHERE b.bidder.id = :bidderId " +
             "ORDER BY i.createdAt DESC")
-    Slice<Item> findMyBidItems(@Param("category") String category, @Param("userId") Long userId, Pageable pageable);
+    List<Item> findItemsByBidderId(@Param("bidderId") Long bidderId);
 
     @Query("SELECT i FROM Item i " +
             "JOIN FETCH i.seller " +

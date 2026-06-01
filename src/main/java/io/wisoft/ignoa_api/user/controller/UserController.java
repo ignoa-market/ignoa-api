@@ -2,6 +2,7 @@ package io.wisoft.ignoa_api.user.controller;
 
 import io.wisoft.ignoa_api.global.common.ApiResponse;
 import io.wisoft.ignoa_api.item.dto.response.ItemPreview;
+import io.wisoft.ignoa_api.item.service.ItemQueryService;
 import io.wisoft.ignoa_api.user.dto.request.UpdateUserRequest;
 import io.wisoft.ignoa_api.user.dto.response.MyProfile;
 import io.wisoft.ignoa_api.user.service.UserCommandService;
@@ -18,6 +19,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 import static io.wisoft.ignoa_api.global.common.CookieUtils.createClearRefreshTokenCookie;
 
 @RestController
@@ -28,6 +31,8 @@ public class UserController {
     private final UserCommandService userCommandService;
     private final UserQueryService userQueryService;
     private final UserFacade userFacade;
+
+    private final ItemQueryService itemQueryService;
 
     @GetMapping("/email/duplicate")
     public ResponseEntity<ApiResponse<Void>> checkDuplicateEmail(@RequestParam String email) {
@@ -90,5 +95,23 @@ public class UserController {
         response.addHeader(HttpHeaders.SET_COOKIE, clearCookie.toString());
 
         return ResponseEntity.ok(ApiResponse.of(null, "회원 탈퇴가 되었습니다."));
+    }
+
+    @GetMapping("/me/items")
+    public ResponseEntity<ApiResponse<List<ItemPreview>>> getMyItems(
+        @AuthenticationPrincipal Long userId
+    ) {
+        List<ItemPreview> data = itemQueryService.getMyItems(userId);
+        ApiResponse<List<ItemPreview>> response = ApiResponse.of(data, "내 상품 목록을 조회했습니다.");
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/me/bids")
+    public ResponseEntity<ApiResponse<List<ItemPreview>>> getMyBids(
+        @AuthenticationPrincipal Long userId
+    ) {
+        List<ItemPreview> data = itemQueryService.getMyBids(userId);
+        ApiResponse<List<ItemPreview>> response = ApiResponse.of(data, "내 입찰 목록을 조회했습니다.");
+        return ResponseEntity.ok(response);
     }
 }
