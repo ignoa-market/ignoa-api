@@ -47,6 +47,7 @@ public enum ErrorCode {
     ITEM_MEDIA_REQUIRED(HttpStatus.BAD_REQUEST, "상품 미디어는 최소 1개 이상이어야 합니다."),
     AUCTION_ALREADY_CLOSED(HttpStatus.BAD_REQUEST, "이미 마감된 경매입니다."),
     INVALID_BUY_NOW_PRICE(HttpStatus.BAD_REQUEST, "즉시 구매가는 현재 입찰가보다 낮을 수 없습니다."),
+    COMPLETED_ITEM_CANNOT_BE_DELETED(HttpStatus.CONFLICT, "거래가 완료된 상품은 삭제할 수 없습니다."),
 
     // Bid
     INVALID_BID_PRICE(HttpStatus.BAD_REQUEST, "입찰 금액은 현재 최고가보다 높아야 합니다."),

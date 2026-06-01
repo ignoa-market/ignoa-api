@@ -3,7 +3,7 @@ package io.wisoft.ignoa_api.item.dto.request;
 import io.wisoft.ignoa_api.item.entity.enums.ItemViewType;
 import jakarta.validation.constraints.Min;
 
-public record ItemListRequest(
+public record ItemPreviewRequest(
         ItemViewType view,
 
         String category,
@@ -14,7 +14,7 @@ public record ItemListRequest(
         @Min(value = 1, message = "페이지 크기는 1 이상이어야 합니다.")
         Integer size
 ) {
-    public ItemListRequest {
+    public ItemPreviewRequest {
         view = view == null ? ItemViewType.ALL : view;
         page = page == null ? 0 : page;
         size = size == null ? 10 : size;

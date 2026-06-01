@@ -36,7 +36,7 @@ public class UserCommandService {
         userRepository.save(user);
 
         if (oldImageUrl != null) {
-            outboxAppender.save(user.getId(), oldImageUrl, OutboxEventType.DELETE_PROFILE_IMAGE);
+            outboxAppender.save(user.getId().toString(), "USER", oldImageUrl, OutboxEventType.DELETE_PROFILE_IMAGE);
         }
     }
 
@@ -49,7 +49,7 @@ public class UserCommandService {
         }
 
         user.updateProfileImage(null);
-        outboxAppender.save(userId, profileImageUrl, OutboxEventType.DELETE_PROFILE_IMAGE);
+        outboxAppender.save(userId.toString(), "USER", profileImageUrl, OutboxEventType.DELETE_PROFILE_IMAGE);
     }
 
     public MyProfile updateProfile(Long userId, UpdateUserRequest request) {
@@ -86,7 +86,7 @@ public class UserCommandService {
         userRepository.save(user);
 
         if (profileImageUrl != null) {
-            outboxAppender.save(user.getId(), profileImageUrl, OutboxEventType.PURGE_PERSONAL_DATA);
+            outboxAppender.save(user.getId().toString(), "USER", profileImageUrl, OutboxEventType.PURGE_PERSONAL_DATA);
         }
     }
 }

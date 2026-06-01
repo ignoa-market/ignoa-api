@@ -1,6 +1,6 @@
 package io.wisoft.ignoa_api.item.dto.response;
 
-public record ItemMediaInfo(
+public record ItemMediaUrl(
         Long id,
         String url
 ) {
