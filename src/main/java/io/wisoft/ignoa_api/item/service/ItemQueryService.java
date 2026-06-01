@@ -70,6 +70,24 @@ public class ItemQueryService {
         };
     }
 
+    public List<ItemPreview> getMyItems(Long userId) {
+        return itemRepository.findItemsBySellerId(userId).stream()
+                .map(item -> ItemPreview.from(
+                        item,
+                        itemMediaService.getFirstMediaUrl(item.getId()),
+                        getWishCount(item.getId())
+                )).toList();
+    }
+
+    public List<ItemPreview> getMyBids(Long userId) {
+        return itemRepository.findItemsByBidderId(userId).stream()
+                .map(item -> ItemPreview.from(
+                        item,
+                        itemMediaService.getFirstMediaUrl(item.getId()),
+                        getWishCount(item.getId())
+                )).toList();
+    }
+
     public Item getItemWithSeller(Long itemId) {
         return itemRepository.findByIdWithSeller(itemId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ITEM_NOT_FOUND));

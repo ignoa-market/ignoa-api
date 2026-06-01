@@ -28,9 +28,9 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class BidService {
 
-    private final ApplicationEventPublisher eventPublisher;
     private final BidRepository bidRepository;
     private final ItemRepository itemRepository;
+    private final ApplicationEventPublisher eventPublisher;
     private final UserRepository userRepository;
 
     @Transactional
