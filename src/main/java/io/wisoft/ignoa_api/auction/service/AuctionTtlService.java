@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class AuctionRedisService {
+public class AuctionTtlService {
 
     private static final String AUCTION_KEY_PREFIX = "auction:";
     private final StringRedisTemplate stringRedisTemplate;

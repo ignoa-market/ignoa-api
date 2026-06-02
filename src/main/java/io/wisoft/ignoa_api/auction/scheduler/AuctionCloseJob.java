@@ -1,5 +1,6 @@
-package io.wisoft.ignoa_api.auction.service;
+package io.wisoft.ignoa_api.auction.scheduler;
 
+import io.wisoft.ignoa_api.auction.service.AuctionCloseService;
 import io.wisoft.ignoa_api.item.entity.Item;
 import io.wisoft.ignoa_api.item.entity.enums.ItemStatus;
 import io.wisoft.ignoa_api.item.repository.ItemRepository;
@@ -20,10 +21,9 @@ public class AuctionCloseJob {
     private final AuctionCloseService auctionCloseService;
     private final ItemRepository itemRepository;
 
-    public void closeExpiredBids() {
-        List<Item> expiredItems = itemRepository.findAllByStatusAndEndAtBefore(
-                ItemStatus.ACTIVE, LocalDateTime.now()
-        );
+    public void closeExpiredAuctions() {
+        List<Item> expiredItems = itemRepository
+                .findAllByStatusAndEndAtBefore(ItemStatus.ACTIVE, LocalDateTime.now());
 
         for (Item item : expiredItems) {
             try {

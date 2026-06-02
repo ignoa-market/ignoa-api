@@ -4,7 +4,7 @@ import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
 import io.wisoft.ignoa_api.global.outbox.entity.OutboxEventType;
 import io.wisoft.ignoa_api.global.outbox.service.OutboxAppender;
-import io.wisoft.ignoa_api.item.dto.response.ItemMediaUrl;
+import io.wisoft.ignoa_api.item.dto.response.ItemMediaResponse;
 import io.wisoft.ignoa_api.item.entity.Item;
 import io.wisoft.ignoa_api.item.entity.ItemMedia;
 import io.wisoft.ignoa_api.item.entity.enums.ItemMediaType;
@@ -33,8 +33,11 @@ public class ItemMediaService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.ITEM_MEDIA_NOT_FOUND));
     }
 
-    public List<ItemMediaUrl> getMediaInfoByItemId(Long itemId) {
-        return itemMediaRepository.findMediaInfoByItemId(itemId);
+    public List<ItemMediaResponse> getMediaUrlByItemId(Long itemId) {
+        return itemMediaRepository.findAllByItemIdOrderByIdAsc(itemId).stream()
+                .map(itemMedia ->
+                        new ItemMediaResponse(itemMedia.getId(), itemMedia.getMediaUrl()))
+                .toList();
     }
 
     public void validateMinimumMediaCount(Long itemId, List<Long> mediaIds, List<MultipartFile> files) {

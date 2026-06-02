@@ -95,8 +95,12 @@ public class Item extends BaseEntity {
         if (endAt != null) this.endAt = endAt;
     }
 
-    public void raisePriceTo(Long newPrice) {
+    public void raiseBidPrice(Long newPrice) {
         this.currentPrice = newPrice;
+    }
+
+    public boolean isSeller(Long userId) {
+        return this.seller.getId().equals(userId);
     }
 
     public boolean isActive() {
@@ -104,33 +108,34 @@ public class Item extends BaseEntity {
                 && this.endAt.isAfter(LocalDateTime.now());
     }
 
-    public boolean isSeller(Long userId) {
-        return this.seller.getId().equals(userId);
+    public boolean isClosed() {
+        return this.status != ItemStatus.ACTIVE;
+    }
+
+    public boolean isCompleted() {
+        return this.status == ItemStatus.BID_CLOSED
+                || this.status == ItemStatus.BUY_NOW_CLOSED;
     }
 
     public boolean isValidBidPrice(Long bidPrice) {
         return this.currentPrice < bidPrice;
     }
 
-    public void closeAsNoBid() {
+    public boolean isValidBuyNowPrice(Long buyNowPrice) {
+        return buyNowPrice == null || buyNowPrice > this.currentPrice;
+    }
+
+    public void buyNow(User winner) {
+        this.winner = winner;
+        this.status = ItemStatus.BUY_NOW_CLOSED;
+    }
+
+    public void closeWithoutBid() {
         this.status = ItemStatus.NO_BID_CLOSED;
     }
 
     public void closeWithWinner(User winner) {
         this.winner = winner;
         this.status = ItemStatus.BID_CLOSED;
-    }
-
-    public boolean isClosed() {
-        return this.status != ItemStatus.ACTIVE;
-    }
-
-    public boolean isValidBuyNowPrice(Long buyNowPrice) {
-        return buyNowPrice == null || buyNowPrice > this.currentPrice;
-    }
-
-    public boolean isCompleted() {
-        return this.status == ItemStatus.BID_CLOSED
-                || this.status == ItemStatus.BUY_NOW_CLOSED;
     }
 }

@@ -1,15 +1,17 @@
 package io.wisoft.ignoa_api.item.service;
 
+import io.wisoft.ignoa_api.auction.event.AuctionClosedEvent;
 import io.wisoft.ignoa_api.auction.event.AuctionRegisteredEvent;
 import io.wisoft.ignoa_api.bid.repository.BidRepository;
+import io.wisoft.ignoa_api.bid.service.BidService;
 import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
 import io.wisoft.ignoa_api.item.dto.request.ItemCreateRequest;
 import io.wisoft.ignoa_api.item.dto.request.ItemUpdateRequest;
+import io.wisoft.ignoa_api.item.dto.response.BuyNowResponse;
 import io.wisoft.ignoa_api.item.dto.response.ItemDetail;
 import io.wisoft.ignoa_api.item.dto.response.ItemIdResponse;
 import io.wisoft.ignoa_api.item.entity.Item;
-import io.wisoft.ignoa_api.auction.event.AuctionCanceledEvent;
 import io.wisoft.ignoa_api.item.repository.ItemRepository;
 import io.wisoft.ignoa_api.user.entity.User;
 import io.wisoft.ignoa_api.user.service.UserQueryService;
@@ -27,11 +29,13 @@ import java.util.List;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class ItemCommandService {
 
     private final ItemMediaService itemMediaService;
     private final ItemQueryService itemQueryService;
     private final UserQueryService userQueryService;
+    private final BidService bidService;
 
     private final ApplicationEventPublisher eventPublisher;
 
@@ -39,7 +43,6 @@ public class ItemCommandService {
     private final WishRepository wishRepository;
     private final BidRepository bidRepository;
 
-    @Transactional
     public ItemIdResponse createItem(
             Long sellerId, ItemCreateRequest request, List<MultipartFile> files
     ) {
@@ -64,7 +67,6 @@ public class ItemCommandService {
         return new ItemIdResponse(item.getId());
     }
 
-    @Transactional
     public ItemDetail updateItem(
             Long itemId, Long userId, ItemUpdateRequest request, List<MultipartFile> files
     ) {
@@ -106,7 +108,6 @@ public class ItemCommandService {
         return itemQueryService.getItem(itemId, userId);
     }
 
-    @Transactional
     public ItemIdResponse deleteItem(Long itemId, Long userId) {
         Item item = itemQueryService.getItemWithSeller(itemId);
 
@@ -123,8 +124,28 @@ public class ItemCommandService {
         itemMediaService.deleteAllByItemId(itemId);
         itemRepository.delete(item);
 
-        eventPublisher.publishEvent(new AuctionCanceledEvent(itemId));
+        eventPublisher.publishEvent(new AuctionClosedEvent(itemId));
 
         return new ItemIdResponse(item.getId());
+    }
+
+    public BuyNowResponse buyNowItem(Long itemId, Long buyerId) {
+        Item item = itemRepository.findByIdWithLock(itemId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.ITEM_NOT_FOUND));
+        User user = userQueryService.findById(buyerId);
+
+        if (!item.isActive()) {
+            throw new BusinessException(ErrorCode.AUCTION_ALREADY_CLOSED);
+        }
+
+        if (item.isSeller(buyerId)) {
+            throw new BusinessException(ErrorCode.SELF_BUY_NOT_ALLOWED);
+        }
+
+        item.buyNow(user);
+        bidService.closeBids(itemId);
+        eventPublisher.publishEvent(new AuctionClosedEvent(itemId));
+
+        return new BuyNowResponse(itemId, buyerId, item.getBuyNowPrice(), item.getStatus());
     }
 }

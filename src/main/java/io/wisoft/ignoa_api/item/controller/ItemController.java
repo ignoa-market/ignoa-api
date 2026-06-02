@@ -4,6 +4,7 @@ import io.wisoft.ignoa_api.global.common.SliceResponse;
 import io.wisoft.ignoa_api.item.dto.request.ItemCreateRequest;
 import io.wisoft.ignoa_api.item.dto.request.ItemPreviewRequest;
 import io.wisoft.ignoa_api.item.dto.request.ItemUpdateRequest;
+import io.wisoft.ignoa_api.item.dto.response.BuyNowResponse;
 import io.wisoft.ignoa_api.item.dto.response.ItemIdResponse;
 import io.wisoft.ignoa_api.item.dto.response.ItemDetail;
 import io.wisoft.ignoa_api.item.dto.response.ItemPreview;
@@ -31,17 +32,6 @@ public class ItemController {
     private final ItemQueryService itemQueryService;
     private final ItemCommandService itemCommandService;
 
-    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ApiResponse<ItemIdResponse>> createItem(
-            @Valid @RequestPart ItemCreateRequest request,
-            @RequestPart @NotEmpty(message = "상품 이미지는 최소 1개 이상이어야 합니다.") List<MultipartFile> files,
-            @AuthenticationPrincipal Long sellerId
-    ) {
-        ItemIdResponse data = itemCommandService.createItem(sellerId, request, files);
-        ApiResponse<ItemIdResponse> response = ApiResponse.of(data, "상품이 등록되었습니다.");
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
-    }
-
     @GetMapping
     public ResponseEntity<ApiResponse<SliceResponse<ItemPreview>>> getItems(
             @Valid @ModelAttribute ItemPreviewRequest request
@@ -59,6 +49,17 @@ public class ItemController {
         ItemDetail data = itemQueryService.getItem(itemId, userId);
         ApiResponse<ItemDetail> response = ApiResponse.of(data, "상품 상세 정보를 조회했습니다.");
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<ItemIdResponse>> createItem(
+            @Valid @RequestPart ItemCreateRequest request,
+            @RequestPart @NotEmpty(message = "상품 이미지는 최소 1개 이상이어야 합니다.") List<MultipartFile> files,
+            @AuthenticationPrincipal Long sellerId
+    ) {
+        ItemIdResponse data = itemCommandService.createItem(sellerId, request, files);
+        ApiResponse<ItemIdResponse> response = ApiResponse.of(data, "상품이 등록되었습니다.");
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @PatchMapping(value = "/{itemId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -80,6 +81,16 @@ public class ItemController {
     ) {
         ItemIdResponse data = itemCommandService.deleteItem(itemId, userId);
         ApiResponse<ItemIdResponse> response = ApiResponse.of(data, "상품을 삭제했습니다.");
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/{itemId}/buy-now")
+    public ResponseEntity<ApiResponse<BuyNowResponse>> buyNowItem(
+            @PathVariable Long itemId,
+            @AuthenticationPrincipal Long buyerId
+    ) {
+        BuyNowResponse data = itemCommandService.buyNowItem(itemId, buyerId);
+        ApiResponse<BuyNowResponse> response = ApiResponse.of(data, "상품을 즉시 구매하였습니다.");
         return ResponseEntity.ok(response);
     }
 }
