@@ -53,6 +53,7 @@ public enum ErrorCode {
     INVALID_BID_PRICE(HttpStatus.BAD_REQUEST, "입찰 금액은 현재 최고가보다 높아야 합니다."),
     AUCTION_CLOSED(HttpStatus.BAD_REQUEST, "종료된 경매에는 입찰할 수 없습니다."),
     SELF_BID_NOT_ALLOWED(HttpStatus.FORBIDDEN, "본인 상품에는 입찰할 수 없습니다."),
+    SELF_BUY_NOT_ALLOWED(HttpStatus.FORBIDDEN, "본인 상품은 구매할 수 없습니다."),
 
     // Storage
     FILE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "파일 업로드에 실패했습니다."),

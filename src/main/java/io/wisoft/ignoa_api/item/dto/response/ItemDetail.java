@@ -17,6 +17,7 @@ public record ItemDetail(
         ItemCondition itemCondition,
         Long startPrice,
         Long currentPrice,
+        Long buyNowPrice,
         boolean isTopBidder,
         boolean isBidder,
         boolean isSeller,
@@ -27,7 +28,7 @@ public record ItemDetail(
         Integer wishCount,
         Integer bidCount,
         Long viewCount,
-        List<ItemMediaUrl> mediaUrls
+        List<ItemMediaResponse> mediaUrls
 ) {
     public static ItemDetail of(
             Item item,
@@ -35,7 +36,7 @@ public record ItemDetail(
             boolean isTopBidder,
             boolean isBidder,
             boolean isSeller,
-            List<ItemMediaUrl> mediaUrls,
+            List<ItemMediaResponse> mediaUrls,
             int wishCount,
             int bidCount,
             boolean isWished
@@ -50,6 +51,7 @@ public record ItemDetail(
                 item.getItemCondition(),
                 item.getStartPrice(),
                 item.getCurrentPrice(),
+                item.getBuyNowPrice(),
                 isTopBidder,
                 isBidder,
                 isSeller,

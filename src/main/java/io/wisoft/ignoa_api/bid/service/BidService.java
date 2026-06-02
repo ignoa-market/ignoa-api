@@ -53,7 +53,7 @@ public class BidService {
             throw new BusinessException(ErrorCode.INVALID_BID_PRICE);
         }
 
-        item.raisePriceTo(request.price());
+        item.raiseBidPrice(request.price());
 
         Bid bid = Bid.place(item, bidder, request.price());
         bidRepository.save(bid);
@@ -63,12 +63,19 @@ public class BidService {
         return BidResponse.from(bid);
     }
 
+    @Transactional
+    public void closeBids(Long itemId) {
+        bidRepository.findByItemId(itemId)
+                .forEach(Bid::closeAsLost);
+    }
+
     public SliceResponse<BidSummary> getBids(Long itemId, BidListRequest request) {
         if (!itemRepository.existsById(itemId)) {
             throw new BusinessException(ErrorCode.ITEM_NOT_FOUND);
         }
 
-        Slice<Bid> bidSlice = bidRepository.findByItemIdWithBidder(itemId, PageRequest.of(request.page(), request.size()));
+        Slice<Bid> bidSlice = bidRepository.findByItemIdWithBidder(
+                itemId, PageRequest.of(request.page(), request.size()));
 
         List<BidSummary> bidSummaries = bidSlice.getContent().stream()
                 .map(BidSummary::from)

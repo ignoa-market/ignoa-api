@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface BidRepository extends JpaRepository<Bid, Long> {
@@ -25,4 +26,6 @@ public interface BidRepository extends JpaRepository<Bid, Long> {
 
     @Query("SELECT COUNT(b) > 0 FROM Bid b WHERE b.bidder.id = :userId AND b.item.status = 'ACTIVE'")
     boolean existsByBidderIdAndItemActive(@Param("userId") Long userId);
+
+    List<Bid> findByItemId(Long itemId);
 }

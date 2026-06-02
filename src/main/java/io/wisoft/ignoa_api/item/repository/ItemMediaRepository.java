@@ -1,6 +1,6 @@
 package io.wisoft.ignoa_api.item.repository;
 
-import io.wisoft.ignoa_api.item.dto.response.ItemMediaUrl;
+import io.wisoft.ignoa_api.item.dto.response.ItemMediaResponse;
 import io.wisoft.ignoa_api.item.entity.ItemMedia;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -13,11 +13,7 @@ public interface ItemMediaRepository extends JpaRepository<ItemMedia, Long> {
 
     Optional<ItemMedia> findFirstByItemIdOrderByIdAsc(Long itemId);
 
-    @Query("SELECT new io.wisoft.ignoa_api.item.dto.response.ItemMediaUrl(im.id, im.mediaUrl) " +
-            "FROM ItemMedia im " +
-            "WHERE im.item.id = :itemId " +
-            "ORDER BY im.id ASC")
-    List<ItemMediaUrl> findMediaInfoByItemId(@Param("itemId") Long itemId);
+    List<ItemMedia> findAllByItemIdOrderByIdAsc(Long itemId);
 
     void deleteAllByItemIdAndIdIn(Long itemId, List<Long> ids);
 
