@@ -112,7 +112,7 @@ public class Item extends BaseEntity {
         return this.status != ItemStatus.ACTIVE;
     }
 
-    public boolean isCompleted() {
+    public boolean isSold() {
         return this.status == ItemStatus.BID_CLOSED
                 || this.status == ItemStatus.BUY_NOW_CLOSED;
     }
