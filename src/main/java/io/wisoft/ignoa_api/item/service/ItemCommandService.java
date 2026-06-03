@@ -46,6 +46,10 @@ public class ItemCommandService {
     public ItemIdResponse createItem(
             Long sellerId, ItemCreateRequest request, List<MultipartFile> files
     ) {
+        if (request.startPrice() >= request.buyNowPrice()) {
+            throw new BusinessException(ErrorCode.INVALID_BUY_NOW_PRICE_ON_CREATE);
+        }
+
         User seller = userQueryService.findById(sellerId);
 
         Item item = Item.create(
@@ -59,6 +63,7 @@ public class ItemCommandService {
                 request.brand(),
                 request.endAt()
         );
+
 
         itemRepository.save(item);
         itemMediaService.save(item, files);
