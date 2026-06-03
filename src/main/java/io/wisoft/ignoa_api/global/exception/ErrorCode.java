@@ -50,6 +50,8 @@ public enum ErrorCode {
     INVALID_BUY_NOW_PRICE_ON_CREATE(HttpStatus.BAD_REQUEST, "즉시 구매가는 시작가보다 높아야 합니다."),
     SOLD_ITEM_CANNOT_BE_DELETED(HttpStatus.CONFLICT, "거래가 완료된 상품은 삭제할 수 없습니다."),
     ITEM_WITH_BID_CANNOT_BE_DELETED(HttpStatus.CONFLICT, "입찰 이력이 있는 상품은 삭제할 수 없습니다."),
+    END_AT_TOO_SOON(HttpStatus.BAD_REQUEST, "경매 종료 시간은 최소 1일 이후여야 합니다."),
+    END_AT_TOO_LATE(HttpStatus.BAD_REQUEST, "경매 종료 시간은 최대 7일 이내여야 합니다."),
 
     // Bid
     INVALID_BID_PRICE(HttpStatus.BAD_REQUEST, "입찰 금액은 현재 최고가보다 높아야 합니다."),
