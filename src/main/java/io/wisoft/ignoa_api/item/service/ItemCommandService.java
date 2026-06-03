@@ -115,12 +115,16 @@ public class ItemCommandService {
             throw new BusinessException(ErrorCode.ITEM_DELETE_FORBIDDEN);
         }
 
-        if (item.isCompleted()) {
-            throw new BusinessException(ErrorCode.COMPLETED_ITEM_CANNOT_BE_DELETED);
+        if (item.isSold()) {
+            throw new BusinessException(ErrorCode.SOLD_ITEM_CANNOT_BE_DELETED);
+        }
+
+        boolean hasBid = bidRepository.existsByItemId(itemId);
+        if (hasBid) {
+            throw new BusinessException(ErrorCode.ITEM_WITH_BID_CANNOT_BE_DELETED);
         }
 
         wishRepository.deleteAllByItemId(itemId);
-        bidRepository.deleteAllByItemId(itemId);
         itemMediaService.deleteAllByItemId(itemId);
         itemRepository.delete(item);
 

@@ -4,6 +4,5 @@ public enum ItemStatus {
     ACTIVE,
     BID_CLOSED,
     NO_BID_CLOSED,
-    BUY_NOW_CLOSED,
-    CANCELED
+    BUY_NOW_CLOSED
 }
