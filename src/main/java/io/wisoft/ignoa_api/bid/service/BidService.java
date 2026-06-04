@@ -1,5 +1,6 @@
 package io.wisoft.ignoa_api.bid.service;
 
+import io.wisoft.ignoa_api.auction.event.AuctionClosedEvent;
 import io.wisoft.ignoa_api.bid.dto.request.BidCreateRequest;
 import io.wisoft.ignoa_api.bid.dto.request.BidListRequest;
 import io.wisoft.ignoa_api.bid.dto.response.BidSummary;
@@ -28,10 +29,11 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class BidService {
 
+    private final ApplicationEventPublisher eventPublisher;
+
+    private final UserRepository userRepository;
     private final BidRepository bidRepository;
     private final ItemRepository itemRepository;
-    private final ApplicationEventPublisher eventPublisher;
-    private final UserRepository userRepository;
 
     @Transactional
     public BidResponse placeBid(Long itemId, Long bidderId, BidCreateRequest request) {
@@ -41,6 +43,8 @@ public class BidService {
         Item item = itemRepository.findByIdWithLock(itemId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ITEM_NOT_FOUND));
 
+        Long bidPrice = request.price();
+
         if (item.isSeller(bidderId)) {
             throw new BusinessException(ErrorCode.SELF_BID_NOT_ALLOWED);
         }
@@ -49,13 +53,16 @@ public class BidService {
             throw new BusinessException(ErrorCode.AUCTION_CLOSED);
         }
 
-        if (!item.isValidBidPrice(request.price())) {
+        if (!item.isValidBidPrice(bidPrice)) {
             throw new BusinessException(ErrorCode.INVALID_BID_PRICE);
         }
 
-        item.raiseBidPrice(request.price());
+        if (item.isReachedBuyNowPrice(bidPrice)) {
+            throw new BusinessException(ErrorCode.BID_PRICE_EXCEEDS_BUY_NOW);
+        }
 
-        Bid bid = Bid.place(item, bidder, request.price());
+        item.raiseBidPrice(bidPrice);
+        Bid bid = Bid.place(item, bidder, bidPrice);
         bidRepository.save(bid);
 
         eventPublisher.publishEvent(BidPlaceEvent.of(bid, item, bidder));

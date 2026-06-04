@@ -159,12 +159,12 @@ public class ItemCommandService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.ITEM_NOT_FOUND));
         User user = userQueryService.findById(buyerId);
 
-        if (!item.isActive()) {
-            throw new BusinessException(ErrorCode.AUCTION_ALREADY_CLOSED);
-        }
-
         if (item.isSeller(buyerId)) {
             throw new BusinessException(ErrorCode.SELF_BUY_NOT_ALLOWED);
+        }
+
+        if (!item.isActive()) {
+            throw new BusinessException(ErrorCode.AUCTION_ALREADY_CLOSED);
         }
 
         item.buyNow(user);

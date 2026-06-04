@@ -125,6 +125,10 @@ public class Item extends BaseEntity {
         return buyNowPrice == null || buyNowPrice > this.currentPrice;
     }
 
+    public boolean isReachedBuyNowPrice(Long bidPrice) {
+        return bidPrice >= this.buyNowPrice;
+    }
+
     public void buyNow(User winner) {
         this.winner = winner;
         this.status = ItemStatus.BUY_NOW_CLOSED;

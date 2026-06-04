@@ -58,6 +58,7 @@ public enum ErrorCode {
     AUCTION_CLOSED(HttpStatus.BAD_REQUEST, "종료된 경매에는 입찰할 수 없습니다."),
     SELF_BID_NOT_ALLOWED(HttpStatus.FORBIDDEN, "본인 상품에는 입찰할 수 없습니다."),
     SELF_BUY_NOT_ALLOWED(HttpStatus.FORBIDDEN, "본인 상품은 구매할 수 없습니다."),
+    BID_PRICE_EXCEEDS_BUY_NOW(HttpStatus.BAD_REQUEST, "즉시구매가 이상으로 입찰할 수 없습니다. 즉시구매를 이용해주세요."),
 
     // Storage
     FILE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "파일 업로드에 실패했습니다."),
