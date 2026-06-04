@@ -24,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Slf4j
@@ -46,6 +47,20 @@ public class ItemCommandService {
     public ItemIdResponse createItem(
             Long sellerId, ItemCreateRequest request, List<MultipartFile> files
     ) {
+        if (request.startPrice() >= request.buyNowPrice()) {
+            throw new BusinessException(ErrorCode.INVALID_BUY_NOW_PRICE_ON_CREATE);
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+
+        if (request.endAt().isBefore(now.plusDays(1))) {
+            throw new BusinessException(ErrorCode.END_AT_TOO_SOON);
+        }
+
+        if (request.endAt().isAfter(now.plusDays(7))) {
+            throw new BusinessException(ErrorCode.END_AT_TOO_LATE);
+        }
+
         User seller = userQueryService.findById(sellerId);
 
         Item item = Item.create(
@@ -84,6 +99,11 @@ public class ItemCommandService {
             throw new BusinessException(ErrorCode.INVALID_BUY_NOW_PRICE);
         }
 
+        if (request.endAt() != null
+                && request.endAt().isAfter(LocalDateTime.now().plusDays(7))) {
+            throw new BusinessException(ErrorCode.END_AT_TOO_LATE);
+        }
+
         item.update(request.title(),
                 request.description(),
                 request.category(),
@@ -120,6 +140,7 @@ public class ItemCommandService {
         }
 
         boolean hasBid = bidRepository.existsByItemId(itemId);
+
         if (hasBid) {
             throw new BusinessException(ErrorCode.ITEM_WITH_BID_CANNOT_BE_DELETED);
         }
