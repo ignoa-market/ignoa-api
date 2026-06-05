@@ -2,7 +2,7 @@ package io.wisoft.ignoa_api.wish.controller;
 
 import io.wisoft.ignoa_api.global.common.ApiResponse;
 import io.wisoft.ignoa_api.global.common.SliceResponse;
-import io.wisoft.ignoa_api.wish.dto.request.WishListRequest;
+import io.wisoft.ignoa_api.wish.dto.request.WishPreviewRequest;
 import io.wisoft.ignoa_api.wish.dto.response.WishPreview;
 import io.wisoft.ignoa_api.wish.service.WishService;
 import jakarta.validation.Valid;
@@ -41,7 +41,7 @@ public class WishController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<SliceResponse<WishPreview>>> getWishes(
-            @Valid @ModelAttribute WishListRequest request,
+            @Valid @ModelAttribute WishPreviewRequest request,
             @AuthenticationPrincipal Long userId
     ) {
         SliceResponse<WishPreview> data = wishService.getWishes(userId, request);
