@@ -113,8 +113,8 @@ public class ItemCommandService {
                 request.endAt());
 
         if (!CollectionUtils.isEmpty(request.deleteMediaIds())) {
-            itemMediaService.validateMinimumMediaCount(itemId, request.deleteMediaIds(), files);
-            itemMediaService.deleteByIds(itemId, request.deleteMediaIds());
+            itemMediaService.validateMediaCount(itemId, request.deleteMediaIds(), files);
+            itemMediaService.deleteMedias(itemId, request.deleteMediaIds());
         }
 
         if (!CollectionUtils.isEmpty(files)) {
@@ -146,7 +146,7 @@ public class ItemCommandService {
         }
 
         wishRepository.deleteAllByItemId(itemId);
-        itemMediaService.deleteAllByItemId(itemId);
+        itemMediaService.deleteAllMedia(itemId);
         itemRepository.delete(item);
 
         eventPublisher.publishEvent(new AuctionClosedEvent(itemId));

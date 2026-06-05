@@ -16,6 +16,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -33,17 +35,29 @@ public class ItemMediaService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.ITEM_MEDIA_NOT_FOUND));
     }
 
-    public List<ItemMediaResponse> getMediaUrlByItemId(Long itemId) {
-        return itemMediaRepository.findAllByItemIdOrderByIdAsc(itemId).stream()
-                .map(itemMedia ->
-                        new ItemMediaResponse(itemMedia.getId(), itemMedia.getMediaUrl()))
+    public Map<Long, String> getFirstMediaUrlMap(List<Long> itemIds) {
+        return itemMediaRepository
+                .findByItemIdIn(itemIds).stream()
+                .collect(Collectors.toMap(
+                        row -> (Long) row[0],
+                        row -> (String) row[1],
+                        (existing, replacement) -> existing
+                ));
+    }
+
+    public List<ItemMediaResponse> getMediaUrls(Long itemId) {
+        return itemMediaRepository
+                .findAllByItemIdOrderByIdAsc(itemId).stream()
+                .map(itemMedia -> new ItemMediaResponse(itemMedia.getId(), itemMedia.getMediaUrl()))
                 .toList();
     }
 
-    public void validateMinimumMediaCount(Long itemId, List<Long> mediaIds, List<MultipartFile> files) {
+    public void validateMediaCount(
+            Long itemId, List<Long> mediaIds, List<MultipartFile> files
+    ) {
         int currentCount = itemMediaRepository.countByItemId(itemId);
         int toDeleteCount = itemMediaRepository.countByItemIdAndIdIn(itemId, mediaIds);
-        int addCount = files == null ? 0 : (int) files.stream().filter(file -> !file.isEmpty()).count();
+        int addCount = files == null ? 0 : files.size();
 
         if (currentCount - toDeleteCount + addCount < 1) {
             throw new BusinessException(ErrorCode.ITEM_MEDIA_REQUIRED);
@@ -52,21 +66,16 @@ public class ItemMediaService {
 
     @Transactional
     public void save(Item item, List<MultipartFile> files) {
-        List<ItemMedia> itemMediaList = files.stream()
-                .filter(file -> !file.isEmpty())
-                .map(file -> {
+        files.stream().filter(file -> !file.isEmpty())
+                .forEach(file -> {
                     String mediaUrl = storageService.upload(file);
-                    return ItemMedia.from(item, mediaUrl, ItemMediaType.from(file.getOriginalFilename()));
-                })
-                .toList();
-
-        if (!itemMediaList.isEmpty()) {
-            itemMediaRepository.saveAll(itemMediaList);
-        }
+                    ItemMedia itemMedia = ItemMedia.from(item, mediaUrl, ItemMediaType.from(file.getContentType()));
+                    itemMediaRepository.save(itemMedia);
+                });
     }
 
     @Transactional
-    public void deleteByIds(Long itemId, List<Long> mediaIds) {
+    public void deleteMedias(Long itemId, List<Long> mediaIds) {
         itemMediaRepository.findAllByItemIdAndIdIn(itemId, mediaIds)
                 .forEach(itemMedia -> outboxAppender.save(
                         itemId.toString(), "ITEM", itemMedia.getMediaUrl(), OutboxEventType.DELETE_ITEM_IMAGE
@@ -76,7 +85,7 @@ public class ItemMediaService {
     }
 
     @Transactional
-    public void deleteAllByItemId(Long itemId) {
+    public void deleteAllMedia(Long itemId) {
         itemMediaRepository.findAllByItemId(itemId)
                 .forEach(itemMedia -> outboxAppender.save(
                         itemId.toString(), "ITEM", itemMedia.getMediaUrl(), OutboxEventType.DELETE_ITEM_IMAGE

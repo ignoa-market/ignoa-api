@@ -63,8 +63,9 @@ public class SecurityConfig {
     public CorsConfigurationSource configurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(List.of(
-                "http://localhost:5173",
-                "https://ignoa-web.vercel.app"
+                "http://localhost:35173",
+                "https://ignoa-web.vercel.app",
+                "https://ignoa.wisoft.dev"
         ));
         config.setAllowedMethods(List.of("GET", "POST", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));

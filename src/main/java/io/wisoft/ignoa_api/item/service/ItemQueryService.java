@@ -53,7 +53,7 @@ public class ItemQueryService {
         boolean isBidder = topBid.isPresent();
         boolean isTopBidder = topBid.map(bid -> bid.getPrice().equals(item.getCurrentPrice())).orElse(false);
         boolean isSeller = userId != null && item.isSeller(userId);
-        List<ItemMediaResponse> mediaUrls = itemMediaService.getMediaUrlByItemId(itemId);
+        List<ItemMediaResponse> mediaUrls = itemMediaService.getMediaUrls(itemId);
         int wishCount = getWishCount(itemId);
         int bidCount = getBidCount(itemId);
         boolean isWished = userId != null && wishRepository.existsByUserIdAndItemId(userId, itemId);
@@ -90,6 +90,11 @@ public class ItemQueryService {
 
     public Item getItemWithSeller(Long itemId) {
         return itemRepository.findByIdWithSeller(itemId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.ITEM_NOT_FOUND));
+    }
+
+    public Item findById(Long itemId) {
+        return itemRepository.findById(itemId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ITEM_NOT_FOUND));
     }
 

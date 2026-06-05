@@ -4,14 +4,14 @@ import io.wisoft.ignoa_api.global.common.SliceResponse;
 import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
 import io.wisoft.ignoa_api.item.entity.Item;
-import io.wisoft.ignoa_api.item.repository.ItemRepository;
 import io.wisoft.ignoa_api.item.service.ItemMediaService;
-import io.wisoft.ignoa_api.wish.dto.request.WishListRequest;
+import io.wisoft.ignoa_api.item.service.ItemQueryService;
+import io.wisoft.ignoa_api.user.service.UserQueryService;
+import io.wisoft.ignoa_api.wish.dto.request.WishPreviewRequest;
 import io.wisoft.ignoa_api.wish.dto.response.WishPreview;
 import io.wisoft.ignoa_api.wish.entity.Wish;
 import io.wisoft.ignoa_api.wish.repository.WishRepository;
 import io.wisoft.ignoa_api.user.entity.User;
-import io.wisoft.ignoa_api.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
@@ -19,24 +19,23 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class WishService {
 
-    private final WishRepository wishRepository;
-    private final ItemRepository itemRepository;
-    private final UserRepository userRepository;
+    private final UserQueryService userQueryService;
     private final ItemMediaService itemMediaService;
+    private final ItemQueryService itemQueryService;
+    private final WishRepository wishRepository;
 
     @Transactional
     public void addWish(Long itemId, Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
-
-        Item item = itemRepository.findById(itemId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.ITEM_NOT_FOUND));
+        User user = userQueryService.findById(userId);
+        Item item = itemQueryService.findById(itemId);
 
         if (wishRepository.existsByUserIdAndItemId(userId, itemId)) {
             throw new BusinessException(ErrorCode.WISH_ALREADY_EXISTS);
@@ -53,16 +52,33 @@ public class WishService {
         wishRepository.delete(wish);
     }
 
-    public SliceResponse<WishPreview> getWishes(Long userId, WishListRequest request) {
-        Slice<Wish> wishSlice = wishRepository.findByUserIdWithItem(userId, PageRequest.of(request.page(), request.size()));
+    public SliceResponse<WishPreview> getWishes(Long userId, WishPreviewRequest request) {
+        Slice<Wish> wishSlice = wishRepository
+                .findByUserIdWithItem(userId, PageRequest.of(request.page(), request.size()));
 
-        List<WishPreview> wishSummaries = wishSlice.getContent().stream()
-                .map(wish -> WishPreview.from(
-                        wish,
-                        itemMediaService.getFirstMediaUrl(wish.getItem().getId()),
-                        wishRepository.countByItemId(wish.getItem().getId())))
+        if (wishSlice.isEmpty()) {
+            return SliceResponse.of(List.of(), wishSlice.hasNext());
+        }
+
+        List<Long> itemIds = wishSlice.getContent().stream()
+                .map(wish -> wish.getItem().getId())
                 .toList();
 
-        return SliceResponse.of(wishSummaries, wishSlice.hasNext());
+        Map<Long, String> mediaUrlMap = itemMediaService.getFirstMediaUrlMap(itemIds);
+        Map<Long, Integer> wishCountMap = wishRepository.countByItemIds(itemIds).stream()
+                .collect(Collectors.toMap(
+                        row -> (Long) row[0],
+                        row -> ((Long) row[1]).intValue()
+                ));
+
+        List<WishPreview> wishPreview = wishSlice.getContent().stream()
+                .map(wish -> WishPreview.from(
+                        wish,
+                        mediaUrlMap.get(wish.getItem().getId()),
+                        wishCountMap.get(wish.getItem().getId()),
+                        wish.getItem().getStatus()
+                )).toList();
+
+        return SliceResponse.of(wishPreview, wishSlice.hasNext());
     }
 }
