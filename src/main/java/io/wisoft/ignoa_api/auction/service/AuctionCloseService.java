@@ -30,7 +30,7 @@ public class AuctionCloseService {
         Item item = itemRepository.findByIdWithLock(itemId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ITEM_NOT_FOUND));
 
-        if (!item.isActive()) {
+        if (item.isClosed()) {
             log.info("[중복 마감 방지] 이미 마감된 경매 itemId={} status={}", itemId, item.getStatus());
             return;
         }
