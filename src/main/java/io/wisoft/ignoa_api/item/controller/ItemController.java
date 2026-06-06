@@ -34,9 +34,10 @@ public class ItemController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<SliceResponse<ItemPreview>>> getItems(
-            @Valid @ModelAttribute ItemPreviewRequest request
+            @Valid @ModelAttribute ItemPreviewRequest request,
+            @AuthenticationPrincipal Long userId
     ) {
-        SliceResponse<ItemPreview> data = itemQueryService.getItems(request);
+        SliceResponse<ItemPreview> data = itemQueryService.getItems(request, userId);
         ApiResponse<SliceResponse<ItemPreview>> response = ApiResponse.of(data, "상품 리스트를 조회했습니다.");
         return ResponseEntity.ok(response);
     }

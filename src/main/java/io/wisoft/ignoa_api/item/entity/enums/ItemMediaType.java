@@ -8,14 +8,13 @@ import java.util.Set;
 public enum ItemMediaType {
     IMAGE, VIDEO;
 
-    private static final Set<String> IMAGE_EXTENSIONS = Set.of("jpg", "jpeg", "png", "gif", "webp");
-    private static final Set<String> VIDEO_EXTENSIONS = Set.of("mp4", "mov", "avi", "webm");
+    private static final Set<String> IMAGE_TYPES = Set.of("image/jpeg", "image/png", "image/gif", "image/webp");
+    private static final Set<String> VIDEO_TYPES = Set.of("video/mp4", "video/quicktime", "video/avi", "video/webm");
 
-    public static ItemMediaType from(String fileName) {
-        if (fileName == null) throw new BusinessException(ErrorCode.UNSUPPORTED_MEDIA_TYPE);
-        String ext = fileName.substring(fileName.lastIndexOf('.') + 1).toLowerCase();
-        if (IMAGE_EXTENSIONS.contains(ext)) return IMAGE;
-        if (VIDEO_EXTENSIONS.contains(ext)) return VIDEO;
+    public static ItemMediaType from(String contentType) {
+        if (contentType == null) throw new BusinessException(ErrorCode.UNSUPPORTED_MEDIA_TYPE);
+        if (IMAGE_TYPES.contains(contentType)) return IMAGE;
+        if (VIDEO_TYPES.contains(contentType)) return VIDEO;
         throw new BusinessException(ErrorCode.UNSUPPORTED_MEDIA_TYPE);
     }
 }

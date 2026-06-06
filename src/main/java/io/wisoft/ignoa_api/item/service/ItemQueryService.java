@@ -31,14 +31,15 @@ public class ItemQueryService {
     private final WishRepository wishRepository;
     private final BidRepository bidRepository;
 
-    public SliceResponse<ItemPreview> getItems(ItemPreviewRequest request) {
+    public SliceResponse<ItemPreview> getItems(ItemPreviewRequest request, Long userId) {
         Slice<Item> itemSlice = getItemsByView(request, PageRequest.of(request.page(), request.size()));
 
         List<ItemPreview> itemPreviewList = itemSlice.getContent().stream()
                 .map(item -> ItemPreview.from(
                         item,
                         itemMediaService.getFirstMediaUrl(item.getId()),
-                        getWishCount(item.getId())
+                        getWishCount(item.getId()),
+                        userId != null && wishRepository.existsByUserIdAndItemId(userId, item.getId())
                 )).toList();
 
         return SliceResponse.of(itemPreviewList, itemSlice.hasNext());
@@ -75,7 +76,8 @@ public class ItemQueryService {
                 .map(item -> ItemPreview.from(
                         item,
                         itemMediaService.getFirstMediaUrl(item.getId()),
-                        getWishCount(item.getId())
+                        getWishCount(item.getId()),
+                        userId != null && wishRepository.existsByUserIdAndItemId(userId, item.getId())
                 )).toList();
     }
 
@@ -84,7 +86,8 @@ public class ItemQueryService {
                 .map(item -> ItemPreview.from(
                         item,
                         itemMediaService.getFirstMediaUrl(item.getId()),
-                        getWishCount(item.getId())
+                        getWishCount(item.getId()),
+                        userId != null && wishRepository.existsByUserIdAndItemId(userId, item.getId())
                 )).toList();
     }
 

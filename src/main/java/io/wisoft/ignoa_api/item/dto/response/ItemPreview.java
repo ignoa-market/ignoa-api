@@ -11,19 +11,21 @@ public record ItemPreview(
         String title,
         String mediaUrl,
         Long currentPrice,
+        Boolean isWished,
         Integer wishCount,
         Long viewCount,
         ItemStatus status,
         LocalDateTime endAt
 ) {
 
-    public static ItemPreview from(Item item, String mediaUrl, int wishCount) {
+    public static ItemPreview from(Item item, String mediaUrl, int wishCount, boolean isWished) {
         return new ItemPreview(
                 item.getId(),
                 item.getBrand(),
                 item.getTitle(),
                 mediaUrl,
                 item.getCurrentPrice(),
+                isWished,
                 wishCount,
                 item.getViewCount(),
                 item.getStatus(),
