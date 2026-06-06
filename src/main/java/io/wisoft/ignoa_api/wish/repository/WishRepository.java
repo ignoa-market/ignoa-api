@@ -23,7 +23,7 @@ public interface WishRepository extends JpaRepository<Wish, Long> {
     void deleteAllByUserId(Long userId);
 
     @Query("SELECT w " +
-            "FROM Wish w JOIN FETCH w.item i JOIN FETCH i.seller " +
+            "FROM Wish w JOIN FETCH w.item i " +
             "WHERE w.user.id = :userId " +
             "ORDER BY w.createdAt DESC")
     Slice<Wish> findByUserIdWithItem(@Param("userId") Long userId, Pageable pageable);
