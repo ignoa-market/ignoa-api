@@ -31,6 +31,29 @@ public class ItemQueryService {
     private final WishRepository wishRepository;
     private final BidRepository bidRepository;
 
+    public ItemDetail getItem(Long itemId, Long userId) {
+        Item item = getItemWithSeller(itemId);
+
+        Optional<Bid> myTopBid = userId != null
+                ? bidRepository.findTopByBidderIdAndItemIdOrderByPriceDesc(userId, itemId)
+                : Optional.empty();
+
+        boolean isBidder = myTopBid.isPresent();
+        boolean isSeller = userId != null && item.isSeller(userId);
+        boolean isTopBidder = myTopBid
+                .map(bid -> bid.isTopBid(item))
+                .orElse(false);
+
+        SellerProfile sellerProfile = SellerProfile.from(item.getSeller());
+        List<ItemMediaUrls> mediaUrls = itemMediaService.getMediaUrls(itemId);
+
+        int wishCount = wishRepository.countByItemId(itemId);
+        boolean isWished = userId != null && wishRepository.existsByUserIdAndItemId(userId, itemId);
+
+        return ItemDetail.of(
+                item, mediaUrls, sellerProfile, isTopBidder, isBidder, isSeller, isWished, wishCount);
+    }
+
     public SliceResponse<ItemPreview> getItems(ItemPreviewRequest request, Long userId) {
         Slice<Item> itemSlice = getItemsByView(request, PageRequest.of(request.page(), request.size()));
 
@@ -38,29 +61,11 @@ public class ItemQueryService {
                 .map(item -> ItemPreview.from(
                         item,
                         itemMediaService.getFirstMediaUrl(item.getId()),
-                        getWishCount(item.getId()),
+                        wishRepository.countByItemId(item.getId()),
                         userId != null && wishRepository.existsByUserIdAndItemId(userId, item.getId())
                 )).toList();
 
         return SliceResponse.of(itemPreviewList, itemSlice.hasNext());
-    }
-
-    public ItemDetail getItem(Long itemId, Long userId) {
-        Item item = getItemWithSeller(itemId);
-
-        Optional<Bid> topBid = userId != null
-                ? bidRepository.findTopByBidderIdAndItemIdOrderByPriceDesc(userId, itemId)
-                : Optional.empty();
-        boolean isBidder = topBid.isPresent();
-        boolean isTopBidder = topBid.map(bid -> bid.getPrice().equals(item.getCurrentPrice())).orElse(false);
-        boolean isSeller = userId != null && item.isSeller(userId);
-        List<ItemMediaResponse> mediaUrls = itemMediaService.getMediaUrls(itemId);
-        int wishCount = getWishCount(itemId);
-        int bidCount = getBidCount(itemId);
-        boolean isWished = userId != null && wishRepository.existsByUserIdAndItemId(userId, itemId);
-        SellerProfile sellerInfo = SellerProfile.from(item.getSeller());
-
-        return ItemDetail.of(item, sellerInfo, isTopBidder, isBidder, isSeller, mediaUrls, wishCount, bidCount, isWished);
     }
 
     private Slice<Item> getItemsByView(ItemPreviewRequest request, Pageable pageable) {
@@ -76,7 +81,7 @@ public class ItemQueryService {
                 .map(item -> ItemPreview.from(
                         item,
                         itemMediaService.getFirstMediaUrl(item.getId()),
-                        getWishCount(item.getId()),
+                        wishRepository.countByItemId(item.getId()),
                         userId != null && wishRepository.existsByUserIdAndItemId(userId, item.getId())
                 )).toList();
     }
@@ -86,7 +91,7 @@ public class ItemQueryService {
                 .map(item -> ItemPreview.from(
                         item,
                         itemMediaService.getFirstMediaUrl(item.getId()),
-                        getWishCount(item.getId()),
+                        wishRepository.countByItemId(item.getId()),
                         userId != null && wishRepository.existsByUserIdAndItemId(userId, item.getId())
                 )).toList();
     }
@@ -99,13 +104,5 @@ public class ItemQueryService {
     public Item findById(Long itemId) {
         return itemRepository.findById(itemId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ITEM_NOT_FOUND));
-    }
-
-    private int getWishCount(Long itemId) {
-        return wishRepository.countByItemId(itemId);
-    }
-
-    private int getBidCount(Long itemId) {
-        return bidRepository.countDistinctBidderByItemId(itemId);
     }
 }
