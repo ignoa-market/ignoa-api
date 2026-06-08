@@ -1,6 +1,5 @@
 package io.wisoft.ignoa_api.item.repository;
 
-import io.wisoft.ignoa_api.item.dto.response.ItemMediaResponse;
 import io.wisoft.ignoa_api.item.entity.ItemMedia;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

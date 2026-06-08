@@ -4,7 +4,7 @@ import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
 import io.wisoft.ignoa_api.global.outbox.entity.OutboxEventType;
 import io.wisoft.ignoa_api.global.outbox.service.OutboxAppender;
-import io.wisoft.ignoa_api.item.dto.response.ItemMediaResponse;
+import io.wisoft.ignoa_api.item.dto.response.ItemMediaUrls;
 import io.wisoft.ignoa_api.item.entity.Item;
 import io.wisoft.ignoa_api.item.entity.ItemMedia;
 import io.wisoft.ignoa_api.item.entity.enums.ItemMediaType;
@@ -45,10 +45,10 @@ public class ItemMediaService {
                 ));
     }
 
-    public List<ItemMediaResponse> getMediaUrls(Long itemId) {
+    public List<ItemMediaUrls> getMediaUrls(Long itemId) {
         return itemMediaRepository
                 .findAllByItemIdOrderByIdAsc(itemId).stream()
-                .map(itemMedia -> new ItemMediaResponse(itemMedia.getId(), itemMedia.getMediaUrl()))
+                .map(ItemMediaUrls::of)
                 .toList();
     }
 
