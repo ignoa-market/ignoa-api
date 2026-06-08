@@ -38,29 +38,11 @@ public class ItemQueryService {
                 .map(item -> ItemPreview.from(
                         item,
                         itemMediaService.getFirstMediaUrl(item.getId()),
-                        getWishCount(item.getId()),
+                        wishRepository.countByItemId(item.getId()),
                         userId != null && wishRepository.existsByUserIdAndItemId(userId, item.getId())
                 )).toList();
 
         return SliceResponse.of(itemPreviewList, itemSlice.hasNext());
-    }
-
-    public ItemDetail getItem(Long itemId, Long userId) {
-        Item item = getItemWithSeller(itemId);
-
-        Optional<Bid> topBid = userId != null
-                ? bidRepository.findTopByBidderIdAndItemIdOrderByPriceDesc(userId, itemId)
-                : Optional.empty();
-        boolean isBidder = topBid.isPresent();
-        boolean isTopBidder = topBid.map(bid -> bid.getPrice().equals(item.getCurrentPrice())).orElse(false);
-        boolean isSeller = userId != null && item.isSeller(userId);
-        List<ItemMediaResponse> mediaUrls = itemMediaService.getMediaUrls(itemId);
-        int wishCount = getWishCount(itemId);
-        int bidCount = getBidCount(itemId);
-        boolean isWished = userId != null && wishRepository.existsByUserIdAndItemId(userId, itemId);
-        SellerProfile sellerInfo = SellerProfile.from(item.getSeller());
-
-        return ItemDetail.of(item, sellerInfo, isTopBidder, isBidder, isSeller, mediaUrls, wishCount, bidCount, isWished);
     }
 
     private Slice<Item> getItemsByView(ItemPreviewRequest request, Pageable pageable) {
@@ -71,12 +53,34 @@ public class ItemQueryService {
         };
     }
 
+    public ItemDetail getItem(Long itemId, Long userId) {
+        Item item = getItemWithSeller(itemId);
+
+        Optional<Bid> topBid = userId != null
+                ? bidRepository.findTopByBidderIdAndItemIdOrderByPriceDesc(userId, itemId)
+                : Optional.empty();
+        boolean isTopBidder = topBid.map(bid -> bid.getPrice().equals(item.getCurrentPrice())).orElse(false);
+
+        boolean isBidder = topBid.isPresent();
+        boolean isSeller = userId != null && item.isSeller(userId);
+
+        List<ItemMediaResponse> mediaUrls = itemMediaService.getMediaUrls(itemId);
+
+
+        int wishCount = wishRepository.countByItemId(itemId);
+        boolean isWished = userId != null && wishRepository.existsByUserIdAndItemId(userId, itemId);
+
+        SellerProfile sellerInfo = SellerProfile.from(item.getSeller());
+
+        return ItemDetail.of(item, sellerInfo, isTopBidder, isBidder, isSeller, mediaUrls, wishCount, isWished);
+    }
+
     public List<ItemPreview> getMyItems(Long userId) {
         return itemRepository.findItemsBySellerId(userId).stream()
                 .map(item -> ItemPreview.from(
                         item,
                         itemMediaService.getFirstMediaUrl(item.getId()),
-                        getWishCount(item.getId()),
+                        wishRepository.countByItemId(item.getId()),
                         userId != null && wishRepository.existsByUserIdAndItemId(userId, item.getId())
                 )).toList();
     }
@@ -86,7 +90,7 @@ public class ItemQueryService {
                 .map(item -> ItemPreview.from(
                         item,
                         itemMediaService.getFirstMediaUrl(item.getId()),
-                        getWishCount(item.getId()),
+                        wishRepository.countByItemId(item.getId()),
                         userId != null && wishRepository.existsByUserIdAndItemId(userId, item.getId())
                 )).toList();
     }
@@ -99,13 +103,5 @@ public class ItemQueryService {
     public Item findById(Long itemId) {
         return itemRepository.findById(itemId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ITEM_NOT_FOUND));
-    }
-
-    private int getWishCount(Long itemId) {
-        return wishRepository.countByItemId(itemId);
-    }
-
-    private int getBidCount(Long itemId) {
-        return bidRepository.countDistinctBidderByItemId(itemId);
     }
 }

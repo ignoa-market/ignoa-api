@@ -26,7 +26,6 @@ public record ItemDetail(
         LocalDateTime endAt,
         Boolean isWished,
         Integer wishCount,
-        Integer bidCount,
         Long viewCount,
         List<ItemMediaResponse> mediaUrls
 ) {
@@ -38,7 +37,6 @@ public record ItemDetail(
             boolean isSeller,
             List<ItemMediaResponse> mediaUrls,
             int wishCount,
-            int bidCount,
             boolean isWished
     ) {
         return new ItemDetail(
@@ -60,7 +58,6 @@ public record ItemDetail(
                 item.getEndAt(),
                 isWished,
                 wishCount,
-                bidCount,
                 item.getViewCount(),
                 mediaUrls
         );
