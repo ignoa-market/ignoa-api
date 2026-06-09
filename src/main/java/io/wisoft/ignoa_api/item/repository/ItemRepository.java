@@ -16,41 +16,50 @@ import java.util.Optional;
 
 public interface ItemRepository extends JpaRepository<Item, Long> {
 
-    @Query("SELECT i FROM Item i " +
-            "WHERE i.status = 'ACTIVE' " +
-            "AND (:category IS NULL OR i.category = :category) " +
-            "ORDER BY (SELECT COUNT(w) " +
-            "          FROM Wish w " +
-            "          WHERE w.item = i) " +
-            "          DESC, i.createdAt DESC")
+    @Query("""
+            SELECT i FROM Item i
+            WHERE i.status = 'ACTIVE'
+            AND (:category IS NULL OR i.category = :category)
+            ORDER BY (SELECT COUNT(w) FROM Wish w WHERE w.item = i) DESC, i.createdAt DESC
+            """)
     Slice<Item> findPopularItems(@Param("category") String category, Pageable pageable);
 
-    @Query("SELECT i FROM Item i " +
-            "WHERE i.status = 'ACTIVE' " +
-            "AND (:category IS NULL OR i.category = :category) " +
-            "ORDER BY i.endAt ASC")
+    @Query("""
+            SELECT i FROM Item i
+            WHERE i.status = 'ACTIVE'
+            AND (:category IS NULL OR i.category = :category)
+            ORDER BY i.endAt ASC
+            """)
     Slice<Item> findEndingSoonItems(@Param("category") String category, Pageable pageable);
 
-    @Query("SELECT i FROM Item i " +
-            "WHERE i.status = 'ACTIVE' " +
-            "AND (:category IS NULL OR i.category = :category) " +
-            "ORDER BY i.createdAt DESC")
+    @Query("""
+            SELECT i FROM Item i
+            WHERE i.status = 'ACTIVE'
+            AND (:category IS NULL OR i.category = :category)
+            ORDER BY i.createdAt DESC
+            """)
     Slice<Item> findLatestItems(@Param("category") String category, Pageable pageable);
 
-    @Query("SELECT i FROM Item i " +
-            "WHERE i.seller.id = :sellerId " +
-            "ORDER BY i.createdAt DESC")
+    @Query("""
+            SELECT i FROM Item i
+            WHERE i.seller.id = :sellerId
+            ORDER BY i.createdAt DESC
+            """)
     List<Item> findItemsBySellerId(@Param("sellerId") Long sellerId);
 
-    @Query("SELECT DISTINCT i FROM Item i " +
-            "JOIN Bid b ON b.item = i " +
-            "WHERE b.bidder.id = :bidderId " +
-            "ORDER BY i.createdAt DESC")
+    @Query("""
+            SELECT DISTINCT i FROM Item i
+            JOIN Bid b ON b.item = i
+            WHERE b.bidder.id = :bidderId
+            ORDER BY i.createdAt DESC
+            """)
     List<Item> findItemsByBidderId(@Param("bidderId") Long bidderId);
 
-    @Query("SELECT i FROM Item i " +
-            "JOIN FETCH i.seller " +
-            "WHERE i.id = :itemId")
+    @Query("""
+            SELECT i FROM Item i
+            JOIN FETCH i.seller
+            WHERE i.id = :itemId
+            """)
     Optional<Item> findByIdWithSeller(@Param("itemId") Long itemId);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)

@@ -12,6 +12,7 @@ spring:
     properties:
       hibernate:
         format_sql: true
+        generate_statistics: true
     open-in-view: false
 
   data:

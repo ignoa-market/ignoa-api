@@ -17,8 +17,8 @@ import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -55,25 +55,36 @@ public class ItemQueryService {
     }
 
     public SliceResponse<ItemPreview> getItems(ItemPreviewRequest request, Long userId) {
-        Slice<Item> itemSlice = getItemsByView(request, PageRequest.of(request.page(), request.size()));
+        Pageable pageable = PageRequest.of(request.page(), request.size());
+
+        Slice<Item> itemSlice =
+                switch (request.view()) {
+                    case ALL, LATEST -> itemRepository.findLatestItems(request.category(), pageable);
+                    case POPULAR -> itemRepository.findPopularItems(request.category(), pageable);
+                    case ENDING_SOON -> itemRepository.findEndingSoonItems(request.category(), pageable);
+                };
+
+        List<Long> itemIds = itemSlice.getContent().stream()
+                .map(Item::getId).toList();
+
+        Map<Long, String> mediaUrlMap = itemMediaService.getFirstMediaUrlMap(itemIds);
+        Map<Long, Integer> wishCountMap = wishRepository.countByItemIds(itemIds).stream()
+                .collect(Collectors.toMap(
+                        row -> (Long) row[0],
+                        row -> ((Long) row[1]).intValue()));
+        Set<Long> isWishedSet = (userId == null)
+                ? Set.of()
+                : new HashSet<>(wishRepository.findWishedItemIds(userId, itemIds));
 
         List<ItemPreview> itemPreviewList = itemSlice.getContent().stream()
                 .map(item -> ItemPreview.from(
                         item,
-                        itemMediaService.getFirstMediaUrl(item.getId()),
-                        wishRepository.countByItemId(item.getId()),
-                        userId != null && wishRepository.existsByUserIdAndItemId(userId, item.getId())
+                        mediaUrlMap.get(item.getId()),
+                        wishCountMap.getOrDefault(item.getId(), 0),
+                        isWishedSet.contains(item.getId())
                 )).toList();
 
         return SliceResponse.of(itemPreviewList, itemSlice.hasNext());
-    }
-
-    private Slice<Item> getItemsByView(ItemPreviewRequest request, Pageable pageable) {
-        return switch (request.view()) {
-            case ALL, LATEST -> itemRepository.findLatestItems(request.category(), pageable);
-            case POPULAR -> itemRepository.findPopularItems(request.category(), pageable);
-            case ENDING_SOON -> itemRepository.findEndingSoonItems(request.category(), pageable);
-        };
     }
 
     public List<ItemPreview> getMyItems(Long userId) {

@@ -81,4 +81,5 @@ public class WishService {
 
         return SliceResponse.of(wishPreview, wishSlice.hasNext());
     }
+
 }
