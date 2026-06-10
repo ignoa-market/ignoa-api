@@ -13,7 +13,11 @@ import java.time.LocalDateTime;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-@Table(name = "items")
+@Table(name = "items",
+        indexes = {
+            @Index(name = "idx_items_status_created", columnList = "status, created_at"),
+            @Index(name = "idx_items_status_end_at", columnList = "status, end_at")
+        })
 public class Item extends BaseEntity {
 
     @Id
