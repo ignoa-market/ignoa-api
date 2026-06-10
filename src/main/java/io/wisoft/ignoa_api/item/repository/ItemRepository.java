@@ -18,9 +18,11 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
 
     @Query("""
             SELECT i FROM Item i
+            LEFT JOIN Wish w ON w.item = i
             WHERE i.status = 'ACTIVE'
             AND (:category IS NULL OR i.category = :category)
-            ORDER BY (SELECT COUNT(w) FROM Wish w WHERE w.item = i) DESC, i.createdAt DESC
+            GROUP BY i
+            ORDER BY COUNT(w) DESC, i.createdAt DESC, i.id DESC
             """)
     Slice<Item> findPopularItems(@Param("category") String category, Pageable pageable);
 
@@ -28,7 +30,7 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
             SELECT i FROM Item i
             WHERE i.status = 'ACTIVE'
             AND (:category IS NULL OR i.category = :category)
-            ORDER BY i.endAt ASC
+            ORDER BY i.endAt ASC, i.id ASC
             """)
     Slice<Item> findEndingSoonItems(@Param("category") String category, Pageable pageable);
 
@@ -36,7 +38,7 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
             SELECT i FROM Item i
             WHERE i.status = 'ACTIVE'
             AND (:category IS NULL OR i.category = :category)
-            ORDER BY i.createdAt DESC
+            ORDER BY i.createdAt DESC, i.id DESC
             """)
     Slice<Item> findLatestItems(@Param("category") String category, Pageable pageable);
 
