@@ -13,7 +13,6 @@ public record ItemPreview(
         Long currentPrice,
         Boolean isWished,
         Integer wishCount,
-        Long viewCount,
         ItemStatus status,
         LocalDateTime endAt
 ) {
@@ -27,7 +26,6 @@ public record ItemPreview(
                 item.getCurrentPrice(),
                 isWished,
                 wishCount,
-                item.getViewCount(),
                 item.getStatus(),
                 item.getEndAt()
         );

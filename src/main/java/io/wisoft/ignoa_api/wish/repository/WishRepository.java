@@ -33,4 +33,12 @@ public interface WishRepository extends JpaRepository<Wish, Long> {
             "WHERE w.item.id IN :itemIds " +
             "GROUP BY w.item.id")
     List<Object[]> countByItemIds(@Param("itemIds") List<Long> itemIds);
+
+    @Query("""
+            SELECT w.item.id
+            FROM Wish w
+            WHERE w.item.id IN :itemIds
+            AND w.user.id = :userId
+            """)
+    List<Long> findWishedItemIds(@Param("userId") Long userId, @Param("itemIds") List<Long> itemIds);
 }
