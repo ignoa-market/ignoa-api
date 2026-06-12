@@ -65,8 +65,8 @@ public class Item extends BaseEntity {
     private LocalDateTime endAt;
 
     public static Item create(User seller, String title, String description, String category,
-                              ItemCondition itemCondition, Long startPrice, Long buyNowPrice,
-                              String brand, LocalDateTime endAt) {
+                              ItemCondition itemCondition, String brand, Long startPrice, Long buyNowPrice,
+                              LocalDateTime endAt) {
         return new Item(
                 null,
                 seller,

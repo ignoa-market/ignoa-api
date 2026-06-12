@@ -8,6 +8,7 @@ import io.wisoft.ignoa_api.bid.event.BidPlaceEvent;
 import io.wisoft.ignoa_api.item.entity.Item;
 import io.wisoft.ignoa_api.bid.repository.BidRepository;
 import io.wisoft.ignoa_api.item.repository.ItemRepository;
+import io.wisoft.ignoa_api.item.service.ItemReader;
 import io.wisoft.ignoa_api.user.entity.User;
 import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
@@ -25,6 +26,7 @@ import java.util.List;
 public class BidService {
 
     private final UserQueryService userQueryService;
+    private final ItemReader itemReader;
     private final ApplicationEventPublisher eventPublisher;
     private final BidRepository bidRepository;
     private final ItemRepository itemRepository;
@@ -33,8 +35,7 @@ public class BidService {
     public BidResponse placeBid(Long itemId, Long bidderId, BidCreateRequest request) {
         Long bidPrice = request.price();
         User bidder = userQueryService.findById(bidderId);
-        Item item = itemRepository.findByIdWithLock(itemId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.ITEM_NOT_FOUND));
+        Item item = itemReader.getByIdWithLock(itemId);
 
         if (item.isSeller(bidderId)) {
             throw new BusinessException(ErrorCode.SELF_BID_NOT_ALLOWED);
@@ -62,17 +63,15 @@ public class BidService {
 
     @Transactional
     public void closeBids(Long itemId) {
-        bidRepository.findByItemId(itemId)
-                .forEach(Bid::closeAsLost);
+        bidRepository.findByItemId(itemId).forEach(Bid::closeAsLost);
     }
 
     public List<BidHistory> getBids(Long itemId) {
         if (!itemRepository.existsById(itemId)) {
             throw new BusinessException(ErrorCode.ITEM_NOT_FOUND);
         }
-        List<Bid> bidList = bidRepository.findByItemIdWithBidder(itemId);
 
-        return bidList.stream()
+        return bidRepository.findByItemIdWithBidder(itemId).stream()
                 .map(BidHistory::from)
                 .toList();
     }

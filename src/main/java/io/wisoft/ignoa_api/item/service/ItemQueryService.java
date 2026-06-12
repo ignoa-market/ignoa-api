@@ -8,8 +8,7 @@ import io.wisoft.ignoa_api.item.dto.response.*;
 import io.wisoft.ignoa_api.item.entity.Item;
 import io.wisoft.ignoa_api.item.repository.ItemRepository;
 import io.wisoft.ignoa_api.wish.repository.WishRepository;
-import io.wisoft.ignoa_api.global.exception.BusinessException;
-import io.wisoft.ignoa_api.global.exception.ErrorCode;
+import io.wisoft.ignoa_api.wish.repository.dto.WishCount;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -26,13 +25,14 @@ import java.util.stream.Collectors;
 public class ItemQueryService {
 
     private final ItemMediaService itemMediaService;
+    private final ItemReader itemReader;
 
     private final ItemRepository itemRepository;
     private final WishRepository wishRepository;
     private final BidRepository bidRepository;
 
     public ItemDetail getItem(Long itemId, Long userId) {
-        Item item = getItemWithSeller(itemId);
+        Item item = itemReader.getByIdWithSeller(itemId);
 
         Optional<Bid> myTopBid = userId != null
                 ? bidRepository.findTopByBidderIdAndItemIdOrderByPriceDesc(userId, itemId)
@@ -50,70 +50,53 @@ public class ItemQueryService {
         int wishCount = wishRepository.countByItemId(itemId);
         boolean isWished = userId != null && wishRepository.existsByUserIdAndItemId(userId, itemId);
 
-        return ItemDetail.of(
-                item, mediaUrls, sellerProfile, isTopBidder, isBidder, isSeller, isWished, wishCount);
+        return ItemDetail.of(item, mediaUrls, sellerProfile, isTopBidder, isBidder, isSeller, isWished, wishCount);
     }
 
     public SliceResponse<ItemPreview> getItems(ItemPreviewRequest request, Long userId) {
         Pageable pageable = PageRequest.of(request.page(), request.size());
+        Slice<Item> itemSlice = getItemsByView(request, pageable);
+        List<ItemPreview> itemPreviews = buildPreviews(userId, itemSlice.getContent());
 
-        Slice<Item> itemSlice =
-                switch (request.view()) {
-                    case ALL, LATEST -> itemRepository.findLatestItems(request.category(), pageable);
-                    case POPULAR -> itemRepository.findPopularItems(request.category(), pageable);
-                    case ENDING_SOON -> itemRepository.findEndingSoonItems(request.category(), pageable);
-                };
-
-        List<Long> itemIds = itemSlice.getContent().stream()
-                .map(Item::getId).toList();
-
-        Map<Long, String> mediaUrlMap = itemMediaService.getFirstMediaUrlMap(itemIds);
-        Map<Long, Integer> wishCountMap = wishRepository.countByItemIds(itemIds).stream()
-                .collect(Collectors.toMap(
-                        row -> (Long) row[0],
-                        row -> ((Long) row[1]).intValue()));
-        Set<Long> isWishedSet = (userId == null)
-                ? Set.of()
-                : new HashSet<>(wishRepository.findWishedItemIds(userId, itemIds));
-
-        List<ItemPreview> itemPreviewList = itemSlice.getContent().stream()
-                .map(item -> ItemPreview.from(
-                        item,
-                        mediaUrlMap.get(item.getId()),
-                        wishCountMap.getOrDefault(item.getId(), 0),
-                        isWishedSet.contains(item.getId())
-                )).toList();
-
-        return SliceResponse.of(itemPreviewList, itemSlice.hasNext());
+        return SliceResponse.of(itemPreviews, itemSlice.hasNext());
     }
 
     public List<ItemPreview> getMyItems(Long userId) {
-        return itemRepository.findItemsBySellerId(userId).stream()
+        List<Item> items = itemRepository.findItemsBySellerId(userId);
+        return buildPreviews(userId, items);
+    }
+
+    public List<ItemPreview> getMyBidItems(Long userId) {
+        List<Item> items = itemRepository.findItemsByBidderId(userId);
+        return buildPreviews(userId, items);
+    }
+
+    private List<ItemPreview> buildPreviews(Long userId, List<Item> items) {
+        List<Long> itemIds = items.stream()
+                .map(Item::getId)
+                .toList();
+
+        Map<Long, String> mediaUrlMap = itemMediaService.getFirstMediaUrl(itemIds);
+        Map<Long, Long> wishCountMap = wishRepository.countByItemIds(itemIds).stream()
+                .collect(Collectors.toMap(WishCount::getItemId, WishCount::getCount));
+        Set<Long> wishedItemIdSet = userId == null
+                ? Set.of()
+                : new HashSet<>(wishRepository.findWishedItemIds(userId, itemIds));
+
+        return items.stream()
                 .map(item -> ItemPreview.from(
                         item,
-                        itemMediaService.getFirstMediaUrl(item.getId()),
-                        wishRepository.countByItemId(item.getId()),
-                        userId != null && wishRepository.existsByUserIdAndItemId(userId, item.getId())
+                        mediaUrlMap.get(item.getId()),
+                        wishCountMap.getOrDefault(item.getId(), 0L).intValue(),
+                        wishedItemIdSet.contains(item.getId())
                 )).toList();
     }
 
-    public List<ItemPreview> getMyBids(Long userId) {
-        return itemRepository.findItemsByBidderId(userId).stream()
-                .map(item -> ItemPreview.from(
-                        item,
-                        itemMediaService.getFirstMediaUrl(item.getId()),
-                        wishRepository.countByItemId(item.getId()),
-                        userId != null && wishRepository.existsByUserIdAndItemId(userId, item.getId())
-                )).toList();
-    }
-
-    public Item getItemWithSeller(Long itemId) {
-        return itemRepository.findByIdWithSeller(itemId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.ITEM_NOT_FOUND));
-    }
-
-    public Item findById(Long itemId) {
-        return itemRepository.findById(itemId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.ITEM_NOT_FOUND));
+    private Slice<Item> getItemsByView(ItemPreviewRequest request, Pageable pageable) {
+        return switch (request.view()) {
+            case ALL, LATEST -> itemRepository.findLatestItems(request.category(), pageable);
+            case POPULAR -> itemRepository.findPopularItems(request.category(), pageable);
+            case ENDING_SOON -> itemRepository.findEndingSoonItems(request.category(), pageable);
+        };
     }
 }

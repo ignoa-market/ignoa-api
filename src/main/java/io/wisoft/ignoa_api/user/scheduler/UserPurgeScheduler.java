@@ -1,6 +1,5 @@
 package io.wisoft.ignoa_api.user.scheduler;
 
-import io.wisoft.ignoa_api.user.service.UserPurgeJob;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;

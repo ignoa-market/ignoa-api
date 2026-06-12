@@ -38,6 +38,7 @@ public class ItemCommandService {
     private final UserQueryService userQueryService;
     private final BidService bidService;
 
+    private final ItemReader itemReader;
     private final ApplicationEventPublisher eventPublisher;
 
     private final ItemRepository itemRepository;
@@ -65,14 +66,8 @@ public class ItemCommandService {
 
         Item item = Item.create(
                 seller,
-                request.title(),
-                request.description(),
-                request.category(),
-                request.itemCondition(),
-                request.startPrice(),
-                request.buyNowPrice(),
-                request.brand(),
-                request.endAt()
+                request.title(), request.description(), request.category(), request.itemCondition(), request.brand(),
+                request.startPrice(), request.buyNowPrice(), request.endAt()
         );
 
         itemRepository.save(item);
@@ -85,7 +80,7 @@ public class ItemCommandService {
     public ItemDetail updateItem(
             Long itemId, Long userId, ItemUpdateRequest request, List<MultipartFile> files
     ) {
-        Item item = itemQueryService.getItemWithSeller(itemId);
+        Item item = itemReader.getByIdWithSeller(itemId);
 
         if (!item.isSeller(userId)) {
             throw new BusinessException(ErrorCode.ITEM_UPDATE_FORBIDDEN);
@@ -104,13 +99,10 @@ public class ItemCommandService {
             throw new BusinessException(ErrorCode.END_AT_TOO_LATE);
         }
 
-        item.update(request.title(),
-                request.description(),
-                request.category(),
-                request.brand(),
-                request.itemCondition(),
-                request.buyNowPrice(),
-                request.endAt());
+        item.update(
+                request.title(), request.description(), request.category(), request.brand(), request.itemCondition(),
+                request.buyNowPrice(), request.endAt()
+        );
 
         if (!CollectionUtils.isEmpty(request.deleteMediaIds())) {
             itemMediaService.validateMediaCount(itemId, request.deleteMediaIds(), files);
@@ -129,7 +121,7 @@ public class ItemCommandService {
     }
 
     public ItemIdResponse deleteItem(Long itemId, Long userId) {
-        Item item = itemQueryService.getItemWithSeller(itemId);
+        Item item = itemReader.getByIdWithSeller(itemId);
 
         if (!item.isSeller(userId)) {
             throw new BusinessException(ErrorCode.ITEM_DELETE_FORBIDDEN);
@@ -155,8 +147,7 @@ public class ItemCommandService {
     }
 
     public BuyNowResponse buyNowItem(Long itemId, Long buyerId) {
-        Item item = itemRepository.findByIdWithLock(itemId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.ITEM_NOT_FOUND));
+        Item item = itemReader.getByIdWithLock(itemId);
         User user = userQueryService.findById(buyerId);
 
         if (item.isSeller(buyerId)) {

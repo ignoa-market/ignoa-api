@@ -5,13 +5,14 @@ import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
 import io.wisoft.ignoa_api.item.entity.Item;
 import io.wisoft.ignoa_api.item.service.ItemMediaService;
-import io.wisoft.ignoa_api.item.service.ItemQueryService;
+import io.wisoft.ignoa_api.item.service.ItemReader;
 import io.wisoft.ignoa_api.user.service.UserQueryService;
 import io.wisoft.ignoa_api.wish.dto.request.WishPreviewRequest;
 import io.wisoft.ignoa_api.wish.dto.response.WishPreview;
 import io.wisoft.ignoa_api.wish.entity.Wish;
 import io.wisoft.ignoa_api.wish.repository.WishRepository;
 import io.wisoft.ignoa_api.user.entity.User;
+import io.wisoft.ignoa_api.wish.repository.dto.WishCount;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
@@ -29,13 +30,13 @@ public class WishService {
 
     private final UserQueryService userQueryService;
     private final ItemMediaService itemMediaService;
-    private final ItemQueryService itemQueryService;
+    private final ItemReader itemReader;
     private final WishRepository wishRepository;
 
     @Transactional
     public void addWish(Long itemId, Long userId) {
         User user = userQueryService.findById(userId);
-        Item item = itemQueryService.findById(itemId);
+        Item item = itemReader.getById(itemId);
 
         if (wishRepository.existsByUserIdAndItemId(userId, itemId)) {
             throw new BusinessException(ErrorCode.WISH_ALREADY_EXISTS);
@@ -64,22 +65,21 @@ public class WishService {
                 .map(wish -> wish.getItem().getId())
                 .toList();
 
-        Map<Long, String> mediaUrlMap = itemMediaService.getFirstMediaUrlMap(itemIds);
-        Map<Long, Integer> wishCountMap = wishRepository.countByItemIds(itemIds).stream()
+        Map<Long, String> mediaUrlMap = itemMediaService.getFirstMediaUrl(itemIds);
+        Map<Long, Long> wishCountMap = wishRepository.countByItemIds(itemIds).stream()
                 .collect(Collectors.toMap(
-                        row -> (Long) row[0],
-                        row -> ((Long) row[1]).intValue()
+                        WishCount::getItemId,
+                        WishCount::getCount
                 ));
 
         List<WishPreview> wishPreview = wishSlice.getContent().stream()
                 .map(wish -> WishPreview.from(
                         wish,
                         mediaUrlMap.get(wish.getItem().getId()),
-                        wishCountMap.get(wish.getItem().getId()),
+                        wishCountMap.get(wish.getItem().getId()).intValue(),
                         wish.getItem().getStatus()
                 )).toList();
 
         return SliceResponse.of(wishPreview, wishSlice.hasNext());
     }
-
 }
