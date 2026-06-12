@@ -11,7 +11,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -32,7 +31,7 @@ public class KakaoAuthService {
         // 2. 카카오 AT로 사용자 정보 조회
         KakaoUserInfoResponse userInfo = kakaoOAuthClient.getUserInfo(kakaoAccessToken);
         validateEmail(userInfo.email());
-        String nickname = resolveNickname(userInfo.nickname());
+        String nickname = resolveNickname(userInfo.nickname(), userInfo.id());
 
         // 3. OAuth(Provider + OAuthId) 기존 유저 조회 -> 없으면 자동 가입
         User user = findOrCreateUser(userInfo, nickname);
@@ -64,15 +63,20 @@ public class KakaoAuthService {
         if (email == null) {
             throw new BusinessException(ErrorCode.KAKAO_EMAIL_REQUIRED);
         }
+
+        if (userRepository.existsByEmailAndProvider(email, "LOCAL")) {
+            throw new BusinessException(ErrorCode.KAKAO_EMAIL_ALREADY_REGISTERED);
+        }
     }
 
-    private String resolveNickname(String kakaoNickname) {
+    private String resolveNickname(String kakaoNickname, Long kakaoId) {
         String base = kakaoNickname != null ? kakaoNickname : "카카오 사용자";
 
         if (!userRepository.existsByNickname(base)) {
             return base;
         }
 
-        return base + "_" + UUID.randomUUID().toString().substring(0, 6);
+        String idSuffix = String.valueOf(kakaoId);
+        return base + "_" + idSuffix.substring(Math.max(0, idSuffix.length() - 6));
     }
 }

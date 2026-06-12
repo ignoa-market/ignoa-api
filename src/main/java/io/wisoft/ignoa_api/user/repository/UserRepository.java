@@ -32,5 +32,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
                                 @Param("endDateTime") LocalDateTime endDateTime,
                                 @Param("lastId") Long lastId,
                                 Pageable pageable);
+
+    boolean existsByEmailAndProvider(String email, String local);
 }
 
