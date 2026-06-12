@@ -1,6 +1,8 @@
-package io.wisoft.ignoa_api.user.service;
+package io.wisoft.ignoa_api.user.scheduler;
 
 import io.wisoft.ignoa_api.user.entity.User;
+import io.wisoft.ignoa_api.user.service.UserCommandService;
+import io.wisoft.ignoa_api.user.service.UserQueryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;

@@ -110,7 +110,7 @@ public class UserController {
     public ResponseEntity<ApiResponse<List<ItemPreview>>> getMyBids(
         @AuthenticationPrincipal Long userId
     ) {
-        List<ItemPreview> data = itemQueryService.getMyBids(userId);
+        List<ItemPreview> data = itemQueryService.getMyBidItems(userId);
         ApiResponse<List<ItemPreview>> response = ApiResponse.of(data, "내 입찰 목록을 조회했습니다.");
         return ResponseEntity.ok(response);
     }

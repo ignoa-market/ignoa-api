@@ -1,6 +1,7 @@
 package io.wisoft.ignoa_api.bid.repository;
 
 import io.wisoft.ignoa_api.bid.entity.Bid;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -28,6 +29,14 @@ public interface BidRepository extends JpaRepository<Bid, Long> {
 
     Optional<Bid> findTopByBidderIdAndItemIdOrderByPriceDesc(Long bidderId, Long itemId);
 
+//    @Query("""
+//          SELECT b FROM Bid b
+//          JOIN FETCH b.bidder
+//          WHERE b.item.id = :itemId
+//          ORDER BY b.price DESC
+//          LIMIT 1
+//          """)
+    @EntityGraph(attributePaths = "bidder")
     Optional<Bid> findTopByItemIdOrderByPriceDesc(Long itemId);
 
     List<Bid> findByItemId(Long itemId);

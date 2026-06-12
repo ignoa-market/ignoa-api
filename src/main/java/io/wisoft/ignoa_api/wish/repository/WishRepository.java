@@ -1,6 +1,7 @@
 package io.wisoft.ignoa_api.wish.repository;
 
 import io.wisoft.ignoa_api.wish.entity.Wish;
+import io.wisoft.ignoa_api.wish.repository.dto.WishCount;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -28,11 +29,13 @@ public interface WishRepository extends JpaRepository<Wish, Long> {
             "ORDER BY w.createdAt DESC")
     Slice<Wish> findByUserIdWithItem(@Param("userId") Long userId, Pageable pageable);
 
-    @Query("SELECT w.item.id, COUNT(w) " +
-            "FROM Wish w " +
-            "WHERE w.item.id IN :itemIds " +
-            "GROUP BY w.item.id")
-    List<Object[]> countByItemIds(@Param("itemIds") List<Long> itemIds);
+    @Query("""
+            SELECT w.item.id itemId, COUNT(w) count
+            FROM Wish w 
+            WHERE w.item.id IN :itemIds 
+            GROUP BY w.item.id
+            """)
+    List<WishCount> countByItemIds(@Param("itemIds") List<Long> itemIds);
 
     @Query("""
             SELECT w.item.id

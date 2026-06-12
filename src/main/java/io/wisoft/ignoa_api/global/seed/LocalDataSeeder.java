@@ -46,7 +46,7 @@ public class LocalDataSeeder implements CommandLineRunner {
             User seller = users.get(i % users.size());
             LocalDateTime endAt = LocalDateTime.now().plusDays((i % 30) + 1);
             items.add(Item.create(seller, "상품" + i, "설명", "카테고리" + (i % 5),
-                    ItemCondition.GOOD, 1000L, 50000L, "브랜드", endAt));
+                    ItemCondition.GOOD, "브랜드", 1000L, 50000L, endAt));
         }
         itemRepository.saveAll(items);
 

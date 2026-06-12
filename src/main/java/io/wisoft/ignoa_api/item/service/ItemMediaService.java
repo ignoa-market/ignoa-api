@@ -28,14 +28,7 @@ public class ItemMediaService {
     private final OutboxAppender outboxAppender;
     private final ItemMediaRepository itemMediaRepository;
 
-    public String getFirstMediaUrl(Long itemId) {
-        return itemMediaRepository
-                .findFirstByItemIdOrderByIdAsc(itemId)
-                .map(ItemMedia::getMediaUrl)
-                .orElseThrow(() -> new BusinessException(ErrorCode.ITEM_MEDIA_NOT_FOUND));
-    }
-
-    public Map<Long, String> getFirstMediaUrlMap(List<Long> itemIds) {
+    public Map<Long, String> getFirstMediaUrl(List<Long> itemIds) {
         return itemMediaRepository
                 .findByItemIdIn(itemIds).stream()
                 .collect(Collectors.toMap(
@@ -52,9 +45,7 @@ public class ItemMediaService {
                 .toList();
     }
 
-    public void validateMediaCount(
-            Long itemId, List<Long> mediaIds, List<MultipartFile> files
-    ) {
+    public void validateMediaCount(Long itemId, List<Long> mediaIds, List<MultipartFile> files) {
         int currentCount = itemMediaRepository.countByItemId(itemId);
         int toDeleteCount = itemMediaRepository.countByItemIdAndIdIn(itemId, mediaIds);
         int addCount = files == null ? 0 : files.size();
