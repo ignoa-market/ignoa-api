@@ -1,6 +1,7 @@
 package io.wisoft.ignoa_api.item.dto.request;
 
 import io.wisoft.ignoa_api.item.entity.enums.ItemCondition;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.Min;
 
@@ -26,4 +27,13 @@ public record ItemUpdateRequest(
         @Future(message = "경매 종료 시간은 현재보다 미래여야 합니다")
         LocalDateTime endAt
 ) {
+
+    @AssertTrue(message = "경매 종료 시간은 최대 7일 이내여야 합니다")
+    public boolean isEndAtNotTooLate() {
+        if (endAt == null) {
+            return true;
+        }
+
+        return !endAt.isAfter(LocalDateTime.now().plusDays(7));
+    }
 }

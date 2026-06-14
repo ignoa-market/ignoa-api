@@ -25,7 +25,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Slf4j
@@ -53,7 +52,7 @@ public class ItemCommandService {
 
         Item item = Item.create(
                 seller, request.title(), request.description(),
-                request.category(),request.itemCondition(), request.brand(),
+                request.category(), request.itemCondition(), request.brand(),
                 request.startPrice(), request.buyNowPrice(), request.endAt()
         );
 
@@ -81,11 +80,6 @@ public class ItemCommandService {
 
         if (!item.isValidBuyNowPrice(request.buyNowPrice())) {
             throw new BusinessException(ErrorCode.INVALID_BUY_NOW_PRICE);
-        }
-
-        if (request.endAt() != null
-                && request.endAt().isAfter(LocalDateTime.now().plusDays(7))) {
-            throw new BusinessException(ErrorCode.END_AT_TOO_LATE);
         }
 
         item.update(
