@@ -40,7 +40,6 @@ public class ItemFacade {
 
     private List<UploadedMedia> uploadFiles(List<MultipartFile> files) {
         return files.stream()
-                .filter(file ->!file.isEmpty())
                 .map(file -> new UploadedMedia(
                         storageService.upload(file),
                         ItemMediaType.from(file.getContentType())

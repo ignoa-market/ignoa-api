@@ -49,27 +49,14 @@ public class ItemCommandService {
     public ItemIdResponse createItem(
             Long sellerId, ItemCreateRequest request, List<UploadedMedia> uploadedMedias
     ) {
-        if (request.startPrice() >= request.buyNowPrice()) {
-            throw new BusinessException(ErrorCode.INVALID_BUY_NOW_PRICE_ON_CREATE);
-        }
-
-        LocalDateTime now = LocalDateTime.now();
-
-        if (request.endAt().isBefore(now.plusDays(1))) {
-            throw new BusinessException(ErrorCode.END_AT_TOO_SOON);
-        }
-
-        if (request.endAt().isAfter(now.plusDays(7))) {
-            throw new BusinessException(ErrorCode.END_AT_TOO_LATE);
-        }
-
         User seller = userQueryService.findById(sellerId);
 
         Item item = Item.create(
-                seller,
-                request.title(), request.description(), request.category(), request.itemCondition(), request.brand(),
+                seller, request.title(), request.description(),
+                request.category(),request.itemCondition(), request.brand(),
                 request.startPrice(), request.buyNowPrice(), request.endAt()
         );
+
         List<ItemMedia> itemMedias = toItemMedias(uploadedMedias, item);
 
         itemRepository.save(item);
