@@ -31,9 +31,14 @@ public class StorageService {
     public String upload(MultipartFile file) {
         try {
             String originalFilename = file.getOriginalFilename();
-            if (originalFilename == null) throw new BusinessException(ErrorCode.FILE_UPLOAD_FAILED);
+
+            if (originalFilename == null) {
+                throw new BusinessException(ErrorCode.FILE_UPLOAD_FAILED);
+            }
+
             String extension = originalFilename.substring(originalFilename.lastIndexOf("."));
             String key = LocalDate.now() + "/" + UUID.randomUUID() + extension;
+
             s3Client.putObject(
                     PutObjectRequest.builder()
                             .bucket(bucket)
@@ -42,6 +47,7 @@ public class StorageService {
                             .build(),
                     RequestBody.fromBytes(file.getBytes())
             );
+
             return endpoint + "/" + bucket + "/" + key;
         } catch (IOException e) {
             throw new BusinessException(ErrorCode.FILE_UPLOAD_FAILED);

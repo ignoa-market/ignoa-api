@@ -12,7 +12,9 @@ import io.wisoft.ignoa_api.item.dto.response.BuyNowResponse;
 import io.wisoft.ignoa_api.item.dto.response.ItemDetail;
 import io.wisoft.ignoa_api.item.dto.response.ItemIdResponse;
 import io.wisoft.ignoa_api.item.entity.Item;
+import io.wisoft.ignoa_api.item.entity.ItemMedia;
 import io.wisoft.ignoa_api.item.repository.ItemRepository;
+import io.wisoft.ignoa_api.item.service.dto.UploadedMedia;
 import io.wisoft.ignoa_api.user.entity.User;
 import io.wisoft.ignoa_api.user.service.UserQueryService;
 import io.wisoft.ignoa_api.wish.repository.WishRepository;
@@ -22,7 +24,6 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -46,7 +47,7 @@ public class ItemCommandService {
     private final BidRepository bidRepository;
 
     public ItemIdResponse createItem(
-            Long sellerId, ItemCreateRequest request, List<MultipartFile> files
+            Long sellerId, ItemCreateRequest request, List<UploadedMedia> uploadedMedias
     ) {
         if (request.startPrice() >= request.buyNowPrice()) {
             throw new BusinessException(ErrorCode.INVALID_BUY_NOW_PRICE_ON_CREATE);
@@ -69,16 +70,17 @@ public class ItemCommandService {
                 request.title(), request.description(), request.category(), request.itemCondition(), request.brand(),
                 request.startPrice(), request.buyNowPrice(), request.endAt()
         );
+        List<ItemMedia> itemMedias = toItemMedias(uploadedMedias, item);
 
         itemRepository.save(item);
-        itemMediaService.save(item, files);
+        itemMediaService.saveAll(itemMedias);
         eventPublisher.publishEvent(new AuctionRegisteredEvent(item.getId(), item.getEndAt()));
 
         return new ItemIdResponse(item.getId());
     }
 
     public ItemDetail updateItem(
-            Long itemId, Long userId, ItemUpdateRequest request, List<MultipartFile> files
+            Long itemId, Long userId, ItemUpdateRequest request, List<UploadedMedia> uploadedMedias
     ) {
         Item item = itemReader.getByIdWithSeller(itemId);
 
@@ -100,17 +102,19 @@ public class ItemCommandService {
         }
 
         item.update(
-                request.title(), request.description(), request.category(), request.brand(), request.itemCondition(),
+                request.title(), request.description(),
+                request.category(), request.brand(), request.itemCondition(),
                 request.buyNowPrice(), request.endAt()
         );
 
         if (!CollectionUtils.isEmpty(request.deleteMediaIds())) {
-            itemMediaService.validateMediaCount(itemId, request.deleteMediaIds(), files);
+            itemMediaService.validateMediaCount(itemId, request.deleteMediaIds(), uploadedMedias);
             itemMediaService.deleteMedias(itemId, request.deleteMediaIds());
         }
 
-        if (!CollectionUtils.isEmpty(files)) {
-            itemMediaService.save(item, files);
+        if (!CollectionUtils.isEmpty(uploadedMedias)) {
+            List<ItemMedia> itemMedias = toItemMedias(uploadedMedias, item);
+            itemMediaService.saveAll(itemMedias);
         }
 
         if (request.endAt() != null) {
@@ -163,5 +167,14 @@ public class ItemCommandService {
         eventPublisher.publishEvent(new AuctionClosedEvent(itemId));
 
         return new BuyNowResponse(itemId, buyerId, item.getBuyNowPrice(), item.getStatus());
+    }
+
+    private List<ItemMedia> toItemMedias(List<UploadedMedia> uploadedMedias, Item item) {
+        return uploadedMedias.stream()
+                .map(uploadedMedia -> ItemMedia.from(
+                        item,
+                        uploadedMedia.mediaUrl(),
+                        uploadedMedia.mediaType()
+                )).toList();
     }
 }

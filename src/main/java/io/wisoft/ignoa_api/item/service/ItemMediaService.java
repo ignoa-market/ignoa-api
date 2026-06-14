@@ -5,15 +5,12 @@ import io.wisoft.ignoa_api.global.exception.ErrorCode;
 import io.wisoft.ignoa_api.global.outbox.entity.OutboxEventType;
 import io.wisoft.ignoa_api.global.outbox.service.OutboxAppender;
 import io.wisoft.ignoa_api.item.dto.response.ItemMediaUrls;
-import io.wisoft.ignoa_api.item.entity.Item;
 import io.wisoft.ignoa_api.item.entity.ItemMedia;
-import io.wisoft.ignoa_api.item.entity.enums.ItemMediaType;
 import io.wisoft.ignoa_api.item.repository.ItemMediaRepository;
-import io.wisoft.ignoa_api.global.infra.storage.StorageService;
+import io.wisoft.ignoa_api.item.service.dto.UploadedMedia;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
@@ -24,7 +21,6 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class ItemMediaService {
 
-    private final StorageService storageService;
     private final OutboxAppender outboxAppender;
     private final ItemMediaRepository itemMediaRepository;
 
@@ -45,24 +41,14 @@ public class ItemMediaService {
                 .toList();
     }
 
-    public void validateMediaCount(Long itemId, List<Long> mediaIds, List<MultipartFile> files) {
+    public void validateMediaCount(Long itemId, List<Long> mediaIds, List<UploadedMedia> uploadedMedias) {
         int currentCount = itemMediaRepository.countByItemId(itemId);
         int toDeleteCount = itemMediaRepository.countByItemIdAndIdIn(itemId, mediaIds);
-        int addCount = files == null ? 0 : files.size();
+        int addCount = uploadedMedias == null ? 0 : uploadedMedias.size();
 
         if (currentCount - toDeleteCount + addCount < 1) {
             throw new BusinessException(ErrorCode.ITEM_MEDIA_REQUIRED);
         }
-    }
-
-    @Transactional
-    public void save(Item item, List<MultipartFile> files) {
-        files.stream().filter(file -> !file.isEmpty())
-                .forEach(file -> {
-                    String mediaUrl = storageService.upload(file);
-                    ItemMedia itemMedia = ItemMedia.from(item, mediaUrl, ItemMediaType.from(file.getContentType()));
-                    itemMediaRepository.save(itemMedia);
-                });
     }
 
     @Transactional
@@ -83,5 +69,10 @@ public class ItemMediaService {
                 ));
 
         itemMediaRepository.deleteAllByItemId(itemId);
+    }
+
+    @Transactional
+    public void saveAll(List<ItemMedia> itemMedias) {
+        itemMediaRepository.saveAll(itemMedias);
     }
 }
