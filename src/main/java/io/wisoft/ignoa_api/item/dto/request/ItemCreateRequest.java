@@ -33,4 +33,28 @@ public record ItemCreateRequest(
         @Future(message = "경매 종료 시간은 현재보다 미래여야 합니다")
         LocalDateTime endAt
 ) {
+
+    @AssertTrue(message = "즉시 구매가는 시작 가격보다 커야 합니다")
+    public boolean isBuyNowPriceValid() {
+        if (startPrice == null || buyNowPrice == null) {
+            return true;
+        }
+        return startPrice < buyNowPrice;
+    }
+
+    @AssertTrue(message = "경매 종료 시간은 최소 1일 이후여야 합니다")
+    public boolean isEndAtNotTooSoon() {
+        if (endAt == null) {
+            return true;
+        }
+        return !endAt.isBefore(LocalDateTime.now().plusDays(1));
+    }
+
+    @AssertTrue(message = "경매 종료 시간은 최대 7일 이내여야 합니다")
+    public boolean isEndAtNotTooLate() {
+        if (endAt == null) {
+            return true;
+        }
+        return !endAt.isAfter(LocalDateTime.now().plusDays(7));
+    }
 }

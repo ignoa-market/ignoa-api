@@ -9,6 +9,7 @@ import io.wisoft.ignoa_api.item.dto.response.ItemIdResponse;
 import io.wisoft.ignoa_api.item.dto.response.ItemDetail;
 import io.wisoft.ignoa_api.item.dto.response.ItemPreview;
 import io.wisoft.ignoa_api.item.service.ItemCommandService;
+import io.wisoft.ignoa_api.item.service.ItemFacade;
 import io.wisoft.ignoa_api.item.service.ItemQueryService;
 import io.wisoft.ignoa_api.global.common.ApiResponse;
 import jakarta.validation.Valid;
@@ -31,6 +32,7 @@ public class ItemController {
 
     private final ItemQueryService itemQueryService;
     private final ItemCommandService itemCommandService;
+    private final ItemFacade itemFacade;
 
     @GetMapping
     public ResponseEntity<ApiResponse<SliceResponse<ItemPreview>>> getItems(
@@ -58,7 +60,7 @@ public class ItemController {
             @RequestPart @NotEmpty(message = "상품 이미지는 최소 1개 이상이어야 합니다.") List<MultipartFile> files,
             @AuthenticationPrincipal Long sellerId
     ) {
-        ItemIdResponse data = itemCommandService.createItem(sellerId, request, files);
+        ItemIdResponse data = itemFacade.createItem(sellerId, request, files);
         ApiResponse<ItemIdResponse> response = ApiResponse.of(data, "상품이 등록되었습니다.");
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -70,7 +72,7 @@ public class ItemController {
             @RequestPart(required = false) List<MultipartFile> files,
             @AuthenticationPrincipal Long userId
     ) {
-        ItemDetail data = itemCommandService.updateItem(itemId, userId, request, files);
+        ItemDetail data = itemFacade.updateItem(itemId, userId, request, files);
         ApiResponse<ItemDetail> response = ApiResponse.of(data, "상품 정보를 수정했습니다.");
         return ResponseEntity.ok(response);
     }

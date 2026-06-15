@@ -3,11 +3,13 @@ package io.wisoft.ignoa_api.global.exception;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.validation.FieldError;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestCookieException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.util.List;
@@ -22,6 +24,19 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(e.getErrorCode().getHttpStatus())
                 .body(ErrorResponse.of(e.getErrorCode()));
+    }
+
+    @ExceptionHandler(HandlerMethodValidationException.class)
+    public ResponseEntity<ErrorResponse> handleHandlerMethodValidationException(HandlerMethodValidationException e) {
+        log.warn("HandlerMethodValidationException: {}", e.getMessage());
+        List<ErrorDetail> details = e.getAllErrors().stream()
+                .map(error -> new ErrorDetail(
+                        error instanceof FieldError fieldError ? fieldError.getField() : null,
+                        error.getDefaultMessage()))
+                .toList();
+        return ResponseEntity
+                .status(ErrorCode.INVALID_INPUT_VALUE.getHttpStatus())
+                .body(ErrorResponse.of(ErrorCode.INVALID_INPUT_VALUE, details));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
