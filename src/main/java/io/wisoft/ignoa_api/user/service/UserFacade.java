@@ -3,6 +3,8 @@ package io.wisoft.ignoa_api.user.service;
 import io.wisoft.ignoa_api.auth.service.RefreshTokenService;
 import io.wisoft.ignoa_api.auth.service.TokenBlacklistService;
 import io.wisoft.ignoa_api.global.infra.storage.StorageService;
+import io.wisoft.ignoa_api.global.outbox.entity.OutboxEventType;
+import io.wisoft.ignoa_api.global.outbox.service.OutboxAppender;
 import io.wisoft.ignoa_api.user.dto.response.MyProfile;
 import io.wisoft.ignoa_api.user.entity.User;
 import lombok.RequiredArgsConstructor;
@@ -15,19 +17,29 @@ import org.springframework.web.multipart.MultipartFile;
 @RequiredArgsConstructor
 public class UserFacade {
 
-    private final StorageService storageService;
-    private final RefreshTokenService refreshTokenService;
-    private final TokenBlacklistService tokenBlacklistService;
     private final UserCommandService userCommandService;
     private final UserQueryService userQueryService;
+
+    private final StorageService storageService;
+    private final OutboxAppender outboxAppender;
+
+    private final RefreshTokenService refreshTokenService;
+    private final TokenBlacklistService tokenBlacklistService;
 
     public MyProfile updateProfileImage(Long userId, MultipartFile image) {
         User user = userQueryService.findById(userId);
 
         String oldImageUrl = user.getProfileImageUrl();
         String newImageUrl = storageService.upload(image);
+
         user.updateProfileImage(newImageUrl);
-        userCommandService.saveProfileImage(user, oldImageUrl);
+
+        try {
+            userCommandService.saveProfileImage(user, oldImageUrl);
+        } catch (RuntimeException e) {
+            outboxAppender.saveForCompensation(userId.toString(), "USER", newImageUrl, OutboxEventType.DELETE_PROFILE_IMAGE);
+            throw e;
+        }
 
         return MyProfile.from(user);
     }
