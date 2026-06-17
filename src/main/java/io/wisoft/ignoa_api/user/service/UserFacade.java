@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -37,11 +38,19 @@ public class UserFacade {
         try {
             userCommandService.saveProfileImage(user, oldImageUrl);
         } catch (RuntimeException e) {
-            outboxAppender.saveForCompensation(userId.toString(), "USER", newImageUrl, OutboxEventType.DELETE_PROFILE_IMAGE);
+            compensate(userId.toString(), newImageUrl);
             throw e;
         }
 
         return MyProfile.from(user);
+    }
+
+    private void compensate(String userId, String mediaUrl) {
+        try {
+            outboxAppender.saveForCompensation(userId, "USER", mediaUrl, OutboxEventType.DELETE_PROFILE_IMAGE);
+        } catch (RuntimeException compensateError) {
+            log.error("보상 Outbox 적재 실패 - 고아 파일 수동 정리 필요 - userId={}, mediaUrl={}", userId, mediaUrl, compensateError);
+        }
     }
 
     public void deleteMe(Long userId, String accessToken, String refreshToken) {
