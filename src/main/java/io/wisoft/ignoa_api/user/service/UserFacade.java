@@ -48,8 +48,8 @@ public class UserFacade {
     private void compensate(String userId, String mediaUrl) {
         try {
             outboxAppender.saveForCompensation(userId, "USER", mediaUrl, OutboxEventType.DELETE_PROFILE_IMAGE);
-        } catch (RuntimeException compensateError) {
-            log.error("보상 Outbox 적재 실패 - 고아 파일 수동 정리 필요 - userId={}, mediaUrl={}", userId, mediaUrl, compensateError);
+        } catch (RuntimeException compensationError) {
+            log.error("보상 Outbox 적재 실패 - 고아 파일 수동 정리 필요 - userId={}, mediaUrl={}", userId, mediaUrl, compensationError);
         }
     }
 
