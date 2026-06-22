@@ -1,12 +1,6 @@
 server:
   port: 38080
 
-logging:
-  pattern:
-    console: "%clr(%d{HH:mm:ss}){faint} %clr([%15.15thread]){magenta} %clr(%-5level){highlight} %clr(%logger{36}){cyan} - %msg%n"
-  level:
-    io.wisoft.ignoa: DEBUG
-
 spring:
   application:
     name: Ignoa API

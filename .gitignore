@@ -54,3 +54,7 @@ db/
 CLAUDE.md
 .claude
 docs/
+
+# K6
+/k6
+/k6/.env.test
