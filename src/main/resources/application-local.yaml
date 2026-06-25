@@ -12,11 +12,10 @@ spring:
     properties:
       hibernate:
         format_sql: true
-        generate_statistics: true
+        generate_statistics: false
     open-in-view: false
 
   data:
     redis:
       host: localhost
       port: 36379
-
