@@ -15,6 +15,7 @@ public enum ErrorCode {
     METHOD_NOT_ALLOWED(HttpStatus.METHOD_NOT_ALLOWED, "지원하지 않는 HTTP 메서드입니다."),
     MISSING_REQUEST_PART(HttpStatus.BAD_REQUEST, "필수 요청 항목이 누락되었습니다."),
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 내부 오류가 발생했습니다."),
+    LOCK_ACQUISITION_FAILED(HttpStatus.CONFLICT, "다른 요청을 처리 중입니다. 잠시 후 다시 시도해주세요."),
 
     // Auth
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),
