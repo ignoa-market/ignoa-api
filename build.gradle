@@ -54,7 +54,7 @@ dependencies {
 	implementation 'net.javacrumbs.shedlock:shedlock-provider-redis-spring:6.0.2'
 
 	// 분산 락
-	implementation 'org.redisson:redisson:3.50.0'
+	implementation 'org.redisson:redisson:4.6.1'
 
 	// 측정
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
