@@ -132,7 +132,7 @@ public class ItemCommandService {
     }
 
     public BuyNowResponse buyNowItem(Long itemId, Long buyerId) {
-        Item item = itemReader.getByIdWithLock(itemId);
+        Item item = itemReader.getById(itemId);
         User user = userQueryService.findById(buyerId);
 
         if (item.isSeller(buyerId)) {

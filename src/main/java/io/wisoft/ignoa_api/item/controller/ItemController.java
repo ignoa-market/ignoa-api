@@ -8,7 +8,6 @@ import io.wisoft.ignoa_api.item.dto.response.BuyNowResponse;
 import io.wisoft.ignoa_api.item.dto.response.ItemIdResponse;
 import io.wisoft.ignoa_api.item.dto.response.ItemDetail;
 import io.wisoft.ignoa_api.item.dto.response.ItemPreview;
-import io.wisoft.ignoa_api.item.service.ItemCommandService;
 import io.wisoft.ignoa_api.item.service.ItemFacade;
 import io.wisoft.ignoa_api.item.service.ItemQueryService;
 import io.wisoft.ignoa_api.global.common.ApiResponse;
@@ -31,7 +30,6 @@ import java.util.List;
 public class ItemController {
 
     private final ItemQueryService itemQueryService;
-    private final ItemCommandService itemCommandService;
     private final ItemFacade itemFacade;
 
     @GetMapping
@@ -82,7 +80,7 @@ public class ItemController {
             @PathVariable Long itemId,
             @AuthenticationPrincipal Long userId
     ) {
-        ItemIdResponse data = itemCommandService.deleteItem(itemId, userId);
+        ItemIdResponse data = itemFacade.deleteItem(itemId, userId);
         ApiResponse<ItemIdResponse> response = ApiResponse.of(data, "상품을 삭제했습니다.");
         return ResponseEntity.ok(response);
     }
@@ -92,7 +90,7 @@ public class ItemController {
             @PathVariable Long itemId,
             @AuthenticationPrincipal Long buyerId
     ) {
-        BuyNowResponse data = itemCommandService.buyNowItem(itemId, buyerId);
+        BuyNowResponse data = itemFacade.buyNowItem(itemId, buyerId);
         ApiResponse<BuyNowResponse> response = ApiResponse.of(data, "상품을 즉시 구매하였습니다.");
         return ResponseEntity.ok(response);
     }

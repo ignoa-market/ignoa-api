@@ -3,6 +3,7 @@ package io.wisoft.ignoa_api.bid.controller;
 import io.wisoft.ignoa_api.bid.dto.request.BidCreateRequest;
 import io.wisoft.ignoa_api.bid.dto.response.BidHistory;
 import io.wisoft.ignoa_api.bid.dto.response.BidResponse;
+import io.wisoft.ignoa_api.bid.service.BidFacade;
 import io.wisoft.ignoa_api.bid.service.BidService;
 import io.wisoft.ignoa_api.global.common.ApiResponse;
 import jakarta.validation.Valid;
@@ -20,6 +21,7 @@ import java.util.List;
 public class BidController {
 
     private final BidService bidService;
+    private final BidFacade bidFacade;
 
     @PostMapping
     public ResponseEntity<ApiResponse<BidResponse>> placeBid(
@@ -27,7 +29,7 @@ public class BidController {
             @Valid @RequestBody BidCreateRequest request,
             @AuthenticationPrincipal Long bidderId
     ) {
-        BidResponse data = bidService.placeBid(itemId, bidderId, request);
+        BidResponse data = bidFacade.placeBid(itemId, bidderId, request);
         ApiResponse<BidResponse> response = ApiResponse.of(data, "입찰에 성공하였습니다.");
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }

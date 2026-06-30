@@ -56,5 +56,4 @@ CLAUDE.md
 docs/
 
 # K6
-/k6
-/k6/.env.test
+/k6/.env.k6

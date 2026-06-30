@@ -1,5 +1,6 @@
 package io.wisoft.ignoa_api.auction.scheduler;
 
+import io.wisoft.ignoa_api.auction.service.AuctionCloseFacade;
 import io.wisoft.ignoa_api.auction.service.AuctionCloseService;
 import io.wisoft.ignoa_api.item.entity.Item;
 import io.wisoft.ignoa_api.item.entity.enums.ItemStatus;
@@ -18,7 +19,7 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class AuctionCloseJob {
 
-    private final AuctionCloseService auctionCloseService;
+    private final AuctionCloseFacade auctionCloseFacade;
     private final ItemRepository itemRepository;
 
     public void closeExpiredAuctions() {
@@ -27,7 +28,7 @@ public class AuctionCloseJob {
 
         for (Item item : expiredItems) {
             try {
-                auctionCloseService.closeAuction(item.getId());
+                auctionCloseFacade.closeAuction(item.getId());
             } catch (Exception e) {
                 log.error("경매 마감 처리 실패 itemId={}", item.getId(), e);
             }

@@ -35,7 +35,7 @@ public class BidService {
     public BidResponse placeBid(Long itemId, Long bidderId, BidCreateRequest request) {
         Long bidPrice = request.price();
         User bidder = userQueryService.findById(bidderId);
-        Item item = itemReader.getByIdWithLock(itemId);
+        Item item = itemReader.getById(itemId);
 
         if (item.isSeller(bidderId)) {
             throw new BusinessException(ErrorCode.SELF_BID_NOT_ALLOWED);
