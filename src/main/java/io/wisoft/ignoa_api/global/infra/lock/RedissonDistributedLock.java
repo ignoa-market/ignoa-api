@@ -14,25 +14,27 @@ import java.util.function.Supplier;
 @RequiredArgsConstructor
 public class RedissonDistributedLock {
 
+    private static final long DEFAULT_LEASE_TIME = 10L;
+    private static final long WATCHDOG_LEASE_TIME = 10L;
     private final RedissonClient redissonClient;
 
     public <T> T executeWithLock(String key, Supplier<T> task) {
-        return executeWithLock(key, 0, TimeUnit.SECONDS, task);
+        return executeWithLock(key, 0, DEFAULT_LEASE_TIME, TimeUnit.SECONDS, task);
     }
 
     public void executeWithLock(String key, long waitTime, TimeUnit unit, Runnable task) {
-        executeWithLock(key, waitTime, unit, () -> {
+        executeWithLock(key, waitTime, WATCHDOG_LEASE_TIME, unit, () -> {
             task.run();
             return null;
         });
     }
 
-    private <T> T executeWithLock(String key, long waitTime, TimeUnit unit, Supplier<T> task) {
+    private <T> T executeWithLock(String key, long waitTime, long leaseTime, TimeUnit unit, Supplier<T> task) {
         RLock lock = redissonClient.getLock(key);
         boolean acquired = false;
 
         try {
-            acquired = lock.tryLock(waitTime, unit);
+            acquired = lock.tryLock(waitTime, leaseTime, unit);
 
             if (!acquired) {
                 throw new BusinessException(ErrorCode.LOCK_ACQUISITION_FAILED);
