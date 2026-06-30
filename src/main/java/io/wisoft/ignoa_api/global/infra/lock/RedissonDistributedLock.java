@@ -17,11 +17,22 @@ public class RedissonDistributedLock {
     private final RedissonClient redissonClient;
 
     public <T> T executeWithLock(String key, Supplier<T> task) {
+        return executeWithLock(key, 0, TimeUnit.SECONDS, task);
+    }
+
+    public void executeWithLock(String key, long waitTime, TimeUnit unit, Runnable task) {
+        executeWithLock(key, waitTime, unit, () -> {
+            task.run();
+            return null;
+        });
+    }
+
+    private <T> T executeWithLock(String key, long waitTime, TimeUnit unit, Supplier<T> task) {
         RLock lock = redissonClient.getLock(key);
         boolean acquired = false;
 
         try {
-            acquired = lock.tryLock(0, TimeUnit.SECONDS);
+            acquired = lock.tryLock(waitTime, unit);
 
             if (!acquired) {
                 throw new BusinessException(ErrorCode.LOCK_ACQUISITION_FAILED);

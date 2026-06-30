@@ -2,11 +2,9 @@ package io.wisoft.ignoa_api.item.repository;
 
 import io.wisoft.ignoa_api.item.entity.Item;
 import io.wisoft.ignoa_api.item.entity.enums.ItemStatus;
-import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -63,10 +61,6 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
             WHERE i.id = :itemId
             """)
     Optional<Item> findByIdWithSeller(@Param("itemId") Long itemId);
-
-    @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("SELECT i FROM Item i WHERE i.id = :id")
-    Optional<Item> findByIdWithLock(@Param("id") Long id);
 
     List<Item> findAllByStatusAndEndAtBefore(ItemStatus status, LocalDateTime endAtBefore);
 

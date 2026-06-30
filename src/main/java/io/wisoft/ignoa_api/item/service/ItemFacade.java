@@ -1,14 +1,17 @@
 package io.wisoft.ignoa_api.item.service;
 
+import io.wisoft.ignoa_api.global.infra.lock.RedissonDistributedLock;
 import io.wisoft.ignoa_api.global.infra.storage.StorageService;
 import io.wisoft.ignoa_api.global.outbox.entity.OutboxEventType;
 import io.wisoft.ignoa_api.global.outbox.service.OutboxAppender;
 import io.wisoft.ignoa_api.item.dto.request.ItemCreateRequest;
 import io.wisoft.ignoa_api.item.dto.request.ItemUpdateRequest;
+import io.wisoft.ignoa_api.item.dto.response.BuyNowResponse;
 import io.wisoft.ignoa_api.item.dto.response.ItemDetail;
 import io.wisoft.ignoa_api.item.dto.response.ItemIdResponse;
 import io.wisoft.ignoa_api.item.entity.enums.ItemMediaType;
 import io.wisoft.ignoa_api.item.service.dto.UploadedMedia;
+import io.wisoft.ignoa_api.item.support.ItemLockKey;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -25,6 +28,7 @@ public class ItemFacade {
 
     private final StorageService storageService;
     private final ItemCommandService itemCommandService;
+    private final RedissonDistributedLock distributedLock;
     private final OutboxAppender outboxAppender;
 
     public ItemIdResponse createItem(Long sellerId, ItemCreateRequest request, List<MultipartFile> files) {
@@ -44,11 +48,28 @@ public class ItemFacade {
 
         try {
             uploadFiles(files, uploadedMedias);
-            return itemCommandService.updateItem(itemId, userId, request, uploadedMedias);
+            return distributedLock.executeWithLock(
+                    ItemLockKey.of(itemId),
+                    () -> itemCommandService.updateItem(itemId, userId, request, uploadedMedias)
+            );
         } catch (RuntimeException e) {
             compensate(itemId.toString(), uploadedMedias);
             throw e;
         }
+    }
+
+    public ItemIdResponse deleteItem(Long itemId, Long userId) {
+        return distributedLock.executeWithLock(
+                ItemLockKey.of(itemId),
+                () -> itemCommandService.deleteItem(itemId, userId)
+        );
+    }
+
+    public BuyNowResponse buyNowItem(Long itemId, Long buyerId) {
+        return distributedLock.executeWithLock(
+                ItemLockKey.of(itemId),
+                () -> itemCommandService.buyNowItem(itemId, buyerId)
+        );
     }
 
     private void uploadFiles(List<MultipartFile> files, List<UploadedMedia> uploadedMedias) {
