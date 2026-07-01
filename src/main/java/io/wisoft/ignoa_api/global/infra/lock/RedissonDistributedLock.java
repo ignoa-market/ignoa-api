@@ -15,7 +15,6 @@ import java.util.function.Supplier;
 public class RedissonDistributedLock {
 
     private static final long DEFAULT_LEASE_TIME = 10L;
-    private static final long WATCHDOG_LEASE_TIME = 10L;
     private final RedissonClient redissonClient;
 
     public <T> T executeWithLock(String key, Supplier<T> task) {
@@ -23,7 +22,7 @@ public class RedissonDistributedLock {
     }
 
     public void executeWithLock(String key, long waitTime, TimeUnit unit, Runnable task) {
-        executeWithLock(key, waitTime, WATCHDOG_LEASE_TIME, unit, () -> {
+        executeWithLock(key, waitTime, DEFAULT_LEASE_TIME, unit, () -> {
             task.run();
             return null;
         });
