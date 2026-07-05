@@ -26,6 +26,9 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ItemFacade {
 
+    private static final long BUY_NOW_WAIT_MILLIS = 250L;
+    private static final long MODIFY_WAIT_MILLIS = 1_000L;
+
     private final StorageService storageService;
     private final ItemCommandService itemCommandService;
     private final RedissonDistributedLock distributedLock;
@@ -50,6 +53,7 @@ public class ItemFacade {
             uploadFiles(files, uploadedMedias);
             return distributedLock.executeWithLock(
                     ItemLockKey.of(itemId),
+                    MODIFY_WAIT_MILLIS,
                     () -> itemCommandService.updateItem(itemId, userId, request, uploadedMedias)
             );
         } catch (RuntimeException e) {
@@ -61,6 +65,7 @@ public class ItemFacade {
     public ItemIdResponse deleteItem(Long itemId, Long userId) {
         return distributedLock.executeWithLock(
                 ItemLockKey.of(itemId),
+                MODIFY_WAIT_MILLIS,
                 () -> itemCommandService.deleteItem(itemId, userId)
         );
     }
@@ -68,6 +73,7 @@ public class ItemFacade {
     public BuyNowResponse buyNowItem(Long itemId, Long buyerId) {
         return distributedLock.executeWithLock(
                 ItemLockKey.of(itemId),
+                BUY_NOW_WAIT_MILLIS,
                 () -> itemCommandService.buyNowItem(itemId, buyerId)
         );
     }

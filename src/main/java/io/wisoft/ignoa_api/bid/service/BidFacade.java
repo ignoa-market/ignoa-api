@@ -11,12 +11,15 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class BidFacade {
 
+    private static final long WAIT_TIME_MILLIS = 250L;
+
     private final RedissonDistributedLock distributedLock;
     private final BidService bidService;
 
     public BidResponse placeBid(Long itemId, Long bidderId, BidCreateRequest request) {
         return distributedLock.executeWithLock(
                 ItemLockKey.of(itemId),
+                WAIT_TIME_MILLIS,
                 () -> bidService.placeBid(itemId, bidderId, request)
         );
     }
