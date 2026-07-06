@@ -64,6 +64,9 @@ public class Item extends BaseEntity {
     @Column(nullable = false)
     private LocalDateTime endAt;
 
+    @Version
+    private Long version;
+
     public static Item create(User seller, String title, String description, String category,
                               ItemCondition itemCondition, String brand, Long startPrice, Long buyNowPrice,
                               LocalDateTime endAt) {
@@ -80,7 +83,8 @@ public class Item extends BaseEntity {
                 buyNowPrice,
                 brand,
                 ItemStatus.ACTIVE,
-                endAt
+                endAt,
+                null
         );
     }
 

@@ -5,11 +5,12 @@ import io.wisoft.ignoa_api.item.support.ItemLockKey;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.util.concurrent.TimeUnit;
 
 @Component
 @RequiredArgsConstructor
 public class AuctionCloseFacade {
+
+    private static final long WAIT_TIME_MILLIS = 3_000L;
 
     private final AuctionCloseService auctionCloseService;
     private final RedissonDistributedLock distributedLock;
@@ -17,8 +18,7 @@ public class AuctionCloseFacade {
     public void closeAuction(Long itemId) {
         distributedLock.executeWithLock(
                 ItemLockKey.of(itemId),
-                3,
-                TimeUnit.SECONDS,
+                WAIT_TIME_MILLIS,
                 () -> auctionCloseService.closeAuction(itemId)
         );
     }

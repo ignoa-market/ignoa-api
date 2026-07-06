@@ -14,27 +14,24 @@ import java.util.function.Supplier;
 @RequiredArgsConstructor
 public class RedissonDistributedLock {
 
-    private static final long DEFAULT_LEASE_TIME = 10L;
-    private static final long WATCHDOG_LEASE_TIME = 10L;
+    private static final long LEASE_TIME_MILLIS = 10_000L;
+
     private final RedissonClient redissonClient;
 
-    public <T> T executeWithLock(String key, Supplier<T> task) {
-        return executeWithLock(key, 0, DEFAULT_LEASE_TIME, TimeUnit.SECONDS, task);
+    public <T> T executeWithLock(String key, long waitMillis, Supplier<T> task) {
+        return execute(key, waitMillis, task);
     }
 
-    public void executeWithLock(String key, long waitTime, TimeUnit unit, Runnable task) {
-        executeWithLock(key, waitTime, WATCHDOG_LEASE_TIME, unit, () -> {
-            task.run();
-            return null;
-        });
+    public void executeWithLock(String key, long waitMillis, Runnable task) {
+        execute(key, waitMillis, toSupplier(task));
     }
 
-    private <T> T executeWithLock(String key, long waitTime, long leaseTime, TimeUnit unit, Supplier<T> task) {
+    private <T> T execute(String key, long waitMillis, Supplier<T> task) {
         RLock lock = redissonClient.getLock(key);
         boolean acquired = false;
 
         try {
-            acquired = lock.tryLock(waitTime, leaseTime, unit);
+            acquired = lock.tryLock(waitMillis, LEASE_TIME_MILLIS, TimeUnit.MILLISECONDS);
 
             if (!acquired) {
                 throw new BusinessException(ErrorCode.LOCK_ACQUISITION_FAILED);
@@ -49,5 +46,12 @@ public class RedissonDistributedLock {
                 lock.unlock();
             }
         }
+    }
+
+    private static Supplier<Object> toSupplier(Runnable task) {
+        return () -> {
+            task.run();
+            return null;
+        };
     }
 }
