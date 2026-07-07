@@ -1,5 +1,7 @@
 package io.wisoft.ignoa_api.global.infra.lock;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +19,7 @@ public class RedissonDistributedLock {
     private static final long LEASE_TIME_MILLIS = 10_000L;
 
     private final RedissonClient redissonClient;
+    private final MeterRegistry meterRegistry;
 
     public <T> T executeWithLock(String key, long waitMillis, Supplier<T> task) {
         return execute(key, waitMillis, task);
@@ -37,7 +40,12 @@ public class RedissonDistributedLock {
                 throw new BusinessException(ErrorCode.LOCK_ACQUISITION_FAILED);
             }
 
-            return task.get();
+            Timer holdTimer = Timer.builder("lock.hold.time")
+                    .tag("key", keyPrefix(key))
+                    .publishPercentiles(0.5, 0.95, 0.99)
+                    .register(meterRegistry);
+
+            return holdTimer.record(task);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new BusinessException(ErrorCode.LOCK_ACQUISITION_FAILED);
@@ -53,5 +61,10 @@ public class RedissonDistributedLock {
             task.run();
             return null;
         };
+    }
+
+    private String keyPrefix(String key) {
+        int i = key.lastIndexOf(':');
+        return i > 0 ? key.substring(0, i) : key;
     }
 }
