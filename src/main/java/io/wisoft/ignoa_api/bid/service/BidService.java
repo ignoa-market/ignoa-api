@@ -53,7 +53,12 @@ public class BidService {
             throw new BusinessException(ErrorCode.BID_PRICE_EXCEEDS_BUY_NOW);
         }
 
-        item.raiseBidPrice(bidPrice);
+        int updatedRows = itemRepository.raiseCurrentPriceIfHigher(itemId, bidPrice);
+
+        if (updatedRows == 0) {
+            throw new BusinessException(ErrorCode.INVALID_BID_PRICE);
+        }
+
         Bid bid = Bid.place(item, bidder, bidPrice);
         bidRepository.save(bid);
         eventPublisher.publishEvent(BidPlaceEvent.of(bid, item, bidder));
