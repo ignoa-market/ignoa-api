@@ -99,10 +99,6 @@ public class Item extends BaseEntity {
         if (endAt != null) this.endAt = endAt;
     }
 
-    public void raiseBidPrice(Long newPrice) {
-        this.currentPrice = newPrice;
-    }
-
     public boolean isSeller(Long userId) {
         return this.seller.getId().equals(userId);
     }
