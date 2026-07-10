@@ -71,7 +71,7 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
     @Query("""
             UPDATE Item i
             SET i.currentPrice = :price
-            WHERE i.id = :id AND i.currentPrice < :price
+            WHERE i.id = :id AND i.currentPrice < :price AND i.status = :status
             """)
-    int raiseCurrentPriceIfHigher(@Param("id") Long id, @Param("price") Long price);
+    int raiseCurrentPriceIfHigher(@Param("id") Long id, @Param("price") Long price, @Param("status") ItemStatus status);
 }

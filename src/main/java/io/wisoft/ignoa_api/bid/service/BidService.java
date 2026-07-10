@@ -7,6 +7,7 @@ import io.wisoft.ignoa_api.bid.entity.Bid;
 import io.wisoft.ignoa_api.bid.event.BidPlaceEvent;
 import io.wisoft.ignoa_api.item.entity.Item;
 import io.wisoft.ignoa_api.bid.repository.BidRepository;
+import io.wisoft.ignoa_api.item.entity.enums.ItemStatus;
 import io.wisoft.ignoa_api.item.repository.ItemRepository;
 import io.wisoft.ignoa_api.item.service.ItemReader;
 import io.wisoft.ignoa_api.user.entity.User;
@@ -53,7 +54,7 @@ public class BidService {
             throw new BusinessException(ErrorCode.BID_PRICE_EXCEEDS_BUY_NOW);
         }
 
-        int updatedRows = itemRepository.raiseCurrentPriceIfHigher(itemId, bidPrice);
+        int updatedRows = itemRepository.raiseCurrentPriceIfHigher(itemId, bidPrice, ItemStatus.ACTIVE);
 
         if (updatedRows == 0) {
             throw new BusinessException(ErrorCode.INVALID_BID_PRICE);
