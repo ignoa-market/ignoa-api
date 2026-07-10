@@ -1,0 +1,7 @@
+# 빈 이슈(템플릿 없이 생성)를 막아 항상 유형을 선택하도록 강제한다.
+blank_issues_enabled: false
+# 필요 시 아래처럼 문의/논의 링크를 안내할 수 있다. (Discussions·보안 정책이 있을 때 활성화)
+# contact_links:
+#   - name: 💬 논의 / 질문
+#     url: https://github.com/ignoa-market/ignoa-api/discussions
+#     about: 버그·작업 이슈가 아닌 일반 논의는 Discussions를 이용해주세요.
