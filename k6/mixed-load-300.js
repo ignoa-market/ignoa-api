@@ -22,6 +22,7 @@ const readError = new Counter('read_error');
 const ONLY_READ = __ENV.ONLY_READ === '1';
 const ONLY_BID = __ENV.ONLY_BID === '1';
 
+// 입찰: 50 req/s부터 단계적으로 증가시켜 피크 300 req/s (원본과 같은 램프업 형태)
 const bidScenario = {
     executor: 'ramping-arrival-rate',
     exec: 'placeBid',
@@ -31,8 +32,8 @@ const bidScenario = {
     maxVUs: 1000,
     stages: [
         {duration: '45s', target: 150},
-        {duration: '45s', target: 250},
-        {duration: '45s', target: 400},
+        {duration: '45s', target: 225},
+        {duration: '45s', target: 300},
         {duration: '10s', target: 0},
     ],
 };
@@ -42,7 +43,7 @@ const bidBaselineScenario = {
     exec: 'placeBid',
     rate: 5,
     timeUnit: '1s',
-    duration: '900s',
+    duration: '60s',
     preAllocatedVUs: 5,
     maxVUs: 20,
 };
