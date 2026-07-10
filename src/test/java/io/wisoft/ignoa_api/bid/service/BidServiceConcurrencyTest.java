@@ -8,12 +8,12 @@ import io.wisoft.ignoa_api.global.exception.ErrorCode;
 import io.wisoft.ignoa_api.item.entity.Item;
 import io.wisoft.ignoa_api.item.entity.enums.ItemCondition;
 import io.wisoft.ignoa_api.item.repository.ItemRepository;
+import io.wisoft.ignoa_api.support.IntegrationTestSupport;
 import io.wisoft.ignoa_api.user.entity.User;
 import io.wisoft.ignoa_api.user.repository.UserRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 
 import java.time.LocalDateTime;
 import java.util.concurrent.CountDownLatch;
@@ -24,8 +24,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.*;
 
-@SpringBootTest
-class BidServiceConcurrencyTest {
+class BidServiceConcurrencyTest extends IntegrationTestSupport {
 
     @Autowired
     BidService bidService;
