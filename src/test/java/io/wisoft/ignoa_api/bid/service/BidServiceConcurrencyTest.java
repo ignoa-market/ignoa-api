@@ -7,6 +7,7 @@ import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
 import io.wisoft.ignoa_api.item.entity.Item;
 import io.wisoft.ignoa_api.item.entity.enums.ItemCondition;
+import io.wisoft.ignoa_api.item.entity.enums.ItemStatus;
 import io.wisoft.ignoa_api.item.repository.ItemRepository;
 import io.wisoft.ignoa_api.support.IntegrationTestSupport;
 import io.wisoft.ignoa_api.user.entity.User;
@@ -14,6 +15,7 @@ import io.wisoft.ignoa_api.user.repository.UserRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.concurrent.CountDownLatch;
@@ -145,6 +147,29 @@ class BidServiceConcurrencyTest extends IntegrationTestSupport {
         // Then
         assertThat(samePriceException.getErrorCode()).isEqualTo(ErrorCode.INVALID_BID_PRICE);
         assertThat(lowerPriceException.getErrorCode()).isEqualTo(ErrorCode.INVALID_BID_PRICE);
+    }
+
+    @Test
+    @Transactional
+    void 마감된_상품은_가격_조건을_만족해도_status_가드로_갱신되지_않는다() {
+        // Given
+        User seller = userRepository.save(newUser("seller@test.com", "판매자"));
+        Item item = itemRepository.save(newItem(seller));
+
+        long before = item.getCurrentPrice();
+        long bidPrice = item.getCurrentPrice() + 1_000L;
+
+        item.closeWithoutBid();
+        itemRepository.saveAndFlush(item);
+
+        // When
+        int updatedRows = itemRepository.raiseCurrentPriceIfHigher(
+                item.getId(), bidPrice, ItemStatus.ACTIVE);
+
+        // Then
+        assertThat(updatedRows).isZero();
+        Item reloaded = itemRepository.findById(item.getId()).orElseThrow();
+        assertThat(reloaded.getCurrentPrice()).isEqualTo(before);
     }
 
     private static User newUser(String email, String nickname) {
