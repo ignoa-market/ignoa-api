@@ -16,13 +16,16 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @Testcontainers
 public abstract class IntegrationTestSupport {
 
-    @Container
     @ServiceConnection
     static final MySQLContainer<?> MYSQL_CONTAINER = new MySQLContainer<>("mysql:8.0");
 
-    @Container
     static final GenericContainer<?> REDIS_CONTAINER = new GenericContainer<>(
             "redis:7-alpine").withExposedPorts(6379);
+
+    static {
+        MYSQL_CONTAINER.start();
+        REDIS_CONTAINER.start();
+    }
 
     @DynamicPropertySource
     static void redisProperties(DynamicPropertyRegistry registry) {
