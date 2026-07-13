@@ -26,7 +26,7 @@ public abstract class IntegrationTestSupport {
         MYSQL_CONTAINER.start();
         REDIS_CONTAINER.start();
     }
-e
+
     @DynamicPropertySource
     static void redisProperties(DynamicPropertyRegistry registry) {
         registry.add("spring.data.redis.host", REDIS_CONTAINER::getHost);
