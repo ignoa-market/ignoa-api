@@ -1,7 +1,6 @@
 package io.wisoft.ignoa_api.item.service;
 
 import io.wisoft.ignoa_api.item.entity.Item;
-import io.wisoft.ignoa_api.item.entity.enums.ItemCondition;
 import io.wisoft.ignoa_api.item.entity.enums.ItemStatus;
 import io.wisoft.ignoa_api.item.repository.ItemRepository;
 import io.wisoft.ignoa_api.support.IntegrationTestSupport;
@@ -14,7 +13,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
@@ -62,23 +60,5 @@ class ItemDynamicUpdateTest extends IntegrationTestSupport {
         // Then
         Item reloaded = itemRepository.findById(itemId).orElseThrow();
         assertThat(reloaded.getCurrentPrice()).isEqualTo(raised);
-    }
-
-    private static User newUser(String email, String nickname) {
-        return new User(email, "password", nickname, "address");
-    }
-
-    private static Item newItem(User seller) {
-        return Item.create(
-                seller,
-                "테스트 상품",
-                "설명",
-                "카테고리",
-                ItemCondition.GOOD,
-                "브랜드",
-                1_000L,
-                1_000_000L,
-                LocalDateTime.now().plusDays(1)
-        );
     }
 }

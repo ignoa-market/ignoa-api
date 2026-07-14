@@ -6,7 +6,6 @@ import io.wisoft.ignoa_api.bid.repository.BidRepository;
 import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
 import io.wisoft.ignoa_api.item.entity.Item;
-import io.wisoft.ignoa_api.item.entity.enums.ItemCondition;
 import io.wisoft.ignoa_api.item.entity.enums.ItemStatus;
 import io.wisoft.ignoa_api.item.repository.ItemRepository;
 import io.wisoft.ignoa_api.support.IntegrationTestSupport;
@@ -17,7 +16,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -69,8 +67,12 @@ class BidServiceConcurrencyTest extends IntegrationTestSupport {
                     startLatch.await();
                     bidService.placeBid(item.getId(), bidder.getId(), new BidCreateRequest(bidPrice));
                     successCount.incrementAndGet();
-                } catch (Exception e) {
-                    failCount.incrementAndGet();
+                } catch (BusinessException e) {
+                    if (e.getErrorCode() == ErrorCode.INVALID_BID_PRICE) {
+                        failCount.incrementAndGet();
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                 } finally {
                     doneLatch.countDown();
                 }
@@ -106,6 +108,7 @@ class BidServiceConcurrencyTest extends IntegrationTestSupport {
                     startLatch.await();
                     bidService.placeBid(item.getId(), bidder.getId(), new BidCreateRequest(bidPrice));
                 } catch (Exception e) {
+                    // 경합에서 밀린 입찰 실패는 예상된 결과 — 최종 상태(최고가 반영)만 검증
                 } finally {
                     doneLatch.countDown();
                 }
@@ -172,21 +175,4 @@ class BidServiceConcurrencyTest extends IntegrationTestSupport {
         assertThat(reloaded.getCurrentPrice()).isEqualTo(before);
     }
 
-    private static User newUser(String email, String nickname) {
-        return new User(email, "password", nickname, "address");
-    }
-
-    private static Item newItem(User seller) {
-        return Item.create(
-                seller,
-                "테스트 상품",
-                "설명",
-                "카테고리",
-                ItemCondition.GOOD,
-                "브랜드",
-                1_000L,
-                1_000_000L,
-                LocalDateTime.now().plusDays(1)
-        );
-    }
 }

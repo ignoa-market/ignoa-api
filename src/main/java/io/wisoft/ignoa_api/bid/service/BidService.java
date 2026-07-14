@@ -73,7 +73,10 @@ public class BidService {
 
     @Transactional
     public void closeBids(Long itemId) {
-        bidRepository.findByItemId(itemId).forEach(Bid::closeAsLost);
+        // TODO
+        // 입찰 N개 SELECT, 각각 Dirty → flush 시 UPDATE N번
+        bidRepository.findByItemId(itemId)
+                .forEach(Bid::closeAsLost);
     }
 
     public List<BidHistory> getBids(Long itemId) {
