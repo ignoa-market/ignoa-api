@@ -2,6 +2,7 @@ package io.wisoft.ignoa_api.item.repository;
 
 import io.wisoft.ignoa_api.item.entity.Item;
 import io.wisoft.ignoa_api.item.entity.enums.ItemStatus;
+import io.wisoft.ignoa_api.user.entity.User;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -71,7 +72,22 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
     @Query("""
             UPDATE Item i
             SET i.currentPrice = :price
-            WHERE i.id = :id AND i.currentPrice < :price AND i.status = :status
+            WHERE i.id = :id 
+                AND i.currentPrice < :price
+                AND i.status = :status
             """)
     int raiseCurrentPriceIfHigher(@Param("id") Long id, @Param("price") Long price, @Param("status") ItemStatus status);
+
+    @Modifying
+    @Query("""
+            UPDATE Item i
+            SET i.status = :closedStatus,
+                i.winner = :winner
+            WHERE i.id = :id 
+                AND i.status = :activeStatus 
+            """)
+    int buyNowIfActive(@Param("id") Long id,
+                       @Param("winner") User winner,
+                       @Param("closedStatus") ItemStatus closedStatus,
+                       @Param("activeStatus") ItemStatus activeStatus);
 }

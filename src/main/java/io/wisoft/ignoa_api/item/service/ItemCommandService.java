@@ -13,6 +13,7 @@ import io.wisoft.ignoa_api.item.dto.response.ItemDetail;
 import io.wisoft.ignoa_api.item.dto.response.ItemIdResponse;
 import io.wisoft.ignoa_api.item.entity.Item;
 import io.wisoft.ignoa_api.item.entity.ItemMedia;
+import io.wisoft.ignoa_api.item.entity.enums.ItemStatus;
 import io.wisoft.ignoa_api.item.repository.ItemRepository;
 import io.wisoft.ignoa_api.item.service.dto.UploadedMedia;
 import io.wisoft.ignoa_api.user.entity.User;
@@ -143,11 +144,17 @@ public class ItemCommandService {
             throw new BusinessException(ErrorCode.AUCTION_ALREADY_CLOSED);
         }
 
-        item.buyNow(user);
+        int updatedRows = itemRepository.buyNowIfActive(
+                itemId, user, ItemStatus.BUY_NOW_CLOSED, ItemStatus.ACTIVE);
+
+        if (updatedRows == 0) {
+            throw new BusinessException(ErrorCode.AUCTION_ALREADY_CLOSED);
+        }
+
         bidService.closeBids(itemId);
         eventPublisher.publishEvent(new AuctionClosedEvent(itemId));
 
-        return new BuyNowResponse(itemId, buyerId, item.getBuyNowPrice(), item.getStatus());
+        return new BuyNowResponse(itemId, buyerId, item.getBuyNowPrice(), ItemStatus.BUY_NOW_CLOSED);
     }
 
     private List<ItemMedia> toItemMedias(List<UploadedMedia> uploadedMedias, Item item) {
