@@ -5,6 +5,7 @@ import io.wisoft.ignoa_api.global.infra.lock.RedissonDistributedLock;
 import io.wisoft.ignoa_api.global.infra.storage.StorageService;
 import io.wisoft.ignoa_api.global.outbox.entity.OutboxEventType;
 import io.wisoft.ignoa_api.global.outbox.service.OutboxAppender;
+import io.wisoft.ignoa_api.item.dto.request.ItemBuyNowRequest;
 import io.wisoft.ignoa_api.item.dto.request.ItemCreateRequest;
 import io.wisoft.ignoa_api.item.dto.request.ItemUpdateRequest;
 import io.wisoft.ignoa_api.item.dto.response.BuyNowResponse;
@@ -71,16 +72,16 @@ public class ItemFacade {
         );
     }
 
-    public BuyNowResponse buyNowItem(Long itemId, Long buyerId) {
+    public BuyNowResponse buyNowItem(Long itemId, Long buyerId, ItemBuyNowRequest request) {
         try {
             return distributedLock.executeWithLock(
                     ItemLockKey.of(itemId),
                     BUY_NOW_WAIT_MILLIS,
-                    () -> itemCommandService.buyNowItem(itemId, buyerId)
+                    () -> itemCommandService.buyNowItem(itemId, buyerId, request)
             );
         } catch (LockInfrastructureException e) {
             log.warn("Redis 인프라 장애로 fail-open 처리 - 락 없이 즉시구매 진행 itemId={}, buyerId={}", itemId, buyerId, e);
-            return itemCommandService.buyNowItem(itemId, buyerId);
+            return itemCommandService.buyNowItem(itemId, buyerId, request);
         }
     }
 

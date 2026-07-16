@@ -4,6 +4,7 @@ import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
 import io.wisoft.ignoa_api.global.infra.lock.LockInfrastructureException;
 import io.wisoft.ignoa_api.global.infra.lock.RedissonDistributedLock;
+import io.wisoft.ignoa_api.item.dto.request.ItemBuyNowRequest;
 import io.wisoft.ignoa_api.item.dto.response.BuyNowResponse;
 import io.wisoft.ignoa_api.item.support.ItemLockKey;
 import org.junit.jupiter.api.Test;
@@ -40,20 +41,21 @@ class ItemFacadeTest {
         // Given
         long itemId = 1L;
         long buyerId = 2L;
+        ItemBuyNowRequest request = new ItemBuyNowRequest(10_000L);
         BuyNowResponse expected = mock(BuyNowResponse.class);
 
         given(redissonDistributedLock.executeWithLock(
                 eq(ItemLockKey.of(itemId)), anyLong(), any(Supplier.class)))
                 .willThrow(new LockInfrastructureException("Redis 장애", new RuntimeException()));
 
-        given(itemCommandService.buyNowItem(itemId, buyerId)).willReturn(expected);
+        given(itemCommandService.buyNowItem(itemId, buyerId, request)).willReturn(expected);
 
         // When
-        BuyNowResponse response = itemFacade.buyNowItem(itemId, buyerId);
+        BuyNowResponse response = itemFacade.buyNowItem(itemId, buyerId, request);
 
         // Then
         assertThat(response).isEqualTo(expected);
-        verify(itemCommandService).buyNowItem(itemId, buyerId);
+        verify(itemCommandService).buyNowItem(itemId, buyerId, request);
     }
 
     @Test
@@ -61,6 +63,7 @@ class ItemFacadeTest {
         // Given
         long itemId = 1L;
         long buyerId = 2L;
+        ItemBuyNowRequest request = new ItemBuyNowRequest(10_000L);
 
         given(redissonDistributedLock.executeWithLock(
                 eq(ItemLockKey.of(itemId)), anyLong(), any(Supplier.class)))
@@ -69,11 +72,11 @@ class ItemFacadeTest {
         // When
         BusinessException exception = catchThrowableOfType(
                 BusinessException.class,
-                () -> itemFacade.buyNowItem(itemId, buyerId)
+                () -> itemFacade.buyNowItem(itemId, buyerId, request)
         );
 
         // Then
         assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.LOCK_ACQUISITION_FAILED);
-        verify(itemCommandService, never()).buyNowItem(itemId, buyerId);
+        verify(itemCommandService, never()).buyNowItem(itemId, buyerId, request);
     }
 }

@@ -6,6 +6,7 @@ import io.wisoft.ignoa_api.bid.repository.BidRepository;
 import io.wisoft.ignoa_api.bid.service.BidService;
 import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
+import io.wisoft.ignoa_api.item.dto.request.ItemBuyNowRequest;
 import io.wisoft.ignoa_api.item.dto.request.ItemCreateRequest;
 import io.wisoft.ignoa_api.item.dto.request.ItemUpdateRequest;
 import io.wisoft.ignoa_api.item.dto.response.BuyNowResponse;
@@ -19,6 +20,9 @@ import io.wisoft.ignoa_api.item.service.dto.UploadedMedia;
 import io.wisoft.ignoa_api.user.entity.User;
 import io.wisoft.ignoa_api.user.service.UserQueryService;
 import io.wisoft.ignoa_api.wish.repository.WishRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityNotFoundException;
+import jakarta.persistence.LockModeType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -41,6 +45,7 @@ public class ItemCommandService {
 
     private final ItemReader itemReader;
     private final ApplicationEventPublisher eventPublisher;
+    private final EntityManager entityManager;
 
     private final ItemRepository itemRepository;
     private final WishRepository wishRepository;
@@ -132,7 +137,7 @@ public class ItemCommandService {
         return new ItemIdResponse(item.getId());
     }
 
-    public BuyNowResponse buyNowItem(Long itemId, Long buyerId) {
+    public BuyNowResponse buyNowItem(Long itemId, Long buyerId, ItemBuyNowRequest request) {
         Item item = itemReader.getById(itemId);
         User user = userQueryService.findById(buyerId);
 
@@ -144,16 +149,30 @@ public class ItemCommandService {
             throw new BusinessException(ErrorCode.AUCTION_ALREADY_CLOSED);
         }
 
-        int updatedRows = itemRepository.buyNowIfActive(itemId, user);
+        int updatedRows = itemRepository.buyNowIfActive(itemId, user, request.buyNowPrice());
 
         if (updatedRows == 0) {
-            throw new BusinessException(ErrorCode.AUCTION_ALREADY_CLOSED);
+            resolveBuyNowFailure(item);
         }
 
         bidService.closeBids(itemId);
         eventPublisher.publishEvent(new AuctionClosedEvent(itemId));
 
-        return new BuyNowResponse(itemId, buyerId, item.getBuyNowPrice(), ItemStatus.BUY_NOW_CLOSED);
+        return new BuyNowResponse(itemId, buyerId, request.buyNowPrice(), ItemStatus.BUY_NOW_CLOSED);
+    }
+
+    private void resolveBuyNowFailure(Item item) {
+        try {
+            entityManager.refresh(item, LockModeType.PESSIMISTIC_READ);
+        } catch (EntityNotFoundException e) {
+            throw new BusinessException(ErrorCode.ITEM_NOT_FOUND);
+        }
+
+        if (item.isClosed()) {
+            throw new BusinessException(ErrorCode.AUCTION_ALREADY_CLOSED);
+        }
+
+        throw new BusinessException(ErrorCode.PRICE_CHANGED);
     }
 
     private List<ItemMedia> toItemMedias(List<UploadedMedia> uploadedMedias, Item item) {

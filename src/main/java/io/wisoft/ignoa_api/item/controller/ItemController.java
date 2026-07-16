@@ -1,6 +1,7 @@
 package io.wisoft.ignoa_api.item.controller;
 
 import io.wisoft.ignoa_api.global.common.SliceResponse;
+import io.wisoft.ignoa_api.item.dto.request.ItemBuyNowRequest;
 import io.wisoft.ignoa_api.item.dto.request.ItemCreateRequest;
 import io.wisoft.ignoa_api.item.dto.request.ItemPreviewRequest;
 import io.wisoft.ignoa_api.item.dto.request.ItemUpdateRequest;
@@ -88,9 +89,10 @@ public class ItemController {
     @PostMapping("/{itemId}/buy-now")
     public ResponseEntity<ApiResponse<BuyNowResponse>> buyNowItem(
             @PathVariable Long itemId,
-            @AuthenticationPrincipal Long buyerId
+            @AuthenticationPrincipal Long buyerId,
+            @Valid @RequestBody ItemBuyNowRequest request
     ) {
-        BuyNowResponse data = itemFacade.buyNowItem(itemId, buyerId);
+        BuyNowResponse data = itemFacade.buyNowItem(itemId, buyerId, request);
         ApiResponse<BuyNowResponse> response = ApiResponse.of(data, "상품을 즉시 구매하였습니다.");
         return ResponseEntity.ok(response);
     }
