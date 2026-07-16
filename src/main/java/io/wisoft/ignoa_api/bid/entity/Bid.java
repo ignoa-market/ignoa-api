@@ -44,8 +44,4 @@ public class Bid extends BaseEntity {
     public void closeAsWon() {
         this.status = BidStatus.WON;
     }
-
-    public void closeAsLost() {
-        this.status = BidStatus.LOST;
-    }
 }

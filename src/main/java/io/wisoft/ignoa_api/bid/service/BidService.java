@@ -7,7 +7,6 @@ import io.wisoft.ignoa_api.bid.entity.Bid;
 import io.wisoft.ignoa_api.bid.event.BidPlaceEvent;
 import io.wisoft.ignoa_api.item.entity.Item;
 import io.wisoft.ignoa_api.bid.repository.BidRepository;
-import io.wisoft.ignoa_api.item.entity.enums.ItemStatus;
 import io.wisoft.ignoa_api.item.repository.ItemRepository;
 import io.wisoft.ignoa_api.item.service.ItemReader;
 import io.wisoft.ignoa_api.user.entity.User;
@@ -58,7 +57,7 @@ public class BidService {
             throw new BusinessException(ErrorCode.BID_PRICE_EXCEEDS_BUY_NOW);
         }
 
-        int updatedRows = itemRepository.raiseCurrentPriceIfHigher(itemId, bidPrice, ItemStatus.ACTIVE);
+        int updatedRows = itemRepository.raiseCurrentPriceIfHigher(itemId, bidPrice);
 
         if (updatedRows == 0) {
             resolveBidFailure(item);
@@ -73,10 +72,7 @@ public class BidService {
 
     @Transactional
     public void closeBids(Long itemId) {
-        // TODO
-        // 입찰 N개 SELECT, 각각 Dirty → flush 시 UPDATE N번
-        bidRepository.findByItemId(itemId)
-                .forEach(Bid::closeAsLost);
+        bidRepository.closeActiveBidsAsLost(itemId);
     }
 
     public List<BidHistory> getBids(Long itemId) {

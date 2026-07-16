@@ -1,7 +1,6 @@
 package io.wisoft.ignoa_api.item.service;
 
 import io.wisoft.ignoa_api.item.entity.Item;
-import io.wisoft.ignoa_api.item.entity.enums.ItemStatus;
 import io.wisoft.ignoa_api.item.repository.ItemRepository;
 import io.wisoft.ignoa_api.support.IntegrationTestSupport;
 import io.wisoft.ignoa_api.user.entity.User;
@@ -51,7 +50,7 @@ class ItemDynamicUpdateTest extends IntegrationTestSupport {
         // When
         Item item = entityManager.find(Item.class, itemId);
 
-        itemRepository.raiseCurrentPriceIfHigher(itemId, raised, ItemStatus.ACTIVE);
+        itemRepository.raiseCurrentPriceIfHigher(itemId, raised);
 
         item.buyNow(buyer);
         entityManager.flush();
