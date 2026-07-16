@@ -2,6 +2,7 @@ package io.wisoft.ignoa_api.item.service;
 
 import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
+import io.wisoft.ignoa_api.item.dto.request.ItemBuyNowRequest;
 import io.wisoft.ignoa_api.item.dto.response.BuyNowResponse;
 import io.wisoft.ignoa_api.item.entity.Item;
 import io.wisoft.ignoa_api.item.entity.enums.ItemStatus;
@@ -45,9 +46,10 @@ class ItemBuyNowTest extends IntegrationTestSupport {
         User seller = userRepository.save(newUser("seller@test.com", "seller"));
         User buyer = userRepository.save(newUser("buyer@test.com", "buyer"));
         Item item = itemRepository.save(newItem(seller));
+        ItemBuyNowRequest request = new ItemBuyNowRequest(item.getBuyNowPrice());
 
         // When
-        BuyNowResponse response = itemCommandService.buyNowItem(item.getId(), buyer.getId());
+        BuyNowResponse response = itemCommandService.buyNowItem(item.getId(), buyer.getId(), request);
 
         // Then
         assertThat(response.status()).isEqualTo(ItemStatus.BUY_NOW_CLOSED);
@@ -61,6 +63,7 @@ class ItemBuyNowTest extends IntegrationTestSupport {
         // Given
         User seller = userRepository.save(newUser("seller@test.com", "seller"));
         Item item = itemRepository.save(newItem(seller));
+        ItemBuyNowRequest request = new ItemBuyNowRequest(item.getBuyNowPrice());
 
         int threadCount = 10;
 
@@ -81,7 +84,7 @@ class ItemBuyNowTest extends IntegrationTestSupport {
             executor.submit(() -> {
                 try {
                     startLatch.await();
-                    itemCommandService.buyNowItem(item.getId(), buyerId);
+                    itemCommandService.buyNowItem(item.getId(), buyerId, request);
                     successCount.incrementAndGet();
                 } catch (BusinessException e) {
                     if (e.getErrorCode() == ErrorCode.AUCTION_ALREADY_CLOSED) {
