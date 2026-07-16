@@ -144,8 +144,7 @@ public class ItemCommandService {
             throw new BusinessException(ErrorCode.AUCTION_ALREADY_CLOSED);
         }
 
-        int updatedRows = itemRepository.buyNowIfActive(
-                itemId, user, ItemStatus.BUY_NOW_CLOSED, ItemStatus.ACTIVE);
+        int updatedRows = itemRepository.buyNowIfActive(itemId, user);
 
         if (updatedRows == 0) {
             throw new BusinessException(ErrorCode.AUCTION_ALREADY_CLOSED);

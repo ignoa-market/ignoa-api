@@ -52,7 +52,12 @@ db/
 
 # AI
 CLAUDE.md
+AGENTS.md
 .claude
+.codex
+.agents
+
+# Docs
 docs/
 
 # K6

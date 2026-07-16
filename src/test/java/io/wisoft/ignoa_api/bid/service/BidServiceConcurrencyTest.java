@@ -6,7 +6,6 @@ import io.wisoft.ignoa_api.bid.repository.BidRepository;
 import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
 import io.wisoft.ignoa_api.item.entity.Item;
-import io.wisoft.ignoa_api.item.entity.enums.ItemStatus;
 import io.wisoft.ignoa_api.item.repository.ItemRepository;
 import io.wisoft.ignoa_api.support.IntegrationTestSupport;
 import io.wisoft.ignoa_api.user.entity.User;
@@ -167,7 +166,7 @@ class BidServiceConcurrencyTest extends IntegrationTestSupport {
 
         // When
         int updatedRows = itemRepository.raiseCurrentPriceIfHigher(
-                item.getId(), bidPrice, ItemStatus.ACTIVE);
+                item.getId(), bidPrice);
 
         // Then
         assertThat(updatedRows).isZero();

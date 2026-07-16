@@ -40,9 +40,6 @@ public class AuctionCloseService {
             return;
         }
 
-        // 입찰 개수만큼 개별 UPDATE O(n)이 발생한다.
-        // 대량 입찰/동시 마감으로 write burst가 커지면 벌크 UPDATE로 전환 검토가 필요하다.
-        // (현재 트래픽에선 불필요)
         bidService.closeBids(itemId);
         Bid topBid = bid.get();
         topBid.closeAsWon();

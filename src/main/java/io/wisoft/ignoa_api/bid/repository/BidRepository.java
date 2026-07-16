@@ -3,6 +3,7 @@ package io.wisoft.ignoa_api.bid.repository;
 import io.wisoft.ignoa_api.bid.entity.Bid;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -42,4 +43,13 @@ public interface BidRepository extends JpaRepository<Bid, Long> {
     List<Bid> findByItemId(Long itemId);
 
     boolean existsByItemId(Long itemId);
+
+    @Modifying
+    @Query("""
+            UPDATE Bid b
+            SET b.status = 'LOST'
+            WHERE b.item.id = :itemId
+              AND b.status = 'ACTIVE'
+            """)
+    int closeActiveBidsAsLost(@Param("itemId") Long itemId);
 }
