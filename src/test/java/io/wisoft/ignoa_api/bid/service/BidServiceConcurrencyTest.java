@@ -156,6 +156,7 @@ class BidServiceConcurrencyTest extends IntegrationTestSupport {
     void 마감된_상품은_가격_조건을_만족해도_status_가드로_갱신되지_않는다() {
         // Given
         User seller = userRepository.save(newUser("seller@test.com", "판매자"));
+        User bidder = userRepository.save(newUser("bidder@test.com", "입찰자"));
         Item item = itemRepository.save(newItem(seller));
 
         long before = item.getCurrentPrice();
@@ -166,7 +167,7 @@ class BidServiceConcurrencyTest extends IntegrationTestSupport {
 
         // When
         int updatedRows = itemRepository.raiseCurrentPriceIfHigher(
-                item.getId(), bidPrice);
+                item.getId(), bidPrice, bidder);
 
         // Then
         assertThat(updatedRows).isZero();

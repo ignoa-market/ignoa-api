@@ -57,7 +57,7 @@ public class BidService {
             throw new BusinessException(ErrorCode.BID_PRICE_EXCEEDS_BUY_NOW);
         }
 
-        int updatedRows = itemRepository.raiseCurrentPriceIfHigher(itemId, bidPrice);
+        int updatedRows = itemRepository.raiseCurrentPriceIfHigher(itemId, bidPrice, bidder);
 
         if (updatedRows == 0) {
             resolveBidFailure(item);

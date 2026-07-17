@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.security.core.parameters.P;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -71,12 +72,13 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
     @Modifying
     @Query("""
             UPDATE Item i
-            SET i.currentPrice = :price
+            SET i.currentPrice = :price,
+                i.highestBidder = :highestBidder
             WHERE i.id = :id
                 AND i.currentPrice < :price
                 AND i.status = 'ACTIVE'
             """)
-    int raiseCurrentPriceIfHigher(@Param("id") Long id, @Param("price") Long price);
+    int raiseCurrentPriceIfHigher(@Param("id") Long id, @Param("price") Long price, @Param("highestBidder") User highestBidder);
 
     @Modifying
     @Query("""
