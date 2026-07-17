@@ -12,15 +12,15 @@ import org.springframework.transaction.event.TransactionalEventListener;
 @RequiredArgsConstructor
 public class AuctionTtlListener {
 
-    private final AuctionTtlService auctionRedisService;
+    private final AuctionTtlService auctionTtlService;
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onAuctionRegistered(AuctionRegisteredEvent event) {
-        auctionRedisService.registerTtl(event.itemId(), event.endAt());
+        auctionTtlService.registerTtl(event.itemId(), event.endAt());
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onAuctionClosed(AuctionClosedEvent event) {
-        auctionRedisService.deleteTtl(event.itemId());
+        auctionTtlService.deleteTtl(event.itemId());
     }
 }

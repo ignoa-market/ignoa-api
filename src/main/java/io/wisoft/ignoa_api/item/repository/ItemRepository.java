@@ -82,10 +82,10 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
     @Query("""
             UPDATE Item i
             SET i.status = 'BUY_NOW_CLOSED',
-                i.winner = :winner
-            WHERE i.id = :id 
+                i.highestBidder = :buyer
+            WHERE i.id = :id
                 AND i.status = 'ACTIVE'
-                AND i.buyNowPrice = :buyNowPrice             
+                AND i.buyNowPrice = :buyNowPrice
             """)
-    int buyNowIfActive(@Param("id") Long id, @Param("winner") User winner, @Param("buyNowPrice") Long buyNowPrice);
+    int buyNowIfActive(@Param("id") Long id, @Param("buyer") User buyer, @Param("buyNowPrice") Long buyNowPrice);
 }

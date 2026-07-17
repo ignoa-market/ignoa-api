@@ -40,6 +40,10 @@ public class AuctionCloseService {
             return;
         }
 
+        // 조건부 UPDATE 했고 이때부터 X-LOCk 잡힘
+        // 이때 잡히는 락을 Bid Row에 잡히느거지? Item row가 아니라..?
+        bidRepository.closeActiveBidsAsLost(itemId);
+
         bidService.closeBids(itemId);
         Bid topBid = bid.get();
         topBid.closeAsWon();
