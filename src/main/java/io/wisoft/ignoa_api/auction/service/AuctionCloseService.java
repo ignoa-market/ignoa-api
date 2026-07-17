@@ -1,18 +1,13 @@
 package io.wisoft.ignoa_api.auction.service;
 
-import io.wisoft.ignoa_api.bid.entity.Bid;
-import io.wisoft.ignoa_api.bid.repository.BidRepository;
 import io.wisoft.ignoa_api.bid.service.BidService;
-import io.wisoft.ignoa_api.item.entity.Item;
-import io.wisoft.ignoa_api.item.service.ItemReader;
-import io.wisoft.ignoa_api.user.entity.User;
+import io.wisoft.ignoa_api.item.repository.ItemRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Optional;
 
 @Slf4j
 @Service
@@ -20,35 +15,17 @@ import java.util.Optional;
 public class AuctionCloseService {
 
     private final BidService bidService;
-    private final BidRepository bidRepository;
-    private final ItemReader itemReader;
+    private final ItemRepository itemRepository;
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void closeAuction(Long itemId) {
-        Item item = itemReader.getById(itemId);
-
-        if (item.isClosed()) {
-            log.info("[중복 마감 방지] 이미 마감된 경매 itemId={} status={}", itemId, item.getStatus());
+        int closedRows = itemRepository.closeIfActive(itemId);
+        if (closedRows == 0) {
+            log.info("[중복 마감 방지] 이미 마감된 경매 itemId={}", itemId);
             return;
         }
 
-        Optional<Bid> bid = bidRepository.findTopByItemIdOrderByPriceDesc(itemId);
-
-        if (bid.isEmpty()) {
-            log.info("[유찰] 입찰 없이 마감된 경매 itemId={}", itemId);
-            item.closeWithoutBid();
-            return;
-        }
-
-        // 조건부 UPDATE 했고 이때부터 X-LOCk 잡힘
-        // 이때 잡히는 락을 Bid Row에 잡히느거지? Item row가 아니라..?
-        bidRepository.closeActiveBidsAsLost(itemId);
-
-        bidService.closeBids(itemId);
-        Bid topBid = bid.get();
-        topBid.closeAsWon();
-
-        User winner = topBid.getBidder();
-        item.closeWithWinner(winner);
+        boolean sold = bidService.settleBids(itemId);
+        log.info(sold ? "[낙찰] 경매 마감 itemId={}" : "[유찰] 입찰 없이 마감된 경매 itemId={}", itemId);
     }
 }

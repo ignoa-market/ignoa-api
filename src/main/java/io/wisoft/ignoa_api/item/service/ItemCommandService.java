@@ -3,7 +3,6 @@ package io.wisoft.ignoa_api.item.service;
 import io.wisoft.ignoa_api.auction.event.AuctionClosedEvent;
 import io.wisoft.ignoa_api.auction.event.AuctionRegisteredEvent;
 import io.wisoft.ignoa_api.bid.repository.BidRepository;
-import io.wisoft.ignoa_api.bid.service.BidService;
 import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
 import io.wisoft.ignoa_api.item.dto.request.ItemBuyNowRequest;
@@ -41,7 +40,6 @@ public class ItemCommandService {
     private final ItemMediaService itemMediaService;
     private final ItemQueryService itemQueryService;
     private final UserQueryService userQueryService;
-    private final BidService bidService;
 
     private final ItemReader itemReader;
     private final ApplicationEventPublisher eventPublisher;
@@ -149,13 +147,13 @@ public class ItemCommandService {
             throw new BusinessException(ErrorCode.AUCTION_ALREADY_CLOSED);
         }
 
-        int updatedRows = itemRepository.buyNowIfActive(itemId, user, request.buyNowPrice());
+        int buyNowRows = itemRepository.buyNowIfActive(itemId, user, request.buyNowPrice());
 
-        if (updatedRows == 0) {
+        if (buyNowRows == 0) {
             resolveBuyNowFailure(item);
         }
 
-        bidService.closeBids(itemId);
+        bidRepository.markLosingBids(itemId);
         eventPublisher.publishEvent(new AuctionClosedEvent(itemId));
 
         return new BuyNowResponse(itemId, buyerId, request.buyNowPrice(), ItemStatus.BUY_NOW_CLOSED);

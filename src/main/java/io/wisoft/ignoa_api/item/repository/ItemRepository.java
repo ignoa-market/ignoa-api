@@ -90,4 +90,13 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
                 AND i.buyNowPrice = :buyNowPrice
             """)
     int buyNowIfActive(@Param("id") Long id, @Param("buyer") User buyer, @Param("buyNowPrice") Long buyNowPrice);
+
+    @Modifying
+    @Query("""
+            UPDATE Item i 
+            SET i.status = CASE WHEN i.highestBidder IS NULL THEN 'NO_BID_CLOSED' ELSE 'BID_CLOSED' END
+            WHERE i.id = :id
+                AND i.status = 'ACTIVE'                                    
+            """)
+    int closeIfActive(@Param("id") Long id);
 }

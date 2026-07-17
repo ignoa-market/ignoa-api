@@ -51,5 +51,17 @@ public interface BidRepository extends JpaRepository<Bid, Long> {
             WHERE b.item.id = :itemId
               AND b.status = 'ACTIVE'
             """)
-    int closeActiveBidsAsLost(@Param("itemId") Long itemId);
+    int markLosingBids(@Param("itemId") Long itemId);
+
+    @Modifying
+    @Query("""
+            UPDATE Bid b
+            SET b.status = 'WON'
+            WHERE b.item.id = :itemId
+             AND b.status = 'ACTIVE'
+             AND b.price = (SELECT MAX(b2.price) FROM Bid b2
+                            WHERE b2.item.id = :itemId
+                                AND b2.status = 'ACTIVE')  
+            """)
+    int markWinningBid(@Param("itemId") Long itemId);
 }
