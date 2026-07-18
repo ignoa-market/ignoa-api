@@ -73,7 +73,8 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
     @Query("""
             UPDATE Item i
             SET i.currentPrice = :price,
-                i.highestBidder = :highestBidder
+                i.highestBidder = :highestBidder,
+                i.version = i.version + 1
             WHERE i.id = :id
                 AND i.currentPrice < :price
                 AND i.status = 'ACTIVE'
@@ -84,7 +85,8 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
     @Query("""
             UPDATE Item i
             SET i.status = 'BUY_NOW_CLOSED',
-                i.highestBidder = :buyer
+                i.highestBidder = :buyer,
+                i.version = i.version + 1
             WHERE i.id = :id
                 AND i.status = 'ACTIVE'
                 AND i.buyNowPrice = :buyNowPrice
@@ -94,7 +96,8 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
     @Modifying
     @Query("""
             UPDATE Item i 
-            SET i.status = CASE WHEN i.highestBidder IS NULL THEN 'NO_BID_CLOSED' ELSE 'BID_CLOSED' END
+            SET i.status = CASE WHEN i.highestBidder IS NULL THEN 'NO_BID_CLOSED' ELSE 'BID_CLOSED' END,
+                i.version = i.version + 1
             WHERE i.id = :id
                 AND i.status = 'ACTIVE'                                    
             """)

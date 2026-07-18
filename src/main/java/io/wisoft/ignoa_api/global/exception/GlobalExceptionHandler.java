@@ -90,12 +90,4 @@ public class GlobalExceptionHandler {
                 .status(ErrorCode.INTERNAL_SERVER_ERROR.getHttpStatus())
                 .body(ErrorResponse.of(ErrorCode.INTERNAL_SERVER_ERROR));
     }
-
-    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
-    public ResponseEntity<ErrorResponse> handleOptimisticLockException(ObjectOptimisticLockingFailureException e) {
-        log.warn("OptimisticLockException: {}", e.getMessage());
-        return ResponseEntity
-                .status(ErrorCode.BID_CONFLICT.getHttpStatus())
-                .body(ErrorResponse.of(ErrorCode.BID_CONFLICT));
-    }
 }

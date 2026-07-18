@@ -131,17 +131,7 @@ public class Item extends BaseEntity {
         return bidPrice >= this.buyNowPrice;
     }
 
-    public void buyNow(User buyer) {
-        this.highestBidder = buyer;
-        this.status = ItemStatus.BUY_NOW_CLOSED;
-    }
-
     public void closeWithoutBid() {
         this.status = ItemStatus.NO_BID_CLOSED;
-    }
-
-    public void closeWithWinner(User winner) {
-        this.highestBidder = winner;
-        this.status = ItemStatus.BID_CLOSED;
     }
 }

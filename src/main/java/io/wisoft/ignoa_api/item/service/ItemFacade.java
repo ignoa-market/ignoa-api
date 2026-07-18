@@ -1,5 +1,7 @@
 package io.wisoft.ignoa_api.item.service;
 
+import io.wisoft.ignoa_api.global.exception.BusinessException;
+import io.wisoft.ignoa_api.global.exception.ErrorCode;
 import io.wisoft.ignoa_api.global.infra.lock.LockInfrastructureException;
 import io.wisoft.ignoa_api.global.infra.lock.RedissonDistributedLock;
 import io.wisoft.ignoa_api.global.infra.storage.StorageService;
@@ -16,6 +18,7 @@ import io.wisoft.ignoa_api.item.service.dto.UploadedMedia;
 import io.wisoft.ignoa_api.item.support.ItemLockKey;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.multipart.MultipartFile;
@@ -53,11 +56,20 @@ public class ItemFacade {
 
         try {
             uploadFiles(files, uploadedMedias);
-            return distributedLock.executeWithLock(
-                    ItemLockKey.of(itemId),
-                    MODIFY_WAIT_MILLIS,
-                    () -> itemCommandService.updateItem(itemId, userId, request, uploadedMedias)
-            );
+
+            try {
+                return distributedLock.executeWithLock(
+                        ItemLockKey.of(itemId),
+                        MODIFY_WAIT_MILLIS,
+                        () -> itemCommandService.updateItem(itemId, userId, request, uploadedMedias));
+            } catch (LockInfrastructureException e) {
+                log.warn("Redis 인프라 장애로 fail-open 처리 - 락 없이 상품 수정을 진행 itemId={}", itemId, e);
+                return itemCommandService.updateItem(itemId, userId, request, uploadedMedias);
+            }
+        } catch (ObjectOptimisticLockingFailureException e) {
+            log.warn("상품 수정 낙관적 락 충돌 itemId={}", itemId, e);
+            compensate(itemId.toString(), uploadedMedias);
+            throw new BusinessException(ErrorCode.ITEM_CONFLICT);
         } catch (RuntimeException e) {
             compensate(itemId.toString(), uploadedMedias);
             throw e;

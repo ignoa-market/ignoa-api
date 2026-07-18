@@ -56,6 +56,7 @@ public enum ErrorCode {
     END_AT_TOO_SOON(HttpStatus.BAD_REQUEST, "경매 종료 시간은 최소 1일 이후여야 합니다."),
     END_AT_TOO_LATE(HttpStatus.BAD_REQUEST, "경매 종료 시간은 최대 7일 이내여야 합니다."),
     PRICE_CHANGED(HttpStatus.CONFLICT, "즉시구매가가 변경되었습니다. 최신 가격을 확인 후 다시 시도해주세요."),
+    ITEM_CONFLICT(HttpStatus.CONFLICT, "수정하는 사이 상품 정보가 변경되었습니다. 최신 정보를 확인 후 다시 시도해주세요."),
 
     // Bid
     INVALID_BID_PRICE(HttpStatus.BAD_REQUEST, "입찰 금액은 현재 최고가보다 높아야 합니다."),

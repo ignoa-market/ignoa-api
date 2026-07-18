@@ -49,9 +49,7 @@ public class ItemCommandService {
     private final WishRepository wishRepository;
     private final BidRepository bidRepository;
 
-    public ItemIdResponse createItem(
-            Long sellerId, ItemCreateRequest request, List<UploadedMedia> uploadedMedias
-    ) {
+    public ItemIdResponse createItem(Long sellerId, ItemCreateRequest request, List<UploadedMedia> uploadedMedias) {
         User seller = userQueryService.findById(sellerId);
 
         Item item = Item.create(
@@ -69,9 +67,7 @@ public class ItemCommandService {
         return new ItemIdResponse(item.getId());
     }
 
-    public ItemDetail updateItem(
-            Long itemId, Long userId, ItemUpdateRequest request, List<UploadedMedia> uploadedMedias
-    ) {
+    public ItemDetail updateItem(Long itemId, Long userId, ItemUpdateRequest request, List<UploadedMedia> uploadedMedias) {
         Item item = itemReader.getByIdWithSeller(itemId);
 
         if (!item.isSeller(userId)) {
@@ -98,8 +94,7 @@ public class ItemCommandService {
         }
 
         if (!CollectionUtils.isEmpty(uploadedMedias)) {
-            List<ItemMedia> itemMedias = toItemMedias(uploadedMedias, item);
-            itemMediaService.saveAll(itemMedias);
+            itemMediaService.saveAll(toItemMedias(uploadedMedias, item));
         }
 
         if (request.endAt() != null) {
