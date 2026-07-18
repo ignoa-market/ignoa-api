@@ -7,6 +7,7 @@ import io.wisoft.ignoa_api.global.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.DynamicUpdate;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.time.LocalDateTime;
 
@@ -15,6 +16,7 @@ import java.time.LocalDateTime;
 @DynamicUpdate
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
+@SQLRestriction("status <> 'DELETED'")
 @Table(name = "items",
         indexes = {
             @Index(name = "idx_items_status_created", columnList = "status, created_at"),
@@ -112,11 +114,6 @@ public class Item extends BaseEntity {
 
     public boolean isClosed() {
         return this.status != ItemStatus.ACTIVE;
-    }
-
-    public boolean isSold() {
-        return this.status == ItemStatus.BID_CLOSED
-                || this.status == ItemStatus.BUY_NOW_CLOSED;
     }
 
     public boolean isValidBidPrice(Long bidPrice) {
