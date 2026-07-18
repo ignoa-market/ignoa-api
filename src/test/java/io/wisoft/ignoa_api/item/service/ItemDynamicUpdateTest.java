@@ -50,7 +50,7 @@ class ItemDynamicUpdateTest extends IntegrationTestSupport {
         // When
         Item item = entityManager.find(Item.class, itemId);
 
-        itemRepository.raiseCurrentPriceIfHigher(itemId, raised);
+        itemRepository.raiseCurrentPriceIfHigher(itemId, raised, buyer);
 
         item.buyNow(buyer);
         entityManager.flush();

@@ -14,7 +14,7 @@ public class AuctionCloseScheduler {
 
     private final AuctionCloseJob auctionCloseJob;
 
-    @Scheduled(cron = "0 */5 * * * *")
+    @Scheduled(cron = "0 */1 * * * *")
     @SchedulerLock(name = "auctionCloseScheduler")
     public void closeExpiredAuctions() {
         log.info("경매 마감 스케줄러 실행");

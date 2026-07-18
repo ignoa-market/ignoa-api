@@ -31,8 +31,8 @@ public class Item extends BaseEntity {
     private User seller;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "winner_id")
-    private User winner;
+    @JoinColumn(name = "highest_bidder_id")
+    private User highestBidder;
 
     @Column(nullable = false)
     private String title;
@@ -131,8 +131,8 @@ public class Item extends BaseEntity {
         return bidPrice >= this.buyNowPrice;
     }
 
-    public void buyNow(User winner) {
-        this.winner = winner;
+    public void buyNow(User buyer) {
+        this.highestBidder = buyer;
         this.status = ItemStatus.BUY_NOW_CLOSED;
     }
 
@@ -141,7 +141,7 @@ public class Item extends BaseEntity {
     }
 
     public void closeWithWinner(User winner) {
-        this.winner = winner;
+        this.highestBidder = winner;
         this.status = ItemStatus.BID_CLOSED;
     }
 }

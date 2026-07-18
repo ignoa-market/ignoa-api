@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.security.core.parameters.P;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -71,21 +72,31 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
     @Modifying
     @Query("""
             UPDATE Item i
-            SET i.currentPrice = :price
+            SET i.currentPrice = :price,
+                i.highestBidder = :highestBidder
             WHERE i.id = :id
                 AND i.currentPrice < :price
                 AND i.status = 'ACTIVE'
             """)
-    int raiseCurrentPriceIfHigher(@Param("id") Long id, @Param("price") Long price);
+    int raiseCurrentPriceIfHigher(@Param("id") Long id, @Param("price") Long price, @Param("highestBidder") User highestBidder);
 
     @Modifying
     @Query("""
             UPDATE Item i
             SET i.status = 'BUY_NOW_CLOSED',
-                i.winner = :winner
-            WHERE i.id = :id 
+                i.highestBidder = :buyer
+            WHERE i.id = :id
                 AND i.status = 'ACTIVE'
-                AND i.buyNowPrice = :buyNowPrice             
+                AND i.buyNowPrice = :buyNowPrice
             """)
-    int buyNowIfActive(@Param("id") Long id, @Param("winner") User winner, @Param("buyNowPrice") Long buyNowPrice);
+    int buyNowIfActive(@Param("id") Long id, @Param("buyer") User buyer, @Param("buyNowPrice") Long buyNowPrice);
+
+    @Modifying
+    @Query("""
+            UPDATE Item i 
+            SET i.status = CASE WHEN i.highestBidder IS NULL THEN 'NO_BID_CLOSED' ELSE 'BID_CLOSED' END
+            WHERE i.id = :id
+                AND i.status = 'ACTIVE'                                    
+            """)
+    int closeIfActive(@Param("id") Long id);
 }

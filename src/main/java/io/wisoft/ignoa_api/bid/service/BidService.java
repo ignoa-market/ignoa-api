@@ -1,6 +1,7 @@
 package io.wisoft.ignoa_api.bid.service;
 
 import io.wisoft.ignoa_api.bid.dto.request.BidCreateRequest;
+
 import io.wisoft.ignoa_api.bid.dto.response.BidHistory;
 import io.wisoft.ignoa_api.bid.dto.response.BidResponse;
 import io.wisoft.ignoa_api.bid.entity.Bid;
@@ -30,8 +31,10 @@ public class BidService {
 
     private final UserQueryService userQueryService;
     private final ItemReader itemReader;
+
     private final BidRepository bidRepository;
     private final ItemRepository itemRepository;
+
     private final ApplicationEventPublisher eventPublisher;
     private final EntityManager entityManager;
 
@@ -57,7 +60,7 @@ public class BidService {
             throw new BusinessException(ErrorCode.BID_PRICE_EXCEEDS_BUY_NOW);
         }
 
-        int updatedRows = itemRepository.raiseCurrentPriceIfHigher(itemId, bidPrice);
+        int updatedRows = itemRepository.raiseCurrentPriceIfHigher(itemId, bidPrice, bidder);
 
         if (updatedRows == 0) {
             resolveBidFailure(item);
@@ -71,8 +74,13 @@ public class BidService {
     }
 
     @Transactional
-    public void closeBids(Long itemId) {
-        bidRepository.closeActiveBidsAsLost(itemId);
+    public boolean settleBids(Long itemId) {
+        if (bidRepository.markWinningBid(itemId) == 0) {
+            return false;
+        }
+
+        bidRepository.markLosingBids(itemId);
+        return true;
     }
 
     public List<BidHistory> getBids(Long itemId) {
