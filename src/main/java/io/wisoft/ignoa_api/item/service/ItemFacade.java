@@ -56,11 +56,16 @@ public class ItemFacade {
 
         try {
             uploadFiles(files, uploadedMedias);
-            return distributedLock.executeWithLock(
-                    ItemLockKey.of(itemId),
-                    MODIFY_WAIT_MILLIS,
-                    () -> itemCommandService.updateItem(itemId, userId, request, uploadedMedias)
-            );
+
+            try {
+                return distributedLock.executeWithLock(
+                        ItemLockKey.of(itemId),
+                        MODIFY_WAIT_MILLIS,
+                        () -> itemCommandService.updateItem(itemId, userId, request, uploadedMedias));
+            } catch (LockInfrastructureException e) {
+                log.warn("Redis 인프라 장애로 fail-open 처리 - 락 없이 상품 수정을 진행 itemId={}", itemId, e);
+                return itemCommandService.updateItem(itemId, userId, request, uploadedMedias);
+            }
         } catch (ObjectOptimisticLockingFailureException e) {
             log.warn("상품 수정 낙관적 락 충돌 itemId={}", itemId, e);
             compensate(itemId.toString(), uploadedMedias);
