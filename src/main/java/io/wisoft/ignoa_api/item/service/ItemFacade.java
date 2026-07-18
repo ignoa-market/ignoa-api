@@ -77,11 +77,15 @@ public class ItemFacade {
     }
 
     public ItemIdResponse deleteItem(Long itemId, Long userId) {
-        return distributedLock.executeWithLock(
-                ItemLockKey.of(itemId),
-                MODIFY_WAIT_MILLIS,
-                () -> itemCommandService.deleteItem(itemId, userId)
-        );
+        try {
+            return distributedLock.executeWithLock(
+                    ItemLockKey.of(itemId),
+                    MODIFY_WAIT_MILLIS,
+                    () -> itemCommandService.deleteItem(itemId, userId));
+        } catch (LockInfrastructureException e) {
+            log.warn("Redis 인프라 장애로 fail-open 처리 - 락 없이 상품 삭제를 진행 itemId={}", itemId, e);
+            return itemCommandService.deleteItem(itemId, userId);
+        }
     }
 
     public BuyNowResponse buyNowItem(Long itemId, Long buyerId, ItemBuyNowRequest request) {

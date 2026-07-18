@@ -111,23 +111,17 @@ public class ItemCommandService {
             throw new BusinessException(ErrorCode.ITEM_DELETE_FORBIDDEN);
         }
 
-        if (item.isSold()) {
-            throw new BusinessException(ErrorCode.SOLD_ITEM_CANNOT_BE_DELETED);
-        }
+        int updatedRows = itemRepository.softDeleteIfActive(itemId);
 
-        boolean hasBid = bidRepository.existsByItemId(itemId);
-
-        if (hasBid) {
-            throw new BusinessException(ErrorCode.ITEM_WITH_BID_CANNOT_BE_DELETED);
+        if (updatedRows == 0) {
+            resolveDeleteFailure(itemId);
         }
 
         wishRepository.deleteAllByItemId(itemId);
         itemMediaService.deleteAllMedia(itemId);
-        itemRepository.delete(item);
-
         eventPublisher.publishEvent(new AuctionClosedEvent(itemId));
 
-        return new ItemIdResponse(item.getId());
+        return new ItemIdResponse(itemId);
     }
 
     public BuyNowResponse buyNowItem(Long itemId, Long buyerId, ItemBuyNowRequest request) {
@@ -166,6 +160,13 @@ public class ItemCommandService {
         }
 
         throw new BusinessException(ErrorCode.PRICE_CHANGED);
+    }
+
+    private void resolveDeleteFailure(Long itemId) {
+        if (bidRepository.existsByItemId(itemId)) {
+            throw new BusinessException(ErrorCode.ITEM_WITH_BID_CANNOT_BE_DELETED);
+        }
+        throw new BusinessException(ErrorCode.AUCTION_ALREADY_CLOSED);
     }
 
     private List<ItemMedia> toItemMedias(List<UploadedMedia> uploadedMedias, Item item) {

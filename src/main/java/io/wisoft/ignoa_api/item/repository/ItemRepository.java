@@ -9,7 +9,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.springframework.security.core.parameters.P;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -102,4 +101,17 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
                 AND i.status = 'ACTIVE'                                    
             """)
     int closeIfActive(@Param("id") Long id);
+
+    @Modifying
+    @Query("""
+            UPDATE Item i
+            SET i.status = 'DELETED',
+                i.version = i.version + 1
+            WHERE i.id = :id
+                AND i.status = 'ACTIVE'
+                AND NOT EXISTS (SELECT 1
+                                FROM Bid b
+                                WHERE b.item.id = :id)
+            """)
+    int softDeleteIfActive(@Param("id") Long id);
 }
