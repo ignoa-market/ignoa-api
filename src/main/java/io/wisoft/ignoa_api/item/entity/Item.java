@@ -19,8 +19,8 @@ import java.time.LocalDateTime;
 @SQLRestriction("status <> 'DELETED'")
 @Table(name = "items",
         indexes = {
-            @Index(name = "idx_items_status_created", columnList = "status, created_at"),
-            @Index(name = "idx_items_status_end_at", columnList = "status, end_at")
+                @Index(name = "idx_items_status_created", columnList = "status, created_at"),
+                @Index(name = "idx_items_status_end_at", columnList = "status, end_at")
         })
 public class Item extends BaseEntity {
 
@@ -71,24 +71,13 @@ public class Item extends BaseEntity {
     @Version
     private Long version;
 
-    public static Item create(User seller, String title, String description, String category,
-                              ItemCondition itemCondition, String brand, Long startPrice, Long buyNowPrice,
-                              LocalDateTime endAt) {
+    public static Item create(User seller, String title, String description, String category, ItemCondition itemCondition,
+                              String brand, Long startPrice, Long buyNowPrice, LocalDateTime endAt) {
         return new Item(
-                null,
-                seller,
-                null,
-                title,
-                description,
-                category,
-                itemCondition,
-                startPrice,
-                startPrice,
-                buyNowPrice,
-                brand,
-                ItemStatus.ACTIVE,
-                endAt,
-                null
+                null, seller, null,
+                title, description, category, itemCondition,
+                startPrice, startPrice, buyNowPrice,
+                brand, ItemStatus.ACTIVE, endAt, null
         );
     }
 
@@ -126,9 +115,5 @@ public class Item extends BaseEntity {
 
     public boolean isReachedBuyNowPrice(Long bidPrice) {
         return bidPrice >= this.buyNowPrice;
-    }
-
-    public void closeWithoutBid() {
-        this.status = ItemStatus.NO_BID_CLOSED;
     }
 }
