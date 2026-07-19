@@ -49,7 +49,7 @@ public class BidService {
         }
 
         if (!item.isActive()) {
-            throw new BusinessException(ErrorCode.AUCTION_CLOSED);
+            throw new BusinessException(ErrorCode.AUCTION_ALREADY_CLOSED);
         }
 
         if (!item.isValidBidPrice(bidPrice)) {
@@ -101,7 +101,7 @@ public class BidService {
         }
 
         if (item.isClosed()) {
-            throw new BusinessException(ErrorCode.AUCTION_CLOSED);
+            throw new BusinessException(ErrorCode.AUCTION_ALREADY_CLOSED);
         }
 
         throw new BusinessException(ErrorCode.INVALID_BID_PRICE);
