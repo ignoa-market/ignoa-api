@@ -5,6 +5,7 @@ import io.micrometer.core.instrument.Timer;
 import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.redisson.client.RedisException;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Component;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class RedissonDistributedLock {
@@ -22,12 +24,22 @@ public class RedissonDistributedLock {
     private final RedissonClient redissonClient;
     private final MeterRegistry meterRegistry;
 
-    public <T> T executeWithLock(String key, long waitMillis, Supplier<T> task) {
-        return execute(key, waitMillis, task);
+    public <T> T executeWithLockOrFailOpen(String key, long waitMillis, Supplier<T> task) {
+        try {
+            return execute(key, waitMillis, task);
+        } catch (LockInfrastructureException e) {
+            log.warn("Redis 인프라 장애로 fail-open 처리 - 락 없이 진행. key={}", key, e);
+            return task.get();
+        }
     }
 
-    public void executeWithLock(String key, long waitMillis, Runnable task) {
-        execute(key, waitMillis, toSupplier(task));
+    public void executeWithLockOrFailOpen(String key, long waitMillis, Runnable task) {
+        try {
+            execute(key, waitMillis, toSupplier(task));
+        } catch (LockInfrastructureException e) {
+            log.warn("Redis 인프라 장애로 fail-open 처리 - 락 없이 진행. key={}", key, e);
+            task.run();
+        }
     }
 
     private <T> T execute(String key, long waitMillis, Supplier<T> task) {
@@ -40,7 +52,7 @@ public class RedissonDistributedLock {
             Thread.currentThread().interrupt();
             throw new BusinessException(ErrorCode.LOCK_ACQUISITION_FAILED);
         } catch (RedisException e) {
-            throw new LockInfrastructureException("Redis 인프라 장애 - 분산 락 획득 실패. key = " + key, e);
+            throw new LockInfrastructureException("Redis 인프라 장애 - 분산 락 획득 실패, key = " + key, e);
         }
 
         if (!acquired) {

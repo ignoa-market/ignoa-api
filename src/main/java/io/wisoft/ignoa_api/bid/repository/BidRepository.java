@@ -12,6 +12,12 @@ import java.util.Optional;
 
 public interface BidRepository extends JpaRepository<Bid, Long> {
 
+    List<Bid> findByItemId(Long itemId);
+
+    boolean existsByItemId(Long itemId);
+
+    Optional<Bid> findTopByBidderIdAndItemIdOrderByPriceDesc(Long bidderId, Long itemId);
+
     @Query("""
             SELECT b
             FROM Bid b
@@ -24,15 +30,10 @@ public interface BidRepository extends JpaRepository<Bid, Long> {
     @Query("""
             SELECT COUNT(b) > 0 
             FROM Bid b 
-            WHERE b.bidder.id = :userId AND b.item.status = 'ACTIVE'
+            WHERE b.bidder.id = :userId
+                AND b.item.status = 'ACTIVE'
             """)
     boolean existsByBidderIdAndItemActive(@Param("userId") Long userId);
-
-    Optional<Bid> findTopByBidderIdAndItemIdOrderByPriceDesc(Long bidderId, Long itemId);
-
-    List<Bid> findByItemId(Long itemId);
-
-    boolean existsByItemId(Long itemId);
 
     @Modifying
     @Query("""

@@ -18,16 +18,11 @@ public class AuctionCloseFacade {
     private final RedissonDistributedLock distributedLock;
 
     public void closeAuction(Long itemId) {
-        try {
-            distributedLock.executeWithLock(
-                    ItemLockKey.of(itemId),
-                    WAIT_TIME_MILLIS,
-                    () -> auctionCloseService.closeAuction(itemId)
-            );
-        } catch (LockInfrastructureException e) {
-            log.warn("Redis 인프라 장애로 fail-open 처리 - 락 없이 마감을 진행 itemId={}", itemId, e);
-            auctionCloseService.closeAuction(itemId);
-        }
+        distributedLock.executeWithLockOrFailOpen(
+                ItemLockKey.of(itemId),
+                WAIT_TIME_MILLIS,
+                () -> auctionCloseService.closeAuction(itemId)
+        );
     }
 }
 

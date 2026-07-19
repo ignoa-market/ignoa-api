@@ -52,7 +52,7 @@ class RedissonDistributedLockTest {
         // When
         BusinessException exception = catchThrowableOfType(
                 BusinessException.class,
-                () -> distributedLock.executeWithLock(key, waitTime, () -> "결과")
+                () -> distributedLock.executeWithLockOrFailOpen(key, waitTime, () -> "결과")
         );
 
         // Then
@@ -61,7 +61,7 @@ class RedissonDistributedLockTest {
     }
 
     @Test
-    void 락_획득_중_인프라_장애가_발생하면_LockInfrastructureException을_던진다() throws InterruptedException {
+    void 락_획득_중_인프라_장애가_발생하면_락_없이_task를_실행한다() throws InterruptedException {
         // Given
         String key = "item:lock:1";
         long waitTime = 250L;
@@ -70,15 +70,10 @@ class RedissonDistributedLockTest {
                 .willThrow(new RedisException("Redis 장애"));
 
         // When
-        LockInfrastructureException exception = catchThrowableOfType(
-                LockInfrastructureException.class,
-                () -> distributedLock.executeWithLock(key, waitTime, () -> "결과")
-        );
+        String result = distributedLock.executeWithLockOrFailOpen(key, waitTime, () -> "결과");
 
         // Then
-        assertThat(exception)
-                .isNotNull()
-                .hasCauseInstanceOf(RedisException.class);
+        assertThat(result).isEqualTo("결과");
         verify(lock, never()).unlock();
     }
 
@@ -92,7 +87,7 @@ class RedissonDistributedLockTest {
         given(lock.isHeldByCurrentThread()).willReturn(true);
 
         // When
-        String result = distributedLock.executeWithLock(key, waitTime, () -> "입찰 완료");
+        String result = distributedLock.executeWithLockOrFailOpen(key, waitTime, () -> "입찰 완료");
 
         // Then
         assertThat(result).isEqualTo("입찰 완료");

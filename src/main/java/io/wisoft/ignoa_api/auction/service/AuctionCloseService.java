@@ -20,6 +20,7 @@ public class AuctionCloseService {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void closeAuction(Long itemId) {
         int closedRows = itemRepository.closeIfActive(itemId);
+
         if (closedRows == 0) {
             log.info("[중복 마감 방지] 이미 마감된 경매 itemId={}", itemId);
             return;

@@ -2,7 +2,6 @@ package io.wisoft.ignoa_api.item.service;
 
 import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
-import io.wisoft.ignoa_api.global.infra.lock.LockInfrastructureException;
 import io.wisoft.ignoa_api.global.infra.lock.RedissonDistributedLock;
 import io.wisoft.ignoa_api.global.infra.storage.StorageService;
 import io.wisoft.ignoa_api.global.outbox.entity.OutboxEventType;
@@ -57,15 +56,11 @@ public class ItemFacade {
         try {
             uploadFiles(files, uploadedMedias);
 
-            try {
-                return distributedLock.executeWithLock(
-                        ItemLockKey.of(itemId),
-                        MODIFY_WAIT_MILLIS,
-                        () -> itemCommandService.updateItem(itemId, userId, request, uploadedMedias));
-            } catch (LockInfrastructureException e) {
-                log.warn("Redis 인프라 장애로 fail-open 처리 - 락 없이 상품 수정을 진행 itemId={}", itemId, e);
-                return itemCommandService.updateItem(itemId, userId, request, uploadedMedias);
-            }
+            return distributedLock.executeWithLockOrFailOpen(
+                    ItemLockKey.of(itemId),
+                    MODIFY_WAIT_MILLIS,
+                    () -> itemCommandService.updateItem(itemId, userId, request, uploadedMedias)
+            );
         } catch (ObjectOptimisticLockingFailureException e) {
             log.warn("상품 수정 낙관적 락 충돌 itemId={}", itemId, e);
             compensate(itemId.toString(), uploadedMedias);
@@ -77,28 +72,17 @@ public class ItemFacade {
     }
 
     public ItemIdResponse deleteItem(Long itemId, Long userId) {
-        try {
-            return distributedLock.executeWithLock(
-                    ItemLockKey.of(itemId),
-                    MODIFY_WAIT_MILLIS,
-                    () -> itemCommandService.deleteItem(itemId, userId));
-        } catch (LockInfrastructureException e) {
-            log.warn("Redis 인프라 장애로 fail-open 처리 - 락 없이 상품 삭제를 진행 itemId={}", itemId, e);
-            return itemCommandService.deleteItem(itemId, userId);
-        }
+        return distributedLock.executeWithLockOrFailOpen(
+                ItemLockKey.of(itemId),
+                MODIFY_WAIT_MILLIS,
+                () -> itemCommandService.deleteItem(itemId, userId));
     }
 
     public BuyNowResponse buyNowItem(Long itemId, Long buyerId, ItemBuyNowRequest request) {
-        try {
-            return distributedLock.executeWithLock(
-                    ItemLockKey.of(itemId),
-                    BUY_NOW_WAIT_MILLIS,
-                    () -> itemCommandService.buyNowItem(itemId, buyerId, request)
-            );
-        } catch (LockInfrastructureException e) {
-            log.warn("Redis 인프라 장애로 fail-open 처리 - 락 없이 즉시구매 진행 itemId={}, buyerId={}", itemId, buyerId, e);
-            return itemCommandService.buyNowItem(itemId, buyerId, request);
-        }
+        return distributedLock.executeWithLockOrFailOpen(
+                ItemLockKey.of(itemId),
+                BUY_NOW_WAIT_MILLIS,
+                () -> itemCommandService.buyNowItem(itemId, buyerId, request));
     }
 
     private void uploadFiles(List<MultipartFile> files, List<UploadedMedia> uploadedMedias) {
