@@ -26,7 +26,7 @@ public class AuctionCloseService {
             return;
         }
 
-        boolean sold = bidService.settleBids(itemId);
+        boolean sold = bidService.markBidResults(itemId);
         log.info(sold ? "[낙찰] 경매 마감 itemId={}" : "[유찰] 입찰 없이 마감된 경매 itemId={}", itemId);
     }
 }
