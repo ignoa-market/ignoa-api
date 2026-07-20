@@ -90,4 +90,11 @@ public class GlobalExceptionHandler {
                 .status(ErrorCode.INTERNAL_SERVER_ERROR.getHttpStatus())
                 .body(ErrorResponse.of(ErrorCode.INTERNAL_SERVER_ERROR));
     }
+
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    public ResponseEntity<ErrorResponse> handleOptimisticLock(ObjectOptimisticLockingFailureException e) {
+        log.warn("낙관적 락 충돌: {}", e.getMessage());
+        return ResponseEntity.status(ErrorCode.ITEM_CONFLICT.getHttpStatus())
+                .body(ErrorResponse.of(ErrorCode.ITEM_CONFLICT));
+    }
 }
