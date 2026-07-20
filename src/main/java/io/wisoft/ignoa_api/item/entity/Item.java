@@ -71,8 +71,7 @@ public class Item extends BaseEntity {
     @Version
     private Long version;
 
-    public static Item create(User seller, String title, String description, String category, ItemCondition itemCondition,
-                              String brand, Long startPrice, Long buyNowPrice, LocalDateTime endAt) {
+    public static Item create(User seller, String title, String description, String category,ItemCondition itemCondition, String brand, Long startPrice, Long buyNowPrice, LocalDateTime endAt) {
         return new Item(
                 null, seller, null,
                 title, description, category, itemCondition,
@@ -81,8 +80,7 @@ public class Item extends BaseEntity {
         );
     }
 
-    public void update(String title, String description, String category, String brand,
-                       ItemCondition itemCondition, Long buyNowPrice, LocalDateTime endAt) {
+    public void update(String title, String description, String category, String brand, ItemCondition itemCondition, Long buyNowPrice, LocalDateTime endAt) {
         if (title != null) this.title = title;
         if (description != null) this.description = description;
         if (category != null) this.category = category;
@@ -99,14 +97,6 @@ public class Item extends BaseEntity {
     public boolean isActive() {
         return this.status == ItemStatus.ACTIVE
                 && this.endAt.isAfter(LocalDateTime.now());
-    }
-
-    public boolean isClosed() {
-        return this.status != ItemStatus.ACTIVE;
-    }
-
-    public boolean isValidBidPrice(Long bidPrice) {
-        return this.currentPrice < bidPrice;
     }
 
     public boolean isValidBuyNowPrice(Long buyNowPrice) {

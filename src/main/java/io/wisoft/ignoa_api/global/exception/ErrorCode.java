@@ -13,7 +13,6 @@ public enum ErrorCode {
     INVALID_JSON_FORMAT(HttpStatus.BAD_REQUEST, "JSON 형식이 올바르지 않습니다."),
     INVALID_PATH_VARIABLE(HttpStatus.BAD_REQUEST, "경로 변수 타입이 올바르지 않습니다."),
     METHOD_NOT_ALLOWED(HttpStatus.METHOD_NOT_ALLOWED, "지원하지 않는 HTTP 메서드입니다."),
-    MISSING_REQUEST_PART(HttpStatus.BAD_REQUEST, "필수 요청 항목이 누락되었습니다."),
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 내부 오류가 발생했습니다."),
     LOCK_ACQUISITION_FAILED(HttpStatus.CONFLICT, "다른 요청을 처리 중입니다. 잠시 후 다시 시도해주세요."),
 
@@ -46,21 +45,18 @@ public enum ErrorCode {
     ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "상품을 찾을 수 없습니다."),
     ITEM_UPDATE_FORBIDDEN(HttpStatus.FORBIDDEN, "본인 상품만 수정할 수 있습니다."),
     ITEM_DELETE_FORBIDDEN(HttpStatus.FORBIDDEN, "본인 상품만 삭제할 수 있습니다."),
-    ITEM_MEDIA_NOT_FOUND(HttpStatus.NOT_FOUND, "상품 미디어를 찾을 수 없습니다."),
     ITEM_MEDIA_REQUIRED(HttpStatus.BAD_REQUEST, "상품 미디어는 최소 1개 이상이어야 합니다."),
     AUCTION_ALREADY_CLOSED(HttpStatus.BAD_REQUEST, "이미 마감된 경매입니다."),
     INVALID_BUY_NOW_PRICE(HttpStatus.BAD_REQUEST, "즉시 구매가는 현재 입찰가보다 낮을 수 없습니다."),
-    INVALID_BUY_NOW_PRICE_ON_CREATE(HttpStatus.BAD_REQUEST, "즉시 구매가는 시작가보다 높아야 합니다."),
     SOLD_ITEM_CANNOT_BE_DELETED(HttpStatus.CONFLICT, "거래가 완료된 상품은 삭제할 수 없습니다."),
     ITEM_WITH_BID_CANNOT_BE_DELETED(HttpStatus.CONFLICT, "입찰 이력이 있는 상품은 삭제할 수 없습니다."),
-    END_AT_TOO_SOON(HttpStatus.BAD_REQUEST, "경매 종료 시간은 최소 1일 이후여야 합니다."),
-    END_AT_TOO_LATE(HttpStatus.BAD_REQUEST, "경매 종료 시간은 최대 7일 이내여야 합니다."),
-    PRICE_CHANGED(HttpStatus.CONFLICT, "즉시구매가가 변경되었습니다. 최신 가격을 확인 후 다시 시도해주세요."),
     ITEM_CONFLICT(HttpStatus.CONFLICT, "수정하는 사이 상품 정보가 변경되었습니다. 최신 정보를 확인 후 다시 시도해주세요."),
+    BUY_NOW_CONFLICT(HttpStatus.CONFLICT, "즉시구매를 처리할 수 없습니다. 최신 경매 상태를 확인 후 다시 시도해주세요."),
+    ITEM_DELETE_CONFLICT(HttpStatus.CONFLICT, "상품을 삭제할 수 없습니다. 진행 중이거나 입찰이 있는 상품은 삭제할 수 없습니다."),
 
     // Bid
     INVALID_BID_PRICE(HttpStatus.BAD_REQUEST, "입찰 금액은 현재 최고가보다 높아야 합니다."),
-    BID_CONFLICT(HttpStatus.CONFLICT, "현재가가 변경되었습니다. 최신 가격을 확인 후 다시 입찰해주세요."),
+    BID_CONFLICT(HttpStatus.CONFLICT, "입찰이 반영되지 않았습니다. 최신 경매 상태를 확인 후 다시 시도해주세요."),
     SELF_BID_NOT_ALLOWED(HttpStatus.FORBIDDEN, "본인 상품에는 입찰할 수 없습니다."),
     SELF_BUY_NOT_ALLOWED(HttpStatus.FORBIDDEN, "본인 상품은 구매할 수 없습니다."),
     BID_PRICE_EXCEEDS_BUY_NOW(HttpStatus.BAD_REQUEST, "즉시구매가 이상으로 입찰할 수 없습니다. 즉시구매를 이용해주세요."),
@@ -69,7 +65,6 @@ public enum ErrorCode {
     FILE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "파일 업로드에 실패했습니다."),
     PROFILE_IMAGE_NOT_FOUND(HttpStatus.NOT_FOUND, "프로필 이미지를 찾을 수 없습니다."),
     UNSUPPORTED_MEDIA_TYPE(HttpStatus.BAD_REQUEST, "지원하지 않는 파일 형식입니다."),
-    FILE_SIZE_EXCEEDED(HttpStatus.PAYLOAD_TOO_LARGE, "업로드 가능한 파일 크기를 초과했습니다."),
 
     // Wish
     WISH_NOT_FOUND(HttpStatus.NOT_FOUND, "찜을 찾을 수 없습니다."),

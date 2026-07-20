@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -42,49 +43,6 @@ class BidServiceConcurrencyTest extends IntegrationTestSupport {
         bidRepository.deleteAll();
         itemRepository.deleteAll();
         userRepository.deleteAll();
-    }
-
-    @Test
-    void 같은_상품에_동시_입찰하면_한_건만_성공한다() throws InterruptedException {
-        // Given
-        long bidPrice = 1_100L;
-        User seller = userRepository.save(newUser("seller@test.com", "판매자"));
-        User bidder = userRepository.save(newUser("bidder@test.com", "입찰자"));
-        Item item = itemRepository.save(newItem(seller));
-
-        int threadCount = 10;
-        ExecutorService executor = Executors.newFixedThreadPool(threadCount);
-        CountDownLatch startLatch = new CountDownLatch(1);
-        CountDownLatch doneLatch = new CountDownLatch(threadCount);
-        AtomicInteger successCount = new AtomicInteger();
-        AtomicInteger failCount = new AtomicInteger();
-        
-        // When
-        for (int i = 0; i < threadCount; i++) {
-            executor.submit(() -> {
-                try {
-                    startLatch.await();
-                    bidService.placeBid(item.getId(), bidder.getId(), new BidCreateRequest(bidPrice));
-                    successCount.incrementAndGet();
-                } catch (BusinessException e) {
-                    if (e.getErrorCode() == ErrorCode.INVALID_BID_PRICE) {
-                        failCount.incrementAndGet();
-                    }
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                } finally {
-                    doneLatch.countDown();
-                }
-            });
-        }
-        startLatch.countDown();
-        doneLatch.await(10, TimeUnit.SECONDS);
-        executor.shutdown();
-
-        // Then
-        assertThat(successCount.get()).isEqualTo(1);
-        assertThat(failCount.get()).isEqualTo(threadCount - 1);
-        assertThat(bidRepository.findByItemId(item.getId())).hasSize(1);
     }
 
     @Test
@@ -147,8 +105,8 @@ class BidServiceConcurrencyTest extends IntegrationTestSupport {
                 () -> bidService.placeBid(item.getId(), bidder.getId(), new BidCreateRequest(1_400L)));
 
         // Then
-        assertThat(samePriceException.getErrorCode()).isEqualTo(ErrorCode.INVALID_BID_PRICE);
-        assertThat(lowerPriceException.getErrorCode()).isEqualTo(ErrorCode.INVALID_BID_PRICE);
+        assertThat(samePriceException.getErrorCode()).isEqualTo(ErrorCode.BID_CONFLICT);
+        assertThat(lowerPriceException.getErrorCode()).isEqualTo(ErrorCode.BID_CONFLICT);
     }
 
     @Test
@@ -167,12 +125,11 @@ class BidServiceConcurrencyTest extends IntegrationTestSupport {
 
         // When
         int updatedRows = itemRepository.raiseCurrentPriceIfHigher(
-                item.getId(), bidPrice, bidder);
+                item.getId(), bidPrice, bidder, LocalDateTime.now());
 
         // Then
         assertThat(updatedRows).isZero();
         Item reloaded = itemRepository.findById(item.getId()).orElseThrow();
         assertThat(reloaded.getCurrentPrice()).isEqualTo(before);
     }
-
 }

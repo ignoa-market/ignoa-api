@@ -19,9 +19,6 @@ import io.wisoft.ignoa_api.item.service.dto.UploadedMedia;
 import io.wisoft.ignoa_api.user.entity.User;
 import io.wisoft.ignoa_api.user.service.UserQueryService;
 import io.wisoft.ignoa_api.wish.repository.WishRepository;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.EntityNotFoundException;
-import jakarta.persistence.LockModeType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -29,6 +26,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Slf4j
@@ -43,7 +41,6 @@ public class ItemCommandService {
 
     private final ItemReader itemReader;
     private final ApplicationEventPublisher eventPublisher;
-    private final EntityManager entityManager;
 
     private final ItemRepository itemRepository;
     private final WishRepository wishRepository;
@@ -74,7 +71,7 @@ public class ItemCommandService {
             throw new BusinessException(ErrorCode.ITEM_UPDATE_FORBIDDEN);
         }
 
-        if (item.isClosed()) {
+        if (!item.isActive()) {
             throw new BusinessException(ErrorCode.AUCTION_ALREADY_CLOSED);
         }
 
@@ -114,7 +111,7 @@ public class ItemCommandService {
         int updatedRows = itemRepository.softDeleteIfActive(itemId);
 
         if (updatedRows == 0) {
-            resolveDeleteFailure(itemId);
+            throw new BusinessException(ErrorCode.ITEM_DELETE_CONFLICT);
         }
 
         wishRepository.deleteAllByItemId(itemId);
@@ -132,41 +129,16 @@ public class ItemCommandService {
             throw new BusinessException(ErrorCode.SELF_BUY_NOT_ALLOWED);
         }
 
-        if (!item.isActive()) {
-            throw new BusinessException(ErrorCode.AUCTION_ALREADY_CLOSED);
-        }
+        int updatedRows = itemRepository.buyNowIfActive(itemId, user, request.buyNowPrice(), LocalDateTime.now());
 
-        int buyNowRows = itemRepository.buyNowIfActive(itemId, user, request.buyNowPrice());
-
-        if (buyNowRows == 0) {
-            resolveBuyNowFailure(item);
+        if (updatedRows == 0) {
+            throw new BusinessException(ErrorCode.BUY_NOW_CONFLICT);
         }
 
         bidRepository.markLosingBids(itemId);
         eventPublisher.publishEvent(new AuctionClosedEvent(itemId));
 
         return new BuyNowResponse(itemId, buyerId, request.buyNowPrice(), ItemStatus.BUY_NOW_CLOSED);
-    }
-
-    private void resolveBuyNowFailure(Item item) {
-        try {
-            entityManager.refresh(item, LockModeType.PESSIMISTIC_READ);
-        } catch (EntityNotFoundException e) {
-            throw new BusinessException(ErrorCode.ITEM_NOT_FOUND);
-        }
-
-        if (item.isClosed()) {
-            throw new BusinessException(ErrorCode.AUCTION_ALREADY_CLOSED);
-        }
-
-        throw new BusinessException(ErrorCode.PRICE_CHANGED);
-    }
-
-    private void resolveDeleteFailure(Long itemId) {
-        if (bidRepository.existsByItemId(itemId)) {
-            throw new BusinessException(ErrorCode.ITEM_WITH_BID_CANNOT_BE_DELETED);
-        }
-        throw new BusinessException(ErrorCode.AUCTION_ALREADY_CLOSED);
     }
 
     private List<ItemMedia> toItemMedias(List<UploadedMedia> uploadedMedias, Item item) {
