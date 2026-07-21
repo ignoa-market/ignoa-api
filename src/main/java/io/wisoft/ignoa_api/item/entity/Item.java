@@ -68,26 +68,29 @@ public class Item extends BaseEntity {
     @Column(nullable = false)
     private LocalDateTime endAt;
 
+    @Column(nullable = false)
+    private int extensionCount;
+
     @Version
     private Long version;
+
 
     public static Item create(User seller, String title, String description, String category,ItemCondition itemCondition, String brand, Long startPrice, Long buyNowPrice, LocalDateTime endAt) {
         return new Item(
                 null, seller, null,
                 title, description, category, itemCondition,
                 startPrice, startPrice, buyNowPrice,
-                brand, ItemStatus.ACTIVE, endAt, null
+                brand, ItemStatus.ACTIVE, endAt, 0, null
         );
     }
 
-    public void update(String title, String description, String category, String brand, ItemCondition itemCondition, Long buyNowPrice, LocalDateTime endAt) {
+    public void update(String title, String description, String category, String brand, ItemCondition itemCondition, Long buyNowPrice) {
         if (title != null) this.title = title;
         if (description != null) this.description = description;
         if (category != null) this.category = category;
         if (brand != null) this.brand = brand;
         if (itemCondition != null) this.itemCondition = itemCondition;
         if (buyNowPrice != null) this.buyNowPrice = buyNowPrice;
-        if (endAt != null) this.endAt = endAt;
     }
 
     public boolean isSeller(Long userId) {

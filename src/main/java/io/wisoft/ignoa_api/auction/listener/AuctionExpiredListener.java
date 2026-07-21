@@ -1,6 +1,6 @@
 package io.wisoft.ignoa_api.auction.listener;
 
-import io.wisoft.ignoa_api.auction.service.AuctionCloseFacade;
+import io.wisoft.ignoa_api.auction.service.AuctionFacade;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.connection.Message;
@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 public class AuctionExpiredListener implements MessageListener {
 
     private static final String AUCTION_KEY_PREFIX = "auction:";
-    private final AuctionCloseFacade auctionCloseFacade;
+    private final AuctionFacade auctionFacade;
 
     @Override
     public void onMessage(Message message, byte[] pattern) {
@@ -25,7 +25,7 @@ public class AuctionExpiredListener implements MessageListener {
             }
 
             long itemId = Long.parseLong(expiredKey.substring(AUCTION_KEY_PREFIX.length()));
-            auctionCloseFacade.closeAuction(itemId);
+            auctionFacade.closeAuction(itemId);
         } catch (Exception e) {
             log.error("경매 마감 처리 실패 expiredKey={}", message, e);
         }
