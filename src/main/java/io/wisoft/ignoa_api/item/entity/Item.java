@@ -103,10 +103,12 @@ public class Item extends BaseEntity {
     }
 
     public boolean isValidBuyNowPrice(Long buyNowPrice) {
-        return buyNowPrice == null || buyNowPrice > this.currentPrice;
+        return buyNowPrice == null
+                || buyNowPrice > this.currentPrice;
     }
 
-    public boolean isReachedBuyNowPrice(Long bidPrice) {
-        return bidPrice >= this.buyNowPrice;
+    public boolean isBuyNowPriceChanged(Long buyNowPrice) {
+        return buyNowPrice != null
+                && !buyNowPrice.equals(this.buyNowPrice);
     }
 }
