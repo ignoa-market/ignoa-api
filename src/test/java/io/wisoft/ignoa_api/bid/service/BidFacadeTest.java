@@ -3,6 +3,7 @@ package io.wisoft.ignoa_api.bid.service;
 import io.wisoft.ignoa_api.bid.dto.request.BidCreateRequest;
 import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
+import io.wisoft.ignoa_api.global.infra.lock.LockOperation;
 import io.wisoft.ignoa_api.global.infra.lock.RedissonDistributedLock;
 import io.wisoft.ignoa_api.item.support.ItemLockKey;
 import org.junit.jupiter.api.Test;
@@ -37,7 +38,8 @@ class BidFacadeTest {
         Long bidderId = 2L;
         BidCreateRequest request = new BidCreateRequest(1_000L);
 
-        given(distributedLock.executeWithLockOrFailOpen(eq(ItemLockKey.of(itemId)), anyLong(), any(Supplier.class)))
+        given(distributedLock.executeWithLockOrFailOpen(
+                eq(ItemLockKey.of(itemId)), eq(LockOperation.BID), anyLong(), any(Supplier.class)))
                 .willThrow(new BusinessException(ErrorCode.LOCK_ACQUISITION_FAILED));
 
         // When

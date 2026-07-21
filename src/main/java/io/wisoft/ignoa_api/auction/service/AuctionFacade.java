@@ -1,6 +1,7 @@
 package io.wisoft.ignoa_api.auction.service;
 
 import io.wisoft.ignoa_api.auction.dto.response.AuctionExtensionResponse;
+import io.wisoft.ignoa_api.global.infra.lock.LockOperation;
 import io.wisoft.ignoa_api.global.infra.lock.RedissonDistributedLock;
 import io.wisoft.ignoa_api.item.support.ItemLockKey;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,7 @@ public class AuctionFacade {
     public void closeAuction(Long itemId) {
         distributedLock.executeWithLockOrFailOpen(
                 ItemLockKey.of(itemId),
+                LockOperation.AUTO_CLOSE,
                 CLOSE_WAIT_MILLIS,
                 () -> auctionService.closeAuction(itemId)
         );
@@ -29,9 +31,9 @@ public class AuctionFacade {
     public AuctionExtensionResponse extendAuction(Long itemId, Long userId) {
         return distributedLock.executeWithLockOrFailOpen(
                 ItemLockKey.of(itemId),
+                LockOperation.EXTEND,
                 EXTEND_WAIT_MILLIS,
                 () -> auctionService.extendAuction(itemId, userId)
         );
     }
 }
-

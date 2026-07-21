@@ -24,25 +24,25 @@ public class RedissonDistributedLock {
     private final RedissonClient redissonClient;
     private final MeterRegistry meterRegistry;
 
-    public <T> T executeWithLockOrFailOpen(String key, long waitMillis, Supplier<T> task) {
+    public <T> T executeWithLockOrFailOpen(String key, LockOperation operation, long waitMillis, Supplier<T> task) {
         try {
-            return execute(key, waitMillis, task);
+            return execute(key, operation, waitMillis, task);
         } catch (LockInfrastructureException e) {
             log.warn("Redis 인프라 장애로 fail-open 처리 - 락 없이 진행. key={}", key, e);
             return task.get();
         }
     }
 
-    public void executeWithLockOrFailOpen(String key, long waitMillis, Runnable task) {
+    public void executeWithLockOrFailOpen(String key, LockOperation operation, long waitMillis, Runnable task) {
         try {
-            execute(key, waitMillis, toSupplier(task));
+            execute(key, operation, waitMillis, toSupplier(task));
         } catch (LockInfrastructureException e) {
             log.warn("Redis 인프라 장애로 fail-open 처리 - 락 없이 진행. key={}", key, e);
             task.run();
         }
     }
 
-    private <T> T execute(String key, long waitMillis, Supplier<T> task) {
+    private <T> T execute(String key, LockOperation operation, long waitMillis, Supplier<T> task) {
         RLock lock = redissonClient.getLock(key);
         boolean acquired;
 
@@ -62,6 +62,7 @@ public class RedissonDistributedLock {
         try {
             Timer holdTimer = Timer.builder("lock.hold.time")
                     .tag("key", keyPrefix(key))
+                    .tag("operation", operation.metricTag())
                     .publishPercentiles(0.5, 0.95, 0.99)
                     .register(meterRegistry);
 

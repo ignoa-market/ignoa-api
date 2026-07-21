@@ -1,6 +1,7 @@
 package io.wisoft.ignoa_api.global.infra.lock;
 
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,10 +34,12 @@ class RedissonDistributedLockTest {
     RLock lock;
 
     RedissonDistributedLock distributedLock;
+    SimpleMeterRegistry meterRegistry;
 
     @BeforeEach
     void setUp() {
-        distributedLock = new RedissonDistributedLock(redissonClient, new SimpleMeterRegistry());
+        meterRegistry = new SimpleMeterRegistry();
+        distributedLock = new RedissonDistributedLock(redissonClient, meterRegistry);
         given(redissonClient.getLock(anyString())).willReturn(lock);
     }
 
@@ -52,7 +55,7 @@ class RedissonDistributedLockTest {
         // When
         BusinessException exception = catchThrowableOfType(
                 BusinessException.class,
-                () -> distributedLock.executeWithLockOrFailOpen(key, waitTime, () -> "결과")
+                () -> distributedLock.executeWithLockOrFailOpen(key, LockOperation.BID, waitTime, () -> "결과")
         );
 
         // Then
@@ -70,7 +73,7 @@ class RedissonDistributedLockTest {
                 .willThrow(new RedisException("Redis 장애"));
 
         // When
-        String result = distributedLock.executeWithLockOrFailOpen(key, waitTime, () -> "결과");
+        String result = distributedLock.executeWithLockOrFailOpen(key, LockOperation.BID, waitTime, () -> "결과");
 
         // Then
         assertThat(result).isEqualTo("결과");
@@ -87,10 +90,16 @@ class RedissonDistributedLockTest {
         given(lock.isHeldByCurrentThread()).willReturn(true);
 
         // When
-        String result = distributedLock.executeWithLockOrFailOpen(key, waitTime, () -> "입찰 완료");
+        String result = distributedLock.executeWithLockOrFailOpen(key, LockOperation.BID, waitTime, () -> "입찰 완료");
 
         // Then
         assertThat(result).isEqualTo("입찰 완료");
         verify(lock).unlock();
+
+        Timer holdTimer = meterRegistry.find("lock.hold.time")
+                .tags("key", "item:lock", "operation", "bid")
+                .timer();
+        assertThat(holdTimer).isNotNull();
+        assertThat(holdTimer.count()).isEqualTo(1);
     }
 }
