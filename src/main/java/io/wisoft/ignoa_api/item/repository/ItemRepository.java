@@ -109,8 +109,9 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
                 i.version = i.version + 1
             WHERE i.id = :id
                 AND i.status = 'ACTIVE'                                    
+                AND i.endAt <= :now
             """)
-    int closeIfActive(@Param("id") Long id);
+    int closeIfActive(@Param("id") Long id, @Param("now") LocalDateTime now);
 
     // 삭제 조건부 UPDATE - 입찰이 없을 때만 가능
     @Modifying
