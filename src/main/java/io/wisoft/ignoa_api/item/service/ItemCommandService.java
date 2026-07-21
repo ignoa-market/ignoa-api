@@ -79,10 +79,8 @@ public class ItemCommandService {
             throw new BusinessException(ErrorCode.INVALID_BUY_NOW_PRICE);
         }
 
-        item.update(
-                request.title(), request.description(),
-                request.category(), request.brand(), request.itemCondition(),
-                request.buyNowPrice(), request.endAt()
+        item.update(request.title(), request.description(), request.category(),
+                request.brand(), request.itemCondition(), request.buyNowPrice()
         );
 
         if (!CollectionUtils.isEmpty(request.deleteMediaIds())) {
@@ -92,10 +90,6 @@ public class ItemCommandService {
 
         if (!CollectionUtils.isEmpty(uploadedMedias)) {
             itemMediaService.saveAll(toItemMedias(uploadedMedias, item));
-        }
-
-        if (request.endAt() != null) {
-            eventPublisher.publishEvent(new AuctionRegisteredEvent(item.getId(), item.getEndAt()));
         }
 
         return itemQueryService.getItem(itemId, userId);

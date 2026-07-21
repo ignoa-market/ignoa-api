@@ -8,6 +8,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+
 
 @Slf4j
 @Service
@@ -19,14 +21,15 @@ public class AuctionCloseService {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void closeAuction(Long itemId) {
-        int closedRows = itemRepository.closeIfActive(itemId);
+        int updatedRows = itemRepository.closeIfActive(itemId, LocalDateTime.now());
 
-        if (closedRows == 0) {
+        if (updatedRows == 0) {
             log.info("[중복 마감 방지] 이미 마감된 경매 itemId={}", itemId);
             return;
         }
 
-        boolean sold = bidService.markBidResults(itemId);
-        log.info(sold ? "[낙찰] 경매 마감 itemId={}" : "[유찰] 입찰 없이 마감된 경매 itemId={}", itemId);
+        boolean result = bidService.markBidResults(itemId);
+        log.info(result ? "[낙찰] 경매 마감 itemId={}"
+                : "[유찰] 입찰 없이 마감된 경매 itemId={}", itemId);
     }
 }

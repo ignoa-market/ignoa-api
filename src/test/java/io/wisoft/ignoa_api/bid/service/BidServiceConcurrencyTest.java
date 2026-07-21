@@ -120,7 +120,7 @@ class BidServiceConcurrencyTest extends IntegrationTestSupport {
         long before = item.getCurrentPrice();
         long bidPrice = item.getCurrentPrice() + 1_000L;
 
-        itemRepository.closeIfActive(item.getId());
+        itemRepository.closeIfActive(item.getId(), LocalDateTime.now());
         itemRepository.saveAndFlush(item);
 
         // When

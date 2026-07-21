@@ -80,14 +80,13 @@ public class Item extends BaseEntity {
         );
     }
 
-    public void update(String title, String description, String category, String brand, ItemCondition itemCondition, Long buyNowPrice, LocalDateTime endAt) {
+    public void update(String title, String description, String category, String brand, ItemCondition itemCondition, Long buyNowPrice) {
         if (title != null) this.title = title;
         if (description != null) this.description = description;
         if (category != null) this.category = category;
         if (brand != null) this.brand = brand;
         if (itemCondition != null) this.itemCondition = itemCondition;
         if (buyNowPrice != null) this.buyNowPrice = buyNowPrice;
-        if (endAt != null) this.endAt = endAt;
     }
 
     public boolean isSeller(Long userId) {
