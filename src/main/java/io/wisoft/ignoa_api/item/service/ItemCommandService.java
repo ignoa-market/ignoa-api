@@ -75,9 +75,7 @@ public class ItemCommandService {
             throw new BusinessException(ErrorCode.AUCTION_ALREADY_CLOSED);
         }
 
-        if (!item.isValidBuyNowPrice(request.buyNowPrice())) {
-            throw new BusinessException(ErrorCode.INVALID_BUY_NOW_PRICE);
-        }
+        validateBuyNowPrice(item, itemId, request.buyNowPrice());
 
         item.update(request.title(), request.description(), request.category(),
                 request.brand(), request.itemCondition(), request.buyNowPrice()
@@ -133,6 +131,19 @@ public class ItemCommandService {
         eventPublisher.publishEvent(new AuctionClosedEvent(itemId));
 
         return new BuyNowResponse(itemId, buyerId, request.buyNowPrice(), ItemStatus.BUY_NOW_CLOSED);
+    }
+
+    private void validateBuyNowPrice(Item item, Long itemId, Long buyNowPrice) {
+        // 즉시구매가 변경 시, 입찰 이력이 있으면 변경 불가
+        if (item.isBuyNowPriceChanged(buyNowPrice)
+                && bidRepository.existsByItemId(itemId)) {
+            throw new BusinessException(ErrorCode.BUY_NOW_PRICE_CHANGED_NOT_ALLOWED);
+        }
+
+        // 즉시구매가는 현재 입찰가보다 높아야 함
+        if (!item.isValidBuyNowPrice(buyNowPrice)) {
+            throw new BusinessException(ErrorCode.INVALID_BUY_NOW_PRICE);
+        }
     }
 
     private List<ItemMedia> toItemMedias(List<UploadedMedia> uploadedMedias, Item item) {

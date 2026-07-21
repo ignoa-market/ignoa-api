@@ -55,6 +55,7 @@ public enum ErrorCode {
     BUY_NOW_CONFLICT(HttpStatus.CONFLICT, "즉시구매를 처리할 수 없습니다. 최신 경매 상태를 확인 후 다시 시도해주세요."),
     ITEM_DELETE_CONFLICT(HttpStatus.CONFLICT, "상품을 삭제할 수 없습니다. 진행 중이거나 입찰이 있는 상품은 삭제할 수 없습니다."),
     AUCTION_EXTEND_CONFLICT(HttpStatus.CONFLICT, "경매를 연장할 수 없습니다. 마감 상태와 연장 가능 횟수를 확인해주세요."),
+    BUY_NOW_PRICE_CHANGED_NOT_ALLOWED(HttpStatus.CONFLICT, "첫 입찰 이후에는 즉시구매가를 변경할 수 없습니다."),
 
     // Bid
     INVALID_BID_PRICE(HttpStatus.BAD_REQUEST, "입찰 금액은 현재 최고가보다 높아야 합니다."),
@@ -75,4 +76,3 @@ public enum ErrorCode {
     private final HttpStatus httpStatus;
     private final String message;
 }
-
