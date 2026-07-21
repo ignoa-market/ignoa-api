@@ -3,11 +3,9 @@ package io.wisoft.ignoa_api.item.repository;
 import io.wisoft.ignoa_api.item.entity.Item;
 import io.wisoft.ignoa_api.item.entity.enums.ItemStatus;
 import io.wisoft.ignoa_api.user.entity.User;
-import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -70,7 +68,7 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
 
     boolean existsBySellerIdAndStatus(Long userId, ItemStatus status);
 
-    // 입찰 조건부 UPDATE - 가격(현재가 비교, 즉시구매가 비교), 상태, 마감 시간
+    // 입찰 조건부 UPDATE
     @Modifying
     @Query("""
             UPDATE Item i
@@ -86,7 +84,7 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
     int raiseCurrentPriceIfHigher(@Param("id") Long id, @Param("bidPrice") Long bidPrice,
                                   @Param("highestBidder") User highestBidder, @Param("now") LocalDateTime now);
 
-    // 즉시구매 조건부 UPDATE - 상태, 마감시간, 즉시구매가 검증
+    // 즉시구매 조건부 UPDATE
     @Modifying
     @Query("""
             UPDATE Item i
@@ -101,7 +99,7 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
     int buyNowIfActive(@Param("id") Long id, @Param("buyer") User buyer,
                        @Param("buyNowPrice") Long buyNowPrice, @Param("now") LocalDateTime now);
 
-    // 경매 마감 조건부 UPDATE - highestBidder 존재 여부에 따라 상태 변경
+    // 경매 마감 조건부 UPDATE
     @Modifying
     @Query("""
             UPDATE Item i 
@@ -113,7 +111,7 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
             """)
     int closeIfActive(@Param("id") Long id, @Param("now") LocalDateTime now);
 
-    // 삭제 조건부 UPDATE - 입찰이 없을 때만 가능
+    // 삭제 조건부 UPDATE
     @Modifying
     @Query("""
             UPDATE Item i
@@ -126,4 +124,17 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
                                 WHERE b.item.id = :id)
             """)
     int softDeleteIfActive(@Param("id") Long id);
+
+    // 마감 연장 조건부 UPDATE
+    @Modifying(clearAutomatically = true)
+    @Query(value = """
+          UPDATE items
+          SET end_at = DATE_ADD(end_at, INTERVAL 1 DAY),
+              extension_count = extension_count + 1
+          WHERE id = :id
+            AND status = 'ACTIVE'
+            AND end_at > :now
+            AND extension_count < 3
+          """, nativeQuery = true)
+    int extendEndAtIfActive(@Param("id") Long id, @Param("now") LocalDateTime now);
 }
