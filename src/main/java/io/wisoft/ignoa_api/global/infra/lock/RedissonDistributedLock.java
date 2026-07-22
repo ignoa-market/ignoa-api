@@ -98,7 +98,6 @@ public class RedissonDistributedLock {
                 .tags("key", keyPrefix(key))
                 .tag("operation", operation.metricTag())
                 .tags("outcome", outcome.metricTag())
-                .publishPercentiles(0.5, 0.95, 0.99)
                 .register(meterRegistry);
 
         sample.stop(acquireWaitTimer);
@@ -109,7 +108,6 @@ public class RedissonDistributedLock {
         Timer holdTimer = Timer.builder("lock.hold.time")
                 .tag("key", keyPrefix(key))
                 .tag("operation", operation.metricTag())
-                .publishPercentiles(0.5, 0.95, 0.99)
                 .register(meterRegistry);
 
         return holdTimer.record(task);
