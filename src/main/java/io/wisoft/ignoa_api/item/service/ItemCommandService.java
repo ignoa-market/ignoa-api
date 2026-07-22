@@ -5,6 +5,8 @@ import io.wisoft.ignoa_api.auction.event.AuctionRegisteredEvent;
 import io.wisoft.ignoa_api.bid.repository.BidRepository;
 import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
+import io.wisoft.ignoa_api.global.infra.lock.LockOperation;
+import io.wisoft.ignoa_api.global.infra.metrics.MeasureTransaction;
 import io.wisoft.ignoa_api.item.dto.request.ItemBuyNowRequest;
 import io.wisoft.ignoa_api.item.dto.request.ItemCreateRequest;
 import io.wisoft.ignoa_api.item.dto.request.ItemUpdateRequest;
@@ -64,6 +66,7 @@ public class ItemCommandService {
         return new ItemIdResponse(item.getId());
     }
 
+    @MeasureTransaction(operation = LockOperation.UPDATE)
     public ItemDetail updateItem(Long itemId, Long userId, ItemUpdateRequest request, List<UploadedMedia> uploadedMedias) {
         Item item = itemReader.getByIdWithSeller(itemId);
 
@@ -93,6 +96,7 @@ public class ItemCommandService {
         return itemQueryService.getItem(itemId, userId);
     }
 
+    @MeasureTransaction(operation = LockOperation.DELETE)
     public ItemIdResponse deleteItem(Long itemId, Long userId) {
         Item item = itemReader.getByIdWithSeller(itemId);
 
@@ -113,6 +117,7 @@ public class ItemCommandService {
         return new ItemIdResponse(itemId);
     }
 
+    @MeasureTransaction(operation = LockOperation.BUY_NOW)
     public BuyNowResponse buyNowItem(Long itemId, Long buyerId, ItemBuyNowRequest request) {
         Item item = itemReader.getById(itemId);
         User user = userQueryService.findById(buyerId);

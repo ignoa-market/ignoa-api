@@ -2,6 +2,7 @@ package io.wisoft.ignoa_api.item.service;
 
 import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
+import io.wisoft.ignoa_api.global.infra.lock.LockOperation;
 import io.wisoft.ignoa_api.global.infra.lock.RedissonDistributedLock;
 import io.wisoft.ignoa_api.item.dto.request.ItemBuyNowRequest;
 import io.wisoft.ignoa_api.item.support.ItemLockKey;
@@ -41,7 +42,7 @@ class ItemFacadeTest {
         ItemBuyNowRequest request = new ItemBuyNowRequest(10_000L);
 
         given(redissonDistributedLock.executeWithLockOrFailOpen(
-                eq(ItemLockKey.of(itemId)), anyLong(), any(Supplier.class)))
+                eq(ItemLockKey.of(itemId)), eq(LockOperation.BUY_NOW), anyLong(), any(Supplier.class)))
                 .willThrow(new BusinessException(ErrorCode.LOCK_ACQUISITION_FAILED));
 
         // When

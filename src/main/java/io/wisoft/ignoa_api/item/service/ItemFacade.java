@@ -2,6 +2,7 @@ package io.wisoft.ignoa_api.item.service;
 
 import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
+import io.wisoft.ignoa_api.global.infra.lock.LockOperation;
 import io.wisoft.ignoa_api.global.infra.lock.RedissonDistributedLock;
 import io.wisoft.ignoa_api.global.infra.storage.StorageService;
 import io.wisoft.ignoa_api.global.outbox.entity.OutboxEventType;
@@ -58,6 +59,7 @@ public class ItemFacade {
 
             return distributedLock.executeWithLockOrFailOpen(
                     ItemLockKey.of(itemId),
+                    LockOperation.UPDATE,
                     MODIFY_WAIT_MILLIS,
                     () -> itemCommandService.updateItem(itemId, userId, request, uploadedMedias)
             );
@@ -74,6 +76,7 @@ public class ItemFacade {
     public ItemIdResponse deleteItem(Long itemId, Long userId) {
         return distributedLock.executeWithLockOrFailOpen(
                 ItemLockKey.of(itemId),
+                LockOperation.DELETE,
                 MODIFY_WAIT_MILLIS,
                 () -> itemCommandService.deleteItem(itemId, userId));
     }
@@ -81,6 +84,7 @@ public class ItemFacade {
     public BuyNowResponse buyNowItem(Long itemId, Long buyerId, ItemBuyNowRequest request) {
         return distributedLock.executeWithLockOrFailOpen(
                 ItemLockKey.of(itemId),
+                LockOperation.BUY_NOW,
                 BUY_NOW_WAIT_MILLIS,
                 () -> itemCommandService.buyNowItem(itemId, buyerId, request));
     }

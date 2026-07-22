@@ -5,6 +5,8 @@ import io.wisoft.ignoa_api.auction.event.AuctionRegisteredEvent;
 import io.wisoft.ignoa_api.bid.service.BidService;
 import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
+import io.wisoft.ignoa_api.global.infra.lock.LockOperation;
+import io.wisoft.ignoa_api.global.infra.metrics.MeasureTransaction;
 import io.wisoft.ignoa_api.item.entity.Item;
 import io.wisoft.ignoa_api.item.repository.ItemRepository;
 import io.wisoft.ignoa_api.item.service.ItemReader;
@@ -28,6 +30,7 @@ public class AuctionService {
     private final ItemRepository itemRepository;
     private final ApplicationEventPublisher eventPublisher;
 
+    @MeasureTransaction(operation = LockOperation.AUTO_CLOSE)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void closeAuction(Long itemId) {
         int updatedRows = itemRepository.closeIfActive(itemId, LocalDateTime.now());
@@ -42,6 +45,7 @@ public class AuctionService {
                 : "[유찰] 입찰 없이 마감된 경매 itemId={}", itemId);
     }
 
+    @MeasureTransaction(operation = LockOperation.EXTEND)
     @Transactional
     public AuctionExtensionResponse extendAuction(Long itemId, Long sellerId) {
         Item item = itemReader.getByIdWithSeller(itemId);

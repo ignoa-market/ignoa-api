@@ -9,6 +9,9 @@ spring:
     username: ${MYSQL_USER}
     password: ${MYSQL_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 10
+      connection-timeout: 500
 
   jpa:
     hibernate:
@@ -32,3 +35,6 @@ management:
       percentiles-histogram:
         http.server.requests: true
         lock.hold.time: true
+        lock.acquire.wait: true
+        hikaricp.connections.acquire: true
+        transaction.duration: true
