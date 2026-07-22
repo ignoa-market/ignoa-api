@@ -103,7 +103,6 @@ public class RedissonDistributedLock {
         sample.stop(acquireWaitTimer);
     }
 
-
     private <T> T recordHoldTime(String key, LockOperation operation, Supplier<T> task) {
         Timer holdTimer = Timer.builder("lock.hold.time")
                 .tag("key", keyPrefix(key))
