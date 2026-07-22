@@ -36,3 +36,4 @@ management:
         http.server.requests: true
         lock.hold.time: true
         lock.acquire.wait: true
+        hikaricp.connections.acquire: true

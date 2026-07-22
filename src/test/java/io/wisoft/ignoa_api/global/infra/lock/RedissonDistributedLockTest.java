@@ -101,5 +101,15 @@ class RedissonDistributedLockTest {
                 .timer();
         assertThat(holdTimer).isNotNull();
         assertThat(holdTimer.count()).isEqualTo(1);
+
+        Timer acquireWaitTimer = meterRegistry.find("lock.acquire.wait")
+                .tags(
+                        "key", "item:lock",
+                        "operation", "bid",
+                        "outcome", "acquired"
+                )
+                .timer();
+        assertThat(acquireWaitTimer).isNotNull();
+        assertThat(acquireWaitTimer.count()).isEqualTo(1);
     }
 }
