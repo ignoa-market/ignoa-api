@@ -5,6 +5,8 @@ import io.wisoft.ignoa_api.bid.dto.response.BidHistory;
 import io.wisoft.ignoa_api.bid.dto.response.BidResponse;
 import io.wisoft.ignoa_api.bid.entity.Bid;
 import io.wisoft.ignoa_api.bid.event.BidPlaceEvent;
+import io.wisoft.ignoa_api.global.infra.lock.LockOperation;
+import io.wisoft.ignoa_api.global.infra.metrics.MeasureTransaction;
 import io.wisoft.ignoa_api.item.entity.Item;
 import io.wisoft.ignoa_api.bid.repository.BidRepository;
 import io.wisoft.ignoa_api.item.repository.ItemRepository;
@@ -33,6 +35,7 @@ public class BidService {
     private final BidRepository bidRepository;
     private final ItemRepository itemRepository;
 
+    @MeasureTransaction(operation = LockOperation.BID)
     @Transactional
     public BidResponse placeBid(Long itemId, Long bidderId, BidCreateRequest request) {
         Long bidPrice = request.price();
