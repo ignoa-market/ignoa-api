@@ -49,7 +49,7 @@ class RedissonDistributedLockTest {
         String key = "item:lock:1";
         long waitTime = 250L;
 
-        given(lock.tryLock(anyLong(), anyLong(), any(TimeUnit.class)))
+        given(lock.tryLock(anyLong(), any(TimeUnit.class)))
                 .willReturn(false);
 
         // When
@@ -69,7 +69,7 @@ class RedissonDistributedLockTest {
         String key = "item:lock:1";
         long waitTime = 250L;
 
-        given(lock.tryLock(anyLong(), anyLong(), any(TimeUnit.class)))
+        given(lock.tryLock(anyLong(), any(TimeUnit.class)))
                 .willThrow(new RedisException("Redis 장애"));
 
         // When
@@ -86,7 +86,7 @@ class RedissonDistributedLockTest {
         String key = "item:lock:1";
         long waitTime = 250L;
 
-        given(lock.tryLock(anyLong(), anyLong(), any(TimeUnit.class))).willReturn(true);
+        given(lock.tryLock(anyLong(), any(TimeUnit.class))).willReturn(true);
         given(lock.isHeldByCurrentThread()).willReturn(true);
 
         // When

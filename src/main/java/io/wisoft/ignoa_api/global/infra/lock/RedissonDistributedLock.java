@@ -20,8 +20,6 @@ import java.util.function.Supplier;
 @RequiredArgsConstructor
 public class RedissonDistributedLock {
 
-    private static final long LEASE_TIME_MILLIS = 10_000L;
-
     private final RedissonClient redissonClient;
     private final MeterRegistry meterRegistry;
 
@@ -69,7 +67,6 @@ public class RedissonDistributedLock {
         try {
             boolean acquired = lock.tryLock(
                     waitMillis,
-                    LEASE_TIME_MILLIS,
                     TimeUnit.MILLISECONDS
             );
 
