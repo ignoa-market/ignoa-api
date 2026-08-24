@@ -3,9 +3,9 @@ package io.wisoft.ignoa_api.auction.service;
 import io.wisoft.ignoa_api.auction.dto.response.AuctionExtensionResponse;
 import io.wisoft.ignoa_api.auction.event.AuctionRegisteredEvent;
 import io.wisoft.ignoa_api.bid.service.BidService;
+import io.wisoft.ignoa_api.chat.service.ChatRoomService;
 import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
-import io.wisoft.ignoa_api.global.infra.lock.LockOperation;
 import io.wisoft.ignoa_api.item.entity.Item;
 import io.wisoft.ignoa_api.item.repository.ItemRepository;
 import io.wisoft.ignoa_api.item.service.ItemReader;
@@ -25,6 +25,7 @@ import java.time.LocalDateTime;
 public class AuctionService {
 
     private final BidService bidService;
+    private final ChatRoomService chatRoomService;
     private final ItemReader itemReader;
     private final ItemRepository itemRepository;
     private final ApplicationEventPublisher eventPublisher;
@@ -38,9 +39,15 @@ public class AuctionService {
             return;
         }
 
-        boolean result = bidService.markBidResults(itemId);
-        log.info(result ? "[낙찰] 경매 마감 itemId={}"
-                : "[유찰] 입찰 없이 마감된 경매 itemId={}", itemId);
+        boolean hasWinner = bidService.markBidResults(itemId);
+
+        if (!hasWinner) {
+            log.info("[유찰] 입찰 없이 마감된 경매 itemId={}", itemId);
+            return;
+        }
+
+        chatRoomService.createChat(itemId);
+        log.info("[낙찰] 경매 마감 및 채팅방 생성 itemId={}", itemId);
     }
 
     @Transactional
