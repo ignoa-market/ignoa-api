@@ -3,6 +3,7 @@ package io.wisoft.ignoa_api.user.service;
 import io.wisoft.ignoa_api.auth.service.RefreshTokenService;
 import io.wisoft.ignoa_api.auth.service.TokenBlacklistService;
 import io.wisoft.ignoa_api.global.infra.storage.MediaUrlResolver;
+import io.wisoft.ignoa_api.global.infra.storage.ObjectKeyPrefix;
 import io.wisoft.ignoa_api.global.infra.storage.StorageService;
 import io.wisoft.ignoa_api.global.outbox.entity.OutboxEventType;
 import io.wisoft.ignoa_api.global.outbox.service.OutboxAppender;
@@ -20,7 +21,6 @@ import org.springframework.web.multipart.MultipartFile;
 public class UserFacade {
 
     private final UserCommandService userCommandService;
-    private final UserQueryService userQueryService;
 
     private final StorageService storageService;
     private final MediaUrlResolver mediaUrlResolver;
@@ -30,15 +30,15 @@ public class UserFacade {
     private final TokenBlacklistService tokenBlacklistService;
 
     public MyProfile updateProfileImage(Long userId, MultipartFile image) {
-        User user = userQueryService.findById(userId);
+        String newObjectKey = storageService.upload(image, ObjectKeyPrefix.PROFILES);
 
-        String oldMediaReference = user.getProfileImageReference();
-        String newObjectKey = storageService.upload(image);
-
-        user.updateProfileImage(newObjectKey);
+        User user;
 
         try {
-            userCommandService.saveProfileImage(user, oldMediaReference);
+            user = userCommandService.replaceProfileImage(
+                    userId,
+                    newObjectKey
+            );
         } catch (RuntimeException e) {
             compensate(userId.toString(), newObjectKey);
             throw e;

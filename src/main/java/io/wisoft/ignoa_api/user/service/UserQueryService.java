@@ -43,12 +43,17 @@ public class UserQueryService {
 
     public MyProfile getMe(Long userId) {
         User user = findById(userId);
-        String profileImageUrl = mediaUrlResolver.toUrl(user.getProfileImageReference());
+        String profileImageUrl = mediaUrlResolver.toUrl(user.getProfileImageReference(), user.getProfileImageSource());
 
         return MyProfile.from(user, profileImageUrl);
     }
 
     public List<User> findPurgeTargets(LocalDateTime startDateTime, LocalDateTime endDateTime, Long lastId, int batchSize) {
-        return userRepository.findPurgeTargets(startDateTime, endDateTime, lastId, PageRequest.of(0, batchSize));
+        return userRepository.findPurgeTargets(
+                startDateTime,
+                endDateTime,
+                lastId,
+                PageRequest.of(0, batchSize)
+        );
     }
 }

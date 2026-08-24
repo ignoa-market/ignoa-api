@@ -46,7 +46,7 @@ public class ItemQueryService {
                 .map(bid -> bid.isTopBid(item))
                 .orElse(false);
 
-        String profileImageUrl = mediaUrlResolver.toUrl(item.getSeller().getProfileImageReference());
+        String profileImageUrl = mediaUrlResolver.toUrl(item.getSeller().getProfileImageReference(), item.getSeller().getProfileImageSource());
         SellerProfile sellerProfile = SellerProfile.from(item.getSeller(), profileImageUrl);
         List<ItemMediaUrls> mediaUrls = itemMediaService.getMediaUrls(itemId);
 

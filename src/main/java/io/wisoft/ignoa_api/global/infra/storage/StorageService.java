@@ -2,6 +2,7 @@ package io.wisoft.ignoa_api.global.infra.storage;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -13,7 +14,6 @@ import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
 
 import java.io.IOException;
-import java.time.LocalDate;
 import java.util.UUID;
 
 @Service
@@ -25,16 +25,20 @@ public class StorageService {
     @Value("${cloud.aws.s3.bucket}")
     private String bucket;
 
-    public String upload(MultipartFile file) {
+    public String upload(MultipartFile file, ObjectKeyPrefix prefix) {
         try {
-            String originalFilename = file.getOriginalFilename();
+            String extension = StringUtils.getFilenameExtension(file.getOriginalFilename());
 
-            if (originalFilename == null) {
+            if (!StringUtils.hasText(extension)) {
                 throw new BusinessException(ErrorCode.FILE_UPLOAD_FAILED);
+
             }
 
-            String extension = originalFilename.substring(originalFilename.lastIndexOf("."));
-            String objectKey = LocalDate.now() + "/" + UUID.randomUUID() + extension;
+            String objectKey = "%s/%s.%s".formatted(
+                    prefix.getValue(),
+                    UUID.randomUUID(),
+                    extension
+            );
 
             s3Client.putObject(
                     PutObjectRequest.builder()
@@ -52,19 +56,15 @@ public class StorageService {
         }
     }
 
-    public void delete(String mediaReference) {
-        if (mediaReference == null || mediaReference.isBlank()) {
-            return;
-        }
-
-        if (mediaReference.startsWith("http://") || mediaReference.startsWith("https://")) {
+    public void delete(String objectKey) {
+        if (objectKey == null || objectKey.isBlank()) {
             return;
         }
 
         s3Client.deleteObject(
                 DeleteObjectRequest.builder()
                         .bucket(bucket)
-                        .key(mediaReference)
+                        .key(objectKey)
                         .build()
         );
     }

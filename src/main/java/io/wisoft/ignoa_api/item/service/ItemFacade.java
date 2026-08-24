@@ -4,6 +4,7 @@ import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
 import io.wisoft.ignoa_api.global.infra.lock.LockOperation;
 import io.wisoft.ignoa_api.global.infra.lock.RedissonDistributedLock;
+import io.wisoft.ignoa_api.global.infra.storage.ObjectKeyPrefix;
 import io.wisoft.ignoa_api.global.infra.storage.StorageService;
 import io.wisoft.ignoa_api.global.outbox.entity.OutboxEventType;
 import io.wisoft.ignoa_api.global.outbox.service.OutboxAppender;
@@ -96,7 +97,7 @@ public class ItemFacade {
         }
 
         for (MultipartFile file : files) {
-            String objectKey = storageService.upload(file);
+            String objectKey = storageService.upload(file, ObjectKeyPrefix.ITEMS);
             uploadedMedias.add(new UploadedMedia(objectKey, ItemMediaType.from(file.getContentType())));
         }
     }
