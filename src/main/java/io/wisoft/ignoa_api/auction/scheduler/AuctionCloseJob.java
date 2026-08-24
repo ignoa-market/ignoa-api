@@ -21,7 +21,7 @@ public class AuctionCloseJob {
 
     public void closeExpiredAuctions() {
         List<Item> expiredItems = itemRepository
-                .findAllByStatusAndEndAtBefore(ItemStatus.ACTIVE, LocalDateTime.now());
+                .findAllByStatusAndEndAtLessThanEqual(ItemStatus.ACTIVE, LocalDateTime.now());
 
         for (Item item : expiredItems) {
             try {

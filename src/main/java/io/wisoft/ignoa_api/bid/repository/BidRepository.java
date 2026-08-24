@@ -35,6 +35,7 @@ public interface BidRepository extends JpaRepository<Bid, Long> {
             """)
     boolean existsByBidderIdAndItemActive(@Param("userId") Long userId);
 
+    // 경매 마감 - 해당 경매의 활성 입찰을 모두 패찰 처리
     @Modifying
     @Query("""
             UPDATE Bid b
@@ -44,6 +45,7 @@ public interface BidRepository extends JpaRepository<Bid, Long> {
             """)
     int markLosingBids(@Param("itemId") Long itemId);
 
+    // 경매 마감 - 해당 경매의 최고가 입찰을 1건을 낙찰 처리
     @Modifying
     @Query(value = """
             UPDATE bids

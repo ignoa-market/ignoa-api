@@ -34,7 +34,6 @@ public class BidService {
     private final BidRepository bidRepository;
     private final ItemRepository itemRepository;
 
-    @Transactional
     public BidResponse placeBid(Long itemId, Long bidderId, BidCreateRequest request) {
         Long bidPrice = request.price();
         User bidder = userQueryService.findById(bidderId);

@@ -64,7 +64,7 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
             """)
     Optional<Item> findByIdWithSeller(@Param("itemId") Long itemId);
 
-    List<Item> findAllByStatusAndEndAtBefore(ItemStatus status, LocalDateTime endAtBefore);
+    List<Item> findAllByStatusAndEndAtLessThanEqual(ItemStatus status, LocalDateTime endAtBefore);
 
     boolean existsBySellerIdAndStatus(Long userId, ItemStatus status);
 

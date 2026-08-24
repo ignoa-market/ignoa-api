@@ -67,6 +67,7 @@ public class ItemFacade {
             log.warn("상품 수정 낙관적 락 충돌 itemId={}", itemId, e);
             compensate(itemId.toString(), uploadedMedias);
             throw new BusinessException(ErrorCode.ITEM_CONFLICT);
+
         } catch (RuntimeException e) {
             compensate(itemId.toString(), uploadedMedias);
             throw e;
