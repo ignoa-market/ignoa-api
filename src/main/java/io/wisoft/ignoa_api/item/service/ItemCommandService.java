@@ -5,7 +5,6 @@ import io.wisoft.ignoa_api.auction.event.AuctionRegisteredEvent;
 import io.wisoft.ignoa_api.bid.repository.BidRepository;
 import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
-import io.wisoft.ignoa_api.global.infra.lock.LockOperation;
 import io.wisoft.ignoa_api.item.dto.request.ItemBuyNowRequest;
 import io.wisoft.ignoa_api.item.dto.request.ItemCreateRequest;
 import io.wisoft.ignoa_api.item.dto.request.ItemUpdateRequest;
@@ -151,7 +150,7 @@ public class ItemCommandService {
         return uploadedMedias.stream()
                 .map(uploadedMedia -> ItemMedia.from(
                         item,
-                        uploadedMedia.mediaUrl(),
+                        uploadedMedia.objectKey(),
                         uploadedMedia.mediaType()
                 )).toList();
     }

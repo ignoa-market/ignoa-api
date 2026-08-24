@@ -2,6 +2,7 @@ package io.wisoft.ignoa_api.user.service;
 
 import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
+import io.wisoft.ignoa_api.global.infra.storage.MediaUrlResolver;
 import io.wisoft.ignoa_api.user.dto.response.MyProfile;
 import io.wisoft.ignoa_api.user.entity.User;
 import io.wisoft.ignoa_api.user.repository.UserRepository;
@@ -21,6 +22,7 @@ import java.util.List;
 public class UserQueryService {
 
     private final UserRepository userRepository;
+    private final MediaUrlResolver mediaUrlResolver;
 
     public User findById(Long userId) {
         return userRepository.findById(userId)
@@ -41,10 +43,17 @@ public class UserQueryService {
 
     public MyProfile getMe(Long userId) {
         User user = findById(userId);
-        return MyProfile.from(user);
+        String profileImageUrl = mediaUrlResolver.toUrl(user.getProfileImageReference(), user.getProfileImageSource());
+
+        return MyProfile.from(user, profileImageUrl);
     }
 
     public List<User> findPurgeTargets(LocalDateTime startDateTime, LocalDateTime endDateTime, Long lastId, int batchSize) {
-        return userRepository.findPurgeTargets(startDateTime, endDateTime, lastId, PageRequest.of(0, batchSize));
+        return userRepository.findPurgeTargets(
+                startDateTime,
+                endDateTime,
+                lastId,
+                PageRequest.of(0, batchSize)
+        );
     }
 }

@@ -27,7 +27,7 @@ public interface ItemMediaRepository extends JpaRepository<ItemMedia, Long> {
 
     List<ItemMedia> findAllByItemIdAndIdIn(Long itemId, List<Long> mediaIds);
 
-    @Query("SELECT m.item.id, m.mediaUrl " +
+    @Query("SELECT m.item.id, m.objectKey " +
             "FROM ItemMedia m " +
             "WHERE m.item.id IN :itemIds " +
             "ORDER BY m.id ASC")

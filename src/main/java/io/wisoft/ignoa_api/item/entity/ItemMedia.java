@@ -20,14 +20,14 @@ public class ItemMedia extends BaseEntity {
     @JoinColumn(name = "item_id", nullable = false)
     private Item item;
 
-    @Column(nullable = false)
-    private String mediaUrl;
+    @Column(name = "object_key", nullable = false)
+    private String objectKey;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ItemMediaType mediaType;
 
-    public static ItemMedia from(Item item, String mediaUrl, ItemMediaType mediaType) {
-        return new ItemMedia(null, item, mediaUrl, mediaType);
+    public static ItemMedia from(Item item, String objectKey, ItemMediaType mediaType) {
+        return new ItemMedia(null, item, objectKey, mediaType);
     }
 }

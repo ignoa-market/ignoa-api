@@ -2,6 +2,7 @@ package io.wisoft.ignoa_api.global.infra.storage;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -13,7 +14,6 @@ import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
 
 import java.io.IOException;
-import java.time.LocalDate;
 import java.util.UUID;
 
 @Service
@@ -25,42 +25,46 @@ public class StorageService {
     @Value("${cloud.aws.s3.bucket}")
     private String bucket;
 
-    @Value("${cloud.aws.s3.endpoint}")
-    private String endpoint;
-
-    public String upload(MultipartFile file) {
+    public String upload(MultipartFile file, ObjectKeyPrefix prefix) {
         try {
-            String originalFilename = file.getOriginalFilename();
+            String extension = StringUtils.getFilenameExtension(file.getOriginalFilename());
 
-            if (originalFilename == null) {
+            if (!StringUtils.hasText(extension)) {
                 throw new BusinessException(ErrorCode.FILE_UPLOAD_FAILED);
+
             }
 
-            String extension = originalFilename.substring(originalFilename.lastIndexOf("."));
-            String key = LocalDate.now() + "/" + UUID.randomUUID() + extension;
+            String objectKey = "%s/%s.%s".formatted(
+                    prefix.getValue(),
+                    UUID.randomUUID(),
+                    extension
+            );
 
             s3Client.putObject(
                     PutObjectRequest.builder()
                             .bucket(bucket)
-                            .key(key)
+                            .key(objectKey)
                             .contentType(file.getContentType())
                             .build(),
                     RequestBody.fromBytes(file.getBytes())
             );
 
-            return endpoint + "/" + bucket + "/" + key;
+            return objectKey;
+
         } catch (IOException e) {
             throw new BusinessException(ErrorCode.FILE_UPLOAD_FAILED);
         }
     }
 
-    public void delete(String mediaUrl) {
-        String prefix = endpoint + "/" + bucket + "/";
-        String key = mediaUrl.substring(prefix.length());
+    public void delete(String objectKey) {
+        if (objectKey == null || objectKey.isBlank()) {
+            return;
+        }
+
         s3Client.deleteObject(
                 DeleteObjectRequest.builder()
                         .bucket(bucket)
-                        .key(key)
+                        .key(objectKey)
                         .build()
         );
     }

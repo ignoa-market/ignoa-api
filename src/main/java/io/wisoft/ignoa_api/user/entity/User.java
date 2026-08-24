@@ -31,8 +31,11 @@ public class User extends BaseEntity {
     @Column
     private String address;
 
+    @Enumerated(EnumType.STRING)
+    private ProfileImageSource profileImageSource;
+
     @Column
-    private String profileImageUrl;
+    private String profileImageReference;
 
     @Column(nullable = false)
     private String provider;
@@ -53,21 +56,25 @@ public class User extends BaseEntity {
 
     public static User ofKakao(String email, String nickname, String profileImageUrl, String oauthId) {
         User user = new User();
+
         user.email = email;
-        user.nickname =nickname;
-        user.profileImageUrl = profileImageUrl;
+        user.nickname = nickname;
+        user.profileImageReference = profileImageUrl;
+        user.profileImageSource = profileImageUrl == null ? null : ProfileImageSource.EXTERNAL;
         user.provider = "KAKAO";
         user.oauthId = oauthId;
+
         return user;
     }
 
     public void updateProfile(String nickname, String address) {
-        if(nickname != null) this.nickname = nickname;
+        if (nickname != null) this.nickname = nickname;
         if (address != null) this.address = address;
     }
 
-    public void updateProfileImage(String profileImageUrl) {
-        this.profileImageUrl = profileImageUrl;
+    public void updateProfileImage(String profileImageReference, ProfileImageSource profileImageSource) {
+        this.profileImageReference = profileImageReference;
+        this.profileImageSource = profileImageSource;
     }
 
     public void withdraw() {
@@ -79,7 +86,8 @@ public class User extends BaseEntity {
         this.password = null;
         this.nickname = "탈퇴한 사용자_" + this.id;
         this.address = null;
-        this.profileImageUrl = null;
+        this.profileImageReference = null;
+        this.profileImageSource = null;
     }
 
     public boolean isDeleted() {

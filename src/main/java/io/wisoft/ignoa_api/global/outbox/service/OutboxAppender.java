@@ -16,19 +16,19 @@ public class OutboxAppender {
 
     private final OutboxRepository outboxRepository;
 
-    public void save(String aggregateId, String aggregateType, String imageUrl, OutboxEventType eventType) {
-        append(aggregateId, aggregateType, imageUrl, eventType);
-        log.info("Outbox 적재 완료 - aggregateId: {}, imageUrl: {}, eventType: {}", aggregateId, imageUrl, eventType);
+    public void save(String aggregateId, String aggregateType, String mediaReference, OutboxEventType eventType) {
+        append(aggregateId, aggregateType, mediaReference, eventType);
+        log.info("Outbox 적재 완료 - aggregateId: {}, mediaReference: {}, eventType: {}", aggregateId, mediaReference, eventType);
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void saveForCompensation(String aggregateId, String aggregateType, String imageUrl, OutboxEventType eventType) {
-        append(aggregateId, aggregateType, imageUrl, eventType);
-        log.warn("보상 Outbox 적재 완료 - aggregateId: {}, imageUrl: {}, eventType: {}", aggregateId, imageUrl, eventType);
+    public void saveForCompensation(String aggregateId, String aggregateType, String mediaReference, OutboxEventType eventType) {
+        append(aggregateId, aggregateType, mediaReference, eventType);
+        log.warn("보상 Outbox 적재 완료 - aggregateId: {}, mediaReference: {}, eventType: {}", aggregateId, mediaReference, eventType);
     }
 
-    private void append(String aggregateId, String aggregateType, String imageUrl, OutboxEventType eventType) {
-        Outbox outbox = Outbox.create(aggregateId, aggregateType, eventType, imageUrl);
+    private void append(String aggregateId, String aggregateType, String mediaReference, OutboxEventType eventType) {
+        Outbox outbox = Outbox.create(aggregateId, aggregateType, eventType, mediaReference);
         outboxRepository.save(outbox);
     }
 }

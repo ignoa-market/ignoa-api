@@ -9,7 +9,13 @@ public record MyProfile(
         String address,
         String profileImageUrl
 ) {
-    public static MyProfile from(User user) {
-        return new MyProfile(user.getId(), user.getEmail(), user.getNickname(), user.getAddress(), user.getProfileImageUrl());
+    public static MyProfile from(User user, String profileImageUrl) {
+        return new MyProfile(
+                user.getId(),
+                user.getEmail(),
+                user.getNickname(),
+                user.getAddress(),
+                profileImageUrl
+        );
     }
 }
