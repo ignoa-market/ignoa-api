@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class BidFacade {
 
-    private static final long BID_WAIT_MILLIS = 150L;
+    private static final long BID_WAIT_MILLIS = 250L;
 
     private final RedissonDistributedLock distributedLock;
     private final BidService bidService;
