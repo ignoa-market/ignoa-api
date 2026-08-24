@@ -31,8 +31,8 @@ public class User extends BaseEntity {
     @Column
     private String address;
 
-    @Column
-    private String profileImageUrl;
+    @Column(name = "profile_image_reference")
+    private String profileImageReference;
 
     @Column(nullable = false)
     private String provider;
@@ -55,7 +55,7 @@ public class User extends BaseEntity {
         User user = new User();
         user.email = email;
         user.nickname =nickname;
-        user.profileImageUrl = profileImageUrl;
+        user.profileImageReference = profileImageUrl;
         user.provider = "KAKAO";
         user.oauthId = oauthId;
         return user;
@@ -66,8 +66,8 @@ public class User extends BaseEntity {
         if (address != null) this.address = address;
     }
 
-    public void updateProfileImage(String profileImageUrl) {
-        this.profileImageUrl = profileImageUrl;
+    public void updateProfileImage(String profileImageReference) {
+        this.profileImageReference = profileImageReference;
     }
 
     public void withdraw() {
@@ -79,7 +79,7 @@ public class User extends BaseEntity {
         this.password = null;
         this.nickname = "탈퇴한 사용자_" + this.id;
         this.address = null;
-        this.profileImageUrl = null;
+        this.profileImageReference = null;
     }
 
     public boolean isDeleted() {

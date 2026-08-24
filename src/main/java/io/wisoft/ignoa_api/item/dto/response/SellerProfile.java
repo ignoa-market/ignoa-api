@@ -8,11 +8,11 @@ public record SellerProfile(
         String profileImageUrl,
         String address
 ) {
-    public static SellerProfile from(User user) {
+    public static SellerProfile from(User user, String profileImageUrl) {
         return new SellerProfile(
                 user.getId(),
                 user.getNickname(),
-                user.getProfileImageUrl(),
+                profileImageUrl,
                 summarizeAddress(user.getAddress())
         );
     }

@@ -96,8 +96,8 @@ public class ItemFacade {
         }
 
         for (MultipartFile file : files) {
-            String mediaUrl = storageService.upload(file);
-            uploadedMedias.add(new UploadedMedia(mediaUrl, ItemMediaType.from(file.getContentType())));
+            String objectKey = storageService.upload(file);
+            uploadedMedias.add(new UploadedMedia(objectKey, ItemMediaType.from(file.getContentType())));
         }
     }
 
@@ -106,12 +106,12 @@ public class ItemFacade {
             uploadedMedias.forEach(uploadedMedia -> outboxAppender.saveForCompensation(
                     aggregateId,
                     "ITEM",
-                    uploadedMedia.mediaUrl(),
+                    uploadedMedia.objectKey(),
                     OutboxEventType.DELETE_ITEM_IMAGE));
         } catch (RuntimeException compensationError) {
-            log.error("보상 Outbox 적재 실패 - 고아 파일 수동 정리 필요 - aggregateId={}, mediaUrls={}",
+            log.error("보상 Outbox 적재 실패 - 고아 파일 수동 정리 필요 - aggregateId={}, objectKeys={}",
                     aggregateId,
-                    uploadedMedias.stream().map(UploadedMedia::mediaUrl).toList(),
+                    uploadedMedias.stream().map(UploadedMedia::objectKey).toList(),
                     compensationError);
         }
     }

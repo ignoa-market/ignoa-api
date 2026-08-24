@@ -3,6 +3,7 @@ package io.wisoft.ignoa_api.item.service;
 import io.wisoft.ignoa_api.bid.entity.Bid;
 import io.wisoft.ignoa_api.bid.repository.BidRepository;
 import io.wisoft.ignoa_api.global.common.SliceResponse;
+import io.wisoft.ignoa_api.global.infra.storage.MediaUrlResolver;
 import io.wisoft.ignoa_api.item.dto.request.ItemPreviewRequest;
 import io.wisoft.ignoa_api.item.dto.response.*;
 import io.wisoft.ignoa_api.item.entity.Item;
@@ -26,6 +27,7 @@ public class ItemQueryService {
 
     private final ItemMediaService itemMediaService;
     private final ItemReader itemReader;
+    private final MediaUrlResolver mediaUrlResolver;
 
     private final ItemRepository itemRepository;
     private final WishRepository wishRepository;
@@ -44,7 +46,8 @@ public class ItemQueryService {
                 .map(bid -> bid.isTopBid(item))
                 .orElse(false);
 
-        SellerProfile sellerProfile = SellerProfile.from(item.getSeller());
+        String profileImageUrl = mediaUrlResolver.toUrl(item.getSeller().getProfileImageReference());
+        SellerProfile sellerProfile = SellerProfile.from(item.getSeller(), profileImageUrl);
         List<ItemMediaUrls> mediaUrls = itemMediaService.getMediaUrls(itemId);
 
         int wishCount = wishRepository.countByItemId(itemId);

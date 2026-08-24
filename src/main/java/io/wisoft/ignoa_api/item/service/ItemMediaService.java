@@ -2,6 +2,7 @@ package io.wisoft.ignoa_api.item.service;
 
 import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
+import io.wisoft.ignoa_api.global.infra.storage.MediaUrlResolver;
 import io.wisoft.ignoa_api.global.outbox.entity.OutboxEventType;
 import io.wisoft.ignoa_api.global.outbox.service.OutboxAppender;
 import io.wisoft.ignoa_api.item.dto.response.ItemMediaUrls;
@@ -21,6 +22,7 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class ItemMediaService {
 
+    private final MediaUrlResolver mediaUrlResolver;
     private final OutboxAppender outboxAppender;
     private final ItemMediaRepository itemMediaRepository;
 
@@ -29,7 +31,7 @@ public class ItemMediaService {
                 .findByItemIdIn(itemIds).stream()
                 .collect(Collectors.toMap(
                         row -> (Long) row[0],
-                        row -> (String) row[1],
+                        row -> mediaUrlResolver.toUrl((String) row[1]),
                         (existing, replacement) -> existing
                 ));
     }
@@ -37,7 +39,9 @@ public class ItemMediaService {
     public List<ItemMediaUrls> getMediaUrls(Long itemId) {
         return itemMediaRepository
                 .findAllByItemIdOrderByIdAsc(itemId).stream()
-                .map(ItemMediaUrls::of)
+                .map(itemMedia -> new ItemMediaUrls(
+                        itemMedia.getId(),
+                        mediaUrlResolver.toUrl(itemMedia.getObjectKey())))
                 .toList();
     }
 
@@ -55,7 +59,7 @@ public class ItemMediaService {
     public void deleteMedias(Long itemId, List<Long> mediaIds) {
         itemMediaRepository.findAllByItemIdAndIdIn(itemId, mediaIds)
                 .forEach(itemMedia -> outboxAppender.save(
-                        itemId.toString(), "ITEM", itemMedia.getMediaUrl(), OutboxEventType.DELETE_ITEM_IMAGE
+                        itemId.toString(), "ITEM", itemMedia.getObjectKey(), OutboxEventType.DELETE_ITEM_IMAGE
                 ));
 
         itemMediaRepository.deleteAllByItemIdAndIdIn(itemId, mediaIds);
@@ -65,7 +69,7 @@ public class ItemMediaService {
     public void deleteAllMedia(Long itemId) {
         itemMediaRepository.findAllByItemId(itemId)
                 .forEach(itemMedia -> outboxAppender.save(
-                        itemId.toString(), "ITEM", itemMedia.getMediaUrl(), OutboxEventType.DELETE_ITEM_IMAGE
+                        itemId.toString(), "ITEM", itemMedia.getObjectKey(), OutboxEventType.DELETE_ITEM_IMAGE
                 ));
 
         itemMediaRepository.deleteAllByItemId(itemId);

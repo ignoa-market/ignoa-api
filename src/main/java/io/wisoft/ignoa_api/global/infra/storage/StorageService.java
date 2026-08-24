@@ -25,9 +25,6 @@ public class StorageService {
     @Value("${cloud.aws.s3.bucket}")
     private String bucket;
 
-    @Value("${cloud.aws.s3.endpoint}")
-    private String endpoint;
-
     public String upload(MultipartFile file) {
         try {
             String originalFilename = file.getOriginalFilename();
@@ -37,30 +34,37 @@ public class StorageService {
             }
 
             String extension = originalFilename.substring(originalFilename.lastIndexOf("."));
-            String key = LocalDate.now() + "/" + UUID.randomUUID() + extension;
+            String objectKey = LocalDate.now() + "/" + UUID.randomUUID() + extension;
 
             s3Client.putObject(
                     PutObjectRequest.builder()
                             .bucket(bucket)
-                            .key(key)
+                            .key(objectKey)
                             .contentType(file.getContentType())
                             .build(),
                     RequestBody.fromBytes(file.getBytes())
             );
 
-            return endpoint + "/" + bucket + "/" + key;
+            return objectKey;
+
         } catch (IOException e) {
             throw new BusinessException(ErrorCode.FILE_UPLOAD_FAILED);
         }
     }
 
-    public void delete(String mediaUrl) {
-        String prefix = endpoint + "/" + bucket + "/";
-        String key = mediaUrl.substring(prefix.length());
+    public void delete(String mediaReference) {
+        if (mediaReference == null || mediaReference.isBlank()) {
+            return;
+        }
+
+        if (mediaReference.startsWith("http://") || mediaReference.startsWith("https://")) {
+            return;
+        }
+
         s3Client.deleteObject(
                 DeleteObjectRequest.builder()
                         .bucket(bucket)
-                        .key(key)
+                        .key(mediaReference)
                         .build()
         );
     }

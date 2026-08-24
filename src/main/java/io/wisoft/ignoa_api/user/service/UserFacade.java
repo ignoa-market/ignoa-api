@@ -2,6 +2,7 @@ package io.wisoft.ignoa_api.user.service;
 
 import io.wisoft.ignoa_api.auth.service.RefreshTokenService;
 import io.wisoft.ignoa_api.auth.service.TokenBlacklistService;
+import io.wisoft.ignoa_api.global.infra.storage.MediaUrlResolver;
 import io.wisoft.ignoa_api.global.infra.storage.StorageService;
 import io.wisoft.ignoa_api.global.outbox.entity.OutboxEventType;
 import io.wisoft.ignoa_api.global.outbox.service.OutboxAppender;
@@ -22,6 +23,7 @@ public class UserFacade {
     private final UserQueryService userQueryService;
 
     private final StorageService storageService;
+    private final MediaUrlResolver mediaUrlResolver;
     private final OutboxAppender outboxAppender;
 
     private final RefreshTokenService refreshTokenService;
@@ -30,26 +32,27 @@ public class UserFacade {
     public MyProfile updateProfileImage(Long userId, MultipartFile image) {
         User user = userQueryService.findById(userId);
 
-        String oldImageUrl = user.getProfileImageUrl();
-        String newImageUrl = storageService.upload(image);
+        String oldMediaReference = user.getProfileImageReference();
+        String newObjectKey = storageService.upload(image);
 
-        user.updateProfileImage(newImageUrl);
+        user.updateProfileImage(newObjectKey);
 
         try {
-            userCommandService.saveProfileImage(user, oldImageUrl);
+            userCommandService.saveProfileImage(user, oldMediaReference);
         } catch (RuntimeException e) {
-            compensate(userId.toString(), newImageUrl);
+            compensate(userId.toString(), newObjectKey);
             throw e;
         }
 
-        return MyProfile.from(user);
+        String profileImageUrl = mediaUrlResolver.toUrl(newObjectKey);
+        return MyProfile.from(user, profileImageUrl);
     }
 
-    private void compensate(String userId, String mediaUrl) {
+    private void compensate(String userId, String objectKey) {
         try {
-            outboxAppender.saveForCompensation(userId, "USER", mediaUrl, OutboxEventType.DELETE_PROFILE_IMAGE);
+            outboxAppender.saveForCompensation(userId, "USER", objectKey, OutboxEventType.DELETE_PROFILE_IMAGE);
         } catch (RuntimeException compensationError) {
-            log.error("보상 Outbox 적재 실패 - 고아 파일 수동 정리 필요 - userId={}, mediaUrl={}", userId, mediaUrl, compensationError);
+            log.error("보상 Outbox 적재 실패 - 고아 파일 수동 정리 필요 - userId={}, objectKey={}", userId, objectKey, compensationError);
         }
     }
 
