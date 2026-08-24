@@ -3,6 +3,7 @@ package io.wisoft.ignoa_api.item.service;
 import io.wisoft.ignoa_api.auction.event.AuctionClosedEvent;
 import io.wisoft.ignoa_api.auction.event.AuctionRegisteredEvent;
 import io.wisoft.ignoa_api.bid.repository.BidRepository;
+import io.wisoft.ignoa_api.chat.service.ChatRoomService;
 import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
 import io.wisoft.ignoa_api.item.dto.request.ItemBuyNowRequest;
@@ -38,6 +39,7 @@ public class ItemCommandService {
     private final ItemMediaService itemMediaService;
     private final ItemQueryService itemQueryService;
     private final UserQueryService userQueryService;
+    private final ChatRoomService chatRoomService;
 
     private final ItemReader itemReader;
     private final ApplicationEventPublisher eventPublisher;
@@ -121,13 +123,20 @@ public class ItemCommandService {
             throw new BusinessException(ErrorCode.SELF_BUY_NOT_ALLOWED);
         }
 
-        int updatedRows = itemRepository.buyNowIfActive(itemId, user, request.buyNowPrice(), LocalDateTime.now());
+        int updatedRows = itemRepository.buyNowIfActive(
+                itemId,
+                user,
+                request.buyNowPrice(),
+                LocalDateTime.now()
+        );
 
         if (updatedRows == 0) {
             throw new BusinessException(ErrorCode.BUY_NOW_CONFLICT);
         }
 
         bidRepository.markLosingBids(itemId);
+        chatRoomService.createChat(itemId);
+
         eventPublisher.publishEvent(new AuctionClosedEvent(itemId));
 
         return new BuyNowResponse(itemId, buyerId, request.buyNowPrice(), ItemStatus.BUY_NOW_CLOSED);

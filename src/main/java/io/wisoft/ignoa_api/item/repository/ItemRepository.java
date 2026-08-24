@@ -85,7 +85,7 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
                                   @Param("highestBidder") User highestBidder, @Param("now") LocalDateTime now);
 
     // 즉시구매 조건부 UPDATE
-    @Modifying
+    @Modifying(clearAutomatically = true)
     @Query("""
             UPDATE Item i
             SET i.status = 'BUY_NOW_CLOSED',
