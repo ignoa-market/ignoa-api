@@ -11,7 +11,10 @@ import java.time.LocalDateTime;
 @Entity
 @Table(
         name = "users",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"provider", "oauth_id"})
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_users_provider_oauth_id",
+                columnNames = {"provider", "oauth_id"}
+        )
 )
 public class User extends BaseEntity {
 
