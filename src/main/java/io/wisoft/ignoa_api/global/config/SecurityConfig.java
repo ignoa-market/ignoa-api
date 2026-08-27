@@ -1,6 +1,7 @@
 package io.wisoft.ignoa_api.global.config;
 
 import io.wisoft.ignoa_api.auth.jwt.JwtAuthenticationFilter;
+import io.wisoft.ignoa_api.global.security.CloudFrontOriginFilter;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -26,6 +27,7 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final CloudFrontOriginFilter cloudFrontOriginFilter;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -56,6 +58,7 @@ public class SecurityConfig {
                         .accessDeniedHandler((request, response, accessDeniedException) ->
                                 response.sendError(HttpServletResponse.SC_FORBIDDEN)))
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(cloudFrontOriginFilter, JwtAuthenticationFilter.class)
                 .cors(cors -> cors.configurationSource(configurationSource()))
                 .build();
     }
@@ -65,7 +68,8 @@ public class SecurityConfig {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(List.of(
                 "http://localhost:35173",
-                "https://ignoa.wisoft.dev"
+                "https://ignoa.wisoft.dev",
+                "https://dudk7ec6su821.cloudfront.net"
         ));
         config.setAllowedMethods(List.of("GET", "POST", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));

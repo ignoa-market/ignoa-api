@@ -23,6 +23,11 @@ spring:
       host: redis
       port: 6379
 
+ignoa:
+  cloudfront-origin:
+    enabled: ${CLOUDFRONT_ORIGIN_VERIFICATION_ENABLED}
+    secret: ${CLOUDFRONT_ORIGIN_VERIFY_SECRET}
+
 management:
   endpoints:
     web:
