@@ -1,5 +1,6 @@
 package io.wisoft.ignoa_api.item.service;
 
+import io.wisoft.ignoa_api.chat.repository.ChatRoomRepository;
 import io.wisoft.ignoa_api.item.dto.request.ItemBuyNowRequest;
 import io.wisoft.ignoa_api.item.dto.response.BuyNowResponse;
 import io.wisoft.ignoa_api.item.entity.Item;
@@ -17,6 +18,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 class ItemBuyNowTest extends IntegrationTestSupport {
 
     @Autowired
+    private ChatRoomRepository chatRoomRepository;
+
+    @Autowired
     private UserRepository userRepository;
 
     @Autowired
@@ -27,6 +31,7 @@ class ItemBuyNowTest extends IntegrationTestSupport {
 
     @AfterEach
     void tearDown() {
+        chatRoomRepository.deleteAll();
         itemRepository.deleteAll();
         userRepository.deleteAll();
     }
