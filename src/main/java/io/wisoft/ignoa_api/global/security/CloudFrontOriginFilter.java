@@ -50,7 +50,7 @@ public class CloudFrontOriginFilter extends OncePerRequestFilter {
                 || !MessageDigest.isEqual(
                 secret, requestSecret.getBytes(StandardCharsets.UTF_8)
         )) {
-            response.sendError(HttpServletResponse.SC_FORBIDDEN);
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
             return;
         }
 
