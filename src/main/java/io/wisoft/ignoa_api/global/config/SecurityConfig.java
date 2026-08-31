@@ -68,7 +68,7 @@ public class SecurityConfig {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(List.of(
                 "http://localhost:35173",
-                "https://ignoa.wisoft.dev",
+                "https://ignoa.woomin.dev",
                 "https://dudk7ec6su821.cloudfront.net"
         ));
         config.setAllowedMethods(List.of("GET", "POST", "PATCH", "DELETE", "OPTIONS"));
