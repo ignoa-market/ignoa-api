@@ -33,6 +33,9 @@ cloud:
     s3:
       bucket: ${S3_BUCKET}
       region: ${S3_REGION}
+    cloudfront:
+      media-base-url: https://ignoa.woomin.dev
+
 
 jwt:
   secret: ${JWT_SECRET}
