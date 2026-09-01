@@ -5,6 +5,7 @@ import io.wisoft.ignoa_api.auth.service.TokenBlacklistService;
 import io.wisoft.ignoa_api.global.infra.storage.MediaUrlResolver;
 import io.wisoft.ignoa_api.global.infra.storage.ObjectKeyPrefix;
 import io.wisoft.ignoa_api.global.infra.storage.StorageService;
+import io.wisoft.ignoa_api.global.infra.storage.StorageUploadResult;
 import io.wisoft.ignoa_api.global.outbox.entity.OutboxEventType;
 import io.wisoft.ignoa_api.global.outbox.service.OutboxAppender;
 import io.wisoft.ignoa_api.user.dto.response.MyProfile;
@@ -30,7 +31,8 @@ public class UserFacade {
     private final TokenBlacklistService tokenBlacklistService;
 
     public MyProfile updateProfileImage(Long userId, MultipartFile image) {
-        String newObjectKey = storageService.upload(image, ObjectKeyPrefix.PROFILES);
+        StorageUploadResult uploadResult = storageService.upload(image, ObjectKeyPrefix.PROFILES);
+        String newObjectKey = uploadResult.objectKey();
 
         User user;
 

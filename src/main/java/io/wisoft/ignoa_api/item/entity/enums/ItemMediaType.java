@@ -9,7 +9,7 @@ public enum ItemMediaType {
     IMAGE, VIDEO;
 
     private static final Set<String> IMAGE_TYPES = Set.of("image/jpeg", "image/png", "image/gif", "image/webp");
-    private static final Set<String> VIDEO_TYPES = Set.of("video/mp4", "video/quicktime", "video/avi", "video/webm");
+    private static final Set<String> VIDEO_TYPES = Set.of("video/mp4", "video/quicktime", "video/x-msvideo", "video/webm");
 
     public static ItemMediaType from(String contentType) {
         if (contentType == null) throw new BusinessException(ErrorCode.UNSUPPORTED_MEDIA_TYPE);

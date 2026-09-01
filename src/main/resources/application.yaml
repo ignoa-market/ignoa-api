@@ -36,7 +36,6 @@ cloud:
     cloudfront:
       media-base-url: https://ignoa.woomin.dev
 
-
 jwt:
   secret: ${JWT_SECRET}
   access-expiration: ${JWT_ACCESS_EXPIRATION}

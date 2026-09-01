@@ -10,6 +10,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestCookieException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
@@ -81,6 +82,14 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(ErrorCode.MISSING_REFRESH_TOKEN.getHttpStatus())
                 .body(ErrorResponse.of(ErrorCode.MISSING_REFRESH_TOKEN));
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ErrorResponse> handleMaxUploadSizeExceeded(MaxUploadSizeExceededException e) {
+        log.warn("MaxUploadSizeExceededException: {}", e.getMessage());
+        return ResponseEntity
+                .status(ErrorCode.FILE_SIZE_EXCEEDED.getHttpStatus())
+                .body(ErrorResponse.of(ErrorCode.FILE_SIZE_EXCEEDED));
     }
 
     @ExceptionHandler(Exception.class)
