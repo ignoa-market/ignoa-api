@@ -92,6 +92,7 @@ public class ItemFacade {
     }
 
     private void uploadFiles(List<MultipartFile> files, List<UploadedMedia> uploadedMedias) {
+        // 상품 수정 시 새로 업로드할 파일이 없으면 생략
         if (CollectionUtils.isEmpty(files)) {
             return;
         }

@@ -26,6 +26,10 @@ public class StorageService {
     private String bucket;
 
     public String upload(MultipartFile file, ObjectKeyPrefix prefix) {
+        if (file == null || file.isEmpty()) {
+            throw new BusinessException(ErrorCode.EMPTY_FILE);
+        }
+
         try {
             String extension = StringUtils.getFilenameExtension(file.getOriginalFilename());
 
