@@ -1,7 +1,5 @@
 package io.wisoft.ignoa_api.item.service;
 
-import io.wisoft.ignoa_api.auction.event.AuctionClosedEvent;
-import io.wisoft.ignoa_api.auction.event.AuctionRegisteredEvent;
 import io.wisoft.ignoa_api.bid.repository.BidRepository;
 import io.wisoft.ignoa_api.chat.service.ChatRoomService;
 import io.wisoft.ignoa_api.global.exception.BusinessException;
@@ -22,7 +20,6 @@ import io.wisoft.ignoa_api.user.service.UserQueryService;
 import io.wisoft.ignoa_api.wish.repository.WishRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -42,7 +39,6 @@ public class ItemCommandService {
     private final ChatRoomService chatRoomService;
 
     private final ItemReader itemReader;
-    private final ApplicationEventPublisher eventPublisher;
 
     private final ItemRepository itemRepository;
     private final WishRepository wishRepository;
@@ -61,7 +57,6 @@ public class ItemCommandService {
 
         itemRepository.save(item);
         itemMediaService.saveAll(itemMedias);
-        eventPublisher.publishEvent(new AuctionRegisteredEvent(item.getId(), item.getEndAt()));
 
         return new ItemIdResponse(item.getId());
     }
@@ -110,7 +105,6 @@ public class ItemCommandService {
 
         wishRepository.deleteAllByItemId(itemId);
         itemMediaService.deleteAllMedia(itemId);
-        eventPublisher.publishEvent(new AuctionClosedEvent(itemId));
 
         return new ItemIdResponse(itemId);
     }
@@ -136,8 +130,6 @@ public class ItemCommandService {
 
         bidRepository.markLosingBids(itemId);
         chatRoomService.createChat(itemId);
-
-        eventPublisher.publishEvent(new AuctionClosedEvent(itemId));
 
         return new BuyNowResponse(itemId, buyerId, request.buyNowPrice(), ItemStatus.BUY_NOW_CLOSED);
     }

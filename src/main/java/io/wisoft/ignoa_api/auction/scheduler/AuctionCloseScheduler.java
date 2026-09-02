@@ -14,10 +14,10 @@ public class AuctionCloseScheduler {
 
     private final AuctionCloseJob auctionCloseJob;
 
-    @Scheduled(cron = "0 */1 * * * *")
+    @Scheduled(fixedDelay = 5_000L)
     @SchedulerLock(name = "auctionCloseScheduler")
     public void closeExpiredAuctions() {
-        log.info("경매 마감 스케줄러 실행");
+        log.debug("경매 마감 스케줄러 실행");
         auctionCloseJob.closeExpiredAuctions();
     }
 }

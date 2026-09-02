@@ -2,7 +2,6 @@ package io.wisoft.ignoa_api.auction.scheduler;
 
 import io.wisoft.ignoa_api.auction.service.AuctionFacade;
 import io.wisoft.ignoa_api.item.entity.Item;
-import io.wisoft.ignoa_api.item.entity.enums.ItemStatus;
 import io.wisoft.ignoa_api.item.repository.ItemRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,14 +19,13 @@ public class AuctionCloseJob {
     private final ItemRepository itemRepository;
 
     public void closeExpiredAuctions() {
-        List<Item> expiredItems = itemRepository
-                .findAllByStatusAndEndAtLessThanEqual(ItemStatus.ACTIVE, LocalDateTime.now());
+        List<Item> expiredItems = itemRepository.findExpiredActiveItems(LocalDateTime.now());
 
         for (Item item : expiredItems) {
             try {
                 auctionFacade.closeAuction(item.getId());
             } catch (Exception e) {
-                log.error("경매 마감 처리 실패 itemId={}", item.getId(), e);
+                log.error("만료 경매 마감 처리 실패 itemId={}", item.getId(), e);
             }
         }
     }
