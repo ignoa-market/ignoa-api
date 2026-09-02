@@ -39,12 +39,12 @@ public class AuctionService {
         boolean hasWinner = bidService.markBidResults(itemId);
 
         if (!hasWinner) {
-            log.info("경매 유찰 처리 완료: itemId={}", itemId);
+            log.debug("경매 유찰 처리 완료: itemId={}", itemId);
             return;
         }
 
         chatRoomService.createChat(itemId);
-        log.info("경매 낙찰 처리 및 채팅방 생성 완료: itemId={}", itemId);
+        log.debug("경매 낙찰 처리 및 채팅방 생성 완료: itemId={}", itemId);
     }
 
     @Transactional
