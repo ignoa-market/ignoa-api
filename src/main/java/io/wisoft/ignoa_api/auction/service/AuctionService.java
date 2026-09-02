@@ -24,7 +24,6 @@ public class AuctionService {
 
     private final BidService bidService;
     private final ChatRoomService chatRoomService;
-
     private final ItemReader itemReader;
     private final ItemRepository itemRepository;
 
