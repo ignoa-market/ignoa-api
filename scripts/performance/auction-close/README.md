@@ -6,13 +6,13 @@ HTTP 요청 부하 테스트가 아니라 Scheduler Job의 처리량을 측정�
 
 ## 측정 시나리오
 
-각 상품에는 활성 입찰을 한 건씩 생성합니다. 따라서 자동 마감 시 상품 상태 변경뿐 아니라 낙찰 처리와 채팅방 생성까지 실행됩니다.
+각 상품에는 서로 다른 입찰자의 활성 입찰을 10건씩 생성합니다. 따라서 자동 마감 시 상품 상태 변경뿐 아니라 최고가 입찰 1건의 낙찰, 나머지 9건의 패찰, 채팅방 생성까지 실행됩니다.
 
 ```text
 판매자 1명
-입찰자 1명
+입찰자 10명
 ACTIVE 상품 1,000건
-상품별 ACTIVE 입찰 1건
+상품별 ACTIVE 입찰 10건
 ```
 
 ## 실행 전 확인
@@ -50,6 +50,7 @@ mysql -h <HOST> -P <PORT> -u <USER> -p <DATABASE> \
 ```text
 items.status = BID_CLOSED  1,000건
 bids.status  = WON         1,000건
+bids.status  = LOST        9,000건
 chat_rooms                 1,000건
 ACTIVE로 남은 테스트 상품     0건
 ```

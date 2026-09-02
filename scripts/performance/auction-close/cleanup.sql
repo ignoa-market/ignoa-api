@@ -21,10 +21,9 @@ DELETE FROM items
 WHERE title LIKE CONCAT('PERF-AUCTION-', @run_id, '-%');
 
 DELETE FROM users
-WHERE email IN (
-    CONCAT('perf-seller-', @run_id, '@test.local'),
-    CONCAT('perf-bidder-', @run_id, '@test.local')
-);
+WHERE email = CONCAT('perf-seller-', @run_id, '@test.local')
+   OR email = CONCAT('perf-bidder-', @run_id, '@test.local')
+   OR email LIKE CONCAT('perf-bidder-', @run_id, '-%@test.local');
 
 COMMIT;
 
@@ -35,7 +34,6 @@ WHERE title LIKE CONCAT('PERF-AUCTION-', @run_id, '-%');
 
 SELECT COUNT(*) AS remaining_users
 FROM users
-WHERE email IN (
-    CONCAT('perf-seller-', @run_id, '@test.local'),
-    CONCAT('perf-bidder-', @run_id, '@test.local')
-);
+WHERE email = CONCAT('perf-seller-', @run_id, '@test.local')
+   OR email = CONCAT('perf-bidder-', @run_id, '@test.local')
+   OR email LIKE CONCAT('perf-bidder-', @run_id, '-%@test.local');
