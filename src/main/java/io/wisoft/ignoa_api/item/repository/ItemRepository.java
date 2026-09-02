@@ -68,13 +68,13 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
 
     // 경매 마감 - 만료된 상품 조회
     @Query("""
-            SELECT i
+            SELECT i.id
             FROM Item i
             WHERE i.status = 'ACTIVE'
                 AND i.endAt <= :now
             ORDER BY i.endAt ASC, i.id ASC
             """)
-    List<Item> findExpiredActiveItems(@Param("now") LocalDateTime now);
+    List<Long> findExpiredActiveItemIds(@Param("now") LocalDateTime now, Pageable pageable);
 
     // 입찰 조건부 UPDATE
     @Modifying
