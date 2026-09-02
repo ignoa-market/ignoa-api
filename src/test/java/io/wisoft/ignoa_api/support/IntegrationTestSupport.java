@@ -44,6 +44,10 @@ public abstract class IntegrationTestSupport {
     }
 
     protected Item newItem(User seller) {
+        return newItem(seller, LocalDateTime.now().plusDays(1));
+    }
+
+    protected Item newItem(User seller, LocalDateTime endAt) {
         return Item.create(
                 seller,
                 "테스트 상품",
@@ -53,7 +57,7 @@ public abstract class IntegrationTestSupport {
                 "브랜드",
                 1_000L,
                 1_000_000L,
-                LocalDateTime.now().plusDays(1)
+                endAt
         );
     }
 }
