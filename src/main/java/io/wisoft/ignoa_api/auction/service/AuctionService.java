@@ -1,7 +1,6 @@
 package io.wisoft.ignoa_api.auction.service;
 
 import io.wisoft.ignoa_api.auction.dto.response.AuctionExtensionResponse;
-import io.wisoft.ignoa_api.auction.event.AuctionRegisteredEvent;
 import io.wisoft.ignoa_api.bid.service.BidService;
 import io.wisoft.ignoa_api.chat.service.ChatRoomService;
 import io.wisoft.ignoa_api.global.exception.BusinessException;
@@ -11,7 +10,6 @@ import io.wisoft.ignoa_api.item.repository.ItemRepository;
 import io.wisoft.ignoa_api.item.service.ItemReader;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,28 +24,28 @@ public class AuctionService {
 
     private final BidService bidService;
     private final ChatRoomService chatRoomService;
+
     private final ItemReader itemReader;
     private final ItemRepository itemRepository;
-    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void closeAuction(Long itemId) {
         int updatedRows = itemRepository.closeIfActive(itemId, LocalDateTime.now());
 
         if (updatedRows == 0) {
-            log.info("[중복 마감 방지] 이미 마감된 경매 itemId={}", itemId);
+            log.debug("경매 마감 처리 생략: itemId={}, reason=조건 불충족", itemId);
             return;
         }
 
         boolean hasWinner = bidService.markBidResults(itemId);
 
         if (!hasWinner) {
-            log.info("[유찰] 입찰 없이 마감된 경매 itemId={}", itemId);
+            log.info("경매 유찰 처리 완료: itemId={}", itemId);
             return;
         }
 
         chatRoomService.createChat(itemId);
-        log.info("[낙찰] 경매 마감 및 채팅방 생성 itemId={}", itemId);
+        log.info("경매 낙찰 처리 및 채팅방 생성 완료: itemId={}", itemId);
     }
 
     @Transactional
@@ -65,9 +63,6 @@ public class AuctionService {
         }
 
         Item extendedItem = itemReader.getById(itemId);
-
-        eventPublisher.publishEvent(
-                new AuctionRegisteredEvent(extendedItem.getId(), extendedItem.getEndAt()));
 
         return new AuctionExtensionResponse(
                 extendedItem.getId(),

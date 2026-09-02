@@ -64,9 +64,17 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
             """)
     Optional<Item> findByIdWithSeller(@Param("itemId") Long itemId);
 
-    List<Item> findAllByStatusAndEndAtLessThanEqual(ItemStatus status, LocalDateTime endAtBefore);
-
     boolean existsBySellerIdAndStatus(Long userId, ItemStatus status);
+
+    // 경매 마감 - 만료된 상품 조회
+    @Query("""
+            SELECT i 
+            FROM Item i           
+            WHERE i.status = 'ACTIVE'
+                AND i.endAt <= :now
+            ORDER BY i.endAt ASC, i.id ASC        
+            """)
+    List<Item> findExpiredActiveItems(@Param("now") LocalDateTime now);
 
     // 입찰 조건부 UPDATE
     @Modifying

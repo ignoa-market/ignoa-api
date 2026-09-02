@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class AuctionFacade {
 
-    private static final long CLOSE_WAIT_MILLIS = 3_000L;
+    private static final long CLOSE_WAIT_MILLIS = 500L;
     private static final long EXTEND_WAIT_MILLIS = 250L;
 
     private final AuctionService auctionService;
