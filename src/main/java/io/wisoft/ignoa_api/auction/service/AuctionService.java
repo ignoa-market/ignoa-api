@@ -32,19 +32,19 @@ public class AuctionService {
         int updatedRows = itemRepository.closeIfActive(itemId, LocalDateTime.now());
 
         if (updatedRows == 0) {
-            log.debug("경매 마감 처리 생략: itemId={}, reason=조건 불충족", itemId);
+            log.debug("경매 마감 생략: itemId={}, reason=마감 조건 불충족", itemId);
             return;
         }
 
         boolean hasWinner = bidService.markBidResults(itemId);
 
         if (!hasWinner) {
-            log.debug("경매 유찰 처리 완료: itemId={}", itemId);
+            log.debug("경매 마감 완료: itemId={}, result=유찰", itemId);
             return;
         }
 
         chatRoomService.createChat(itemId);
-        log.debug("경매 낙찰 처리 및 채팅방 생성 완료: itemId={}", itemId);
+        log.debug("경매 마감 완료: itemId={}, result=낙찰, chatRoomCreated=true", itemId);
     }
 
     @Transactional

@@ -19,7 +19,6 @@ import io.wisoft.ignoa_api.user.entity.User;
 import io.wisoft.ignoa_api.user.service.UserQueryService;
 import io.wisoft.ignoa_api.wish.repository.WishRepository;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -27,7 +26,6 @@ import org.springframework.util.CollectionUtils;
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional

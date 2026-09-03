@@ -27,7 +27,7 @@ public class RedissonDistributedLock {
         try {
             return execute(key, operation, waitMillis, task);
         } catch (LockInfrastructureException e) {
-            log.warn("Redis 인프라 장애로 fail-open 처리 - 락 없이 진행. key={}, operation={}", key, operation, e);
+            log.warn("분산 락 Fail-Open: key={}, operation={}, reason=Redis 인프라 장애", key, operation, e);
             return task.get();
         }
     }
@@ -36,7 +36,7 @@ public class RedissonDistributedLock {
         try {
             execute(key, operation, waitMillis, toSupplier(task));
         } catch (LockInfrastructureException e) {
-            log.warn("Redis 인프라 장애로 fail-open 처리 - 락 없이 진행. key={}, operation={}", key, operation, e);
+            log.warn("분산 락 Fail-Open: key={}, operation={}, reason=Redis 인프라 장애", key, operation, e);
             task.run();
         }
     }

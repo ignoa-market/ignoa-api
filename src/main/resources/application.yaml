@@ -1,6 +1,11 @@
 server:
   port: 38080
 
+logging:
+  level:
+    root: INFO
+    io.wisoft.ignoa_api: ${APP_LOG_LEVEL:INFO}
+
 spring:
   application:
     name: Ignoa API

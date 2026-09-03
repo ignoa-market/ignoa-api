@@ -67,7 +67,7 @@ public class EmailService {
 
             mailSender.send(message);
         } catch (MessagingException | MailException exception) {
-            throw new BusinessException(ErrorCode.EMAIL_SEND_FAILED);
+            throw new BusinessException(ErrorCode.EMAIL_SEND_FAILED, exception);
         }
     }
 

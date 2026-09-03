@@ -18,13 +18,23 @@ public class OutboxAppender {
 
     public void save(String aggregateId, String aggregateType, String mediaReference, OutboxEventType eventType) {
         append(aggregateId, aggregateType, mediaReference, eventType);
-        log.info("Outbox 적재 완료 - aggregateId: {}, mediaReference: {}, eventType: {}", aggregateId, mediaReference, eventType);
+        log.debug(
+                "Outbox 적재 완료: aggregateType={}, aggregateId={}, eventType={}",
+                aggregateType,
+                aggregateId,
+                eventType
+        );
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void saveForCompensation(String aggregateId, String aggregateType, String mediaReference, OutboxEventType eventType) {
         append(aggregateId, aggregateType, mediaReference, eventType);
-        log.warn("보상 Outbox 적재 완료 - aggregateId: {}, mediaReference: {}, eventType: {}", aggregateId, mediaReference, eventType);
+        log.warn(
+                "보상 Outbox 적재 완료: aggregateType={}, aggregateId={}, eventType={}",
+                aggregateType,
+                aggregateId,
+                eventType
+        );
     }
 
     private void append(String aggregateId, String aggregateType, String mediaReference, OutboxEventType eventType) {
