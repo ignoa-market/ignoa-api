@@ -25,7 +25,7 @@ repositories {
 }
 
 dependencies {
-	// 웹/서버
+	// 웹, 서버
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.boot:spring-boot-starter-websocket'
 
@@ -36,7 +36,7 @@ dependencies {
 	implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
 	runtimeOnly 'com.mysql:mysql-connector-j'
 
-	// 보안/인증
+	// 보안, 인증
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
 	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
@@ -52,7 +52,7 @@ dependencies {
 
 	// Shedlock
 	implementation 'net.javacrumbs.shedlock:shedlock-spring:6.0.2'
-	implementation 'net.javacrumbs.shedlock:shedlock-provider-redis-spring:6.0.2'
+	implementation 'net.javacrumbs.shedlock:shedlock-provider-jdbc-template:6.0.2'
 
 	// 분산 락
 	implementation 'org.redisson:redisson:4.6.1'
