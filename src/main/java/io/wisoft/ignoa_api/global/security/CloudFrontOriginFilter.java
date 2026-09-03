@@ -4,6 +4,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -13,6 +14,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 
+@Slf4j
 @Component
 public class CloudFrontOriginFilter extends OncePerRequestFilter {
 
@@ -50,6 +52,12 @@ public class CloudFrontOriginFilter extends OncePerRequestFilter {
                 || !MessageDigest.isEqual(
                 secret, requestSecret.getBytes(StandardCharsets.UTF_8)
         )) {
+            log.debug(
+                    "CloudFront Origin 검증 실패: method={}, uri={}, remoteAddress={}",
+                    request.getMethod(),
+                    request.getRequestURI(),
+                    request.getRemoteAddr()
+            );
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
             return;
         }
@@ -57,4 +65,3 @@ public class CloudFrontOriginFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 }
-

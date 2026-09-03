@@ -64,7 +64,7 @@ public class AuctionCloseJob {
 
             if (selectedCount > 0) {
                 log.info(
-                        "경매 자동 마감 Job 완료: selected={}, completed={}, failed={}, durationMs={}",
+                        "경매 자동 마감 작업 완료: target={}, completed={}, failed={}, durationMs={}",
                         selectedCount,
                         completedCount.get(),
                         failedCount.get(),
@@ -84,7 +84,7 @@ public class AuctionCloseJob {
             completedCount.incrementAndGet();
         } catch (Exception e) {
             failedCount.incrementAndGet();
-            log.error("만료 경매 마감 처리 실패 itemId={}", itemId, e);
+            log.error("만료 경매 마감 처리 실패: itemId={}", itemId, e);
         }
     }
 }

@@ -17,7 +17,7 @@ public class OutboxScheduler {
     @Scheduled(cron = "0 0 2 * * *")
     @SchedulerLock(name = "outboxScheduler")
     public void run() {
-        log.info("Outbox 스케줄러 실행");
+        log.debug("Outbox 처리 스케줄러 실행");
         outboxWorker.execute();
     }
 }

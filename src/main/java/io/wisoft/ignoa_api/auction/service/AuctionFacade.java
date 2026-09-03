@@ -5,10 +5,8 @@ import io.wisoft.ignoa_api.global.infra.lock.LockOperation;
 import io.wisoft.ignoa_api.global.infra.lock.RedissonDistributedLock;
 import io.wisoft.ignoa_api.item.support.ItemLockKey;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-@Slf4j
 @Component
 @RequiredArgsConstructor
 public class AuctionFacade {

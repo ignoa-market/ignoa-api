@@ -66,7 +66,7 @@ public class StorageService {
 
             return new StorageUploadResult(objectKey, contentType);
         } catch (IOException e) {
-            throw new BusinessException(ErrorCode.FILE_UPLOAD_FAILED);
+            throw new BusinessException(ErrorCode.FILE_UPLOAD_FAILED, e);
         }
     }
 
@@ -87,7 +87,7 @@ public class StorageService {
         try (InputStream inputStream = file.getInputStream()) {
             return tika.detect(inputStream);
         } catch (IOException e) {
-            throw new BusinessException(ErrorCode.FILE_UPLOAD_FAILED);
+            throw new BusinessException(ErrorCode.FILE_UPLOAD_FAILED, e);
         }
     }
 

@@ -54,7 +54,12 @@ public class UserFacade {
         try {
             outboxAppender.saveForCompensation(userId, "USER", objectKey, OutboxEventType.DELETE_PROFILE_IMAGE);
         } catch (RuntimeException compensationError) {
-            log.error("보상 Outbox 적재 실패 - 고아 파일 수동 정리 필요 - userId={}, objectKey={}", userId, objectKey, compensationError);
+            log.error(
+                    "보상 Outbox 적재 실패: aggregateType=USER, aggregateId={}, objectKey={}, action=고아 파일 수동 정리",
+                    userId,
+                    objectKey,
+                    compensationError
+            );
         }
     }
 

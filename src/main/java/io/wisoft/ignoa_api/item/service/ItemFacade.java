@@ -66,7 +66,7 @@ public class ItemFacade {
                     () -> itemCommandService.updateItem(itemId, userId, request, uploadedMedias)
             );
         } catch (ObjectOptimisticLockingFailureException e) {
-            log.warn("상품 수정 낙관적 락 충돌 itemId={}", itemId, e);
+            log.debug("상품 수정 충돌: itemId={}, reason=낙관적 락 충돌", itemId);
             compensate(itemId.toString(), uploadedMedias);
             throw new BusinessException(ErrorCode.ITEM_CONFLICT);
 
@@ -116,7 +116,7 @@ public class ItemFacade {
                     uploadedMedia.objectKey(),
                     OutboxEventType.DELETE_ITEM_IMAGE));
         } catch (RuntimeException compensationError) {
-            log.error("보상 Outbox 적재 실패 - 고아 파일 수동 정리 필요 - aggregateId={}, objectKeys={}",
+            log.error("보상 Outbox 적재 실패: aggregateType=ITEM, aggregateId={}, objectKeys={}, action=고아 파일 수동 정리",
                     aggregateId,
                     uploadedMedias.stream().map(UploadedMedia::objectKey).toList(),
                     compensationError);

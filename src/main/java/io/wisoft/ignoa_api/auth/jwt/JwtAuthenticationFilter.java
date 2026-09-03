@@ -52,7 +52,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             );
 
         } catch (JwtException e) {
-            log.warn("Invalid JWT token: {}", e.getMessage());
+            log.debug("JWT 인증 실패: reason={}", e.getClass().getSimpleName());
         }
     }
 

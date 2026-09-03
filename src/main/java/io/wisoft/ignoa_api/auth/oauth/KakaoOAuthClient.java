@@ -27,7 +27,11 @@ public class KakaoOAuthClient {
                       "&code=" + code)
                 .retrieve()
                 .onStatus(status -> status.isError(), (req, res) -> {
-                    log.error("카카오 토큰 교환 실패 - status: {}, body: {}", res.getStatusCode(), new String(res.getBody().readAllBytes()));
+                    if (res.getStatusCode().is5xxServerError()) {
+                        log.error("카카오 OAuth 요청 실패: operation=TOKEN_EXCHANGE, status={}", res.getStatusCode());
+                    } else {
+                        log.warn("카카오 OAuth 요청 거부: operation=TOKEN_EXCHANGE, status={}", res.getStatusCode());
+                    }
                     throw new BusinessException(ErrorCode.KAKAO_AUTH_FAILED);
                 })
                 .body(KakaoTokenResponse.class);
@@ -41,7 +45,11 @@ public class KakaoOAuthClient {
                 .header("Authorization", "Bearer " + accessToken)
                 .retrieve()
                 .onStatus(status -> status.isError(), (req, res) -> {
-                    log.error("카카오 사용자 정보 조회 실패 - status: {}, body: {}", res.getStatusCode(), new String(res.getBody().readAllBytes()));
+                    if (res.getStatusCode().is5xxServerError()) {
+                        log.error("카카오 OAuth 요청 실패: operation=USER_INFO, status={}", res.getStatusCode());
+                    } else {
+                        log.warn("카카오 OAuth 요청 거부: operation=USER_INFO, status={}", res.getStatusCode());
+                    }
                     throw new BusinessException(ErrorCode.KAKAO_AUTH_FAILED);
                 })
                 .body(KakaoUserInfoResponse.class);

@@ -16,7 +16,7 @@ public class UserPurgeScheduler {
     @Scheduled(cron = "0 0 1 * * *")
     @SchedulerLock(name = "userPurgeScheduler")
     public void purgeExpiredWithdrawals() {
-        log.info("탈퇴 회원 개인정보 파기 스케줄러 실행");
+        log.debug("탈퇴 회원 개인정보 파기 스케줄러 실행");
         userPurgeJob.execute();
     }
 }

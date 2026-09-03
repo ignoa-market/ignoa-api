@@ -17,7 +17,7 @@ public class AuctionCloseScheduler {
     @Scheduled(fixedDelay = 5_000L)
     @SchedulerLock(name = "auctionCloseScheduler")
     public void closeExpiredAuctions() {
-        log.debug("경매 마감 스케줄러 실행");
+        log.debug("경매 자동 마감 스케줄러 실행");
         auctionCloseJob.closeExpiredAuctions();
     }
 }

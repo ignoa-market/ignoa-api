@@ -15,12 +15,10 @@ import io.wisoft.ignoa_api.user.entity.User;
 import io.wisoft.ignoa_api.user.repository.UserRepository;
 import io.wisoft.ignoa_api.wish.repository.WishRepository;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
