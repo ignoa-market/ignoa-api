@@ -47,8 +47,9 @@ public class ItemFacade {
         try {
             uploadFiles(files, uploadedMedias);
             return itemCommandService.createItem(sellerId, request, uploadedMedias);
+
         } catch (RuntimeException e) {
-            compensate(sellerId.toString(), uploadedMedias);
+            compensateAll(sellerId.toString(), uploadedMedias);
             throw e;
         }
     }
@@ -67,11 +68,11 @@ public class ItemFacade {
             );
         } catch (ObjectOptimisticLockingFailureException e) {
             log.debug("상품 수정 충돌: itemId={}, reason=낙관적 락 충돌", itemId);
-            compensate(itemId.toString(), uploadedMedias);
+            compensateAll(itemId.toString(), uploadedMedias);
             throw new BusinessException(ErrorCode.ITEM_CONFLICT);
 
         } catch (RuntimeException e) {
-            compensate(itemId.toString(), uploadedMedias);
+            compensateAll(itemId.toString(), uploadedMedias);
             throw e;
         }
     }
@@ -92,13 +93,16 @@ public class ItemFacade {
                 () -> itemCommandService.buyNowItem(itemId, buyerId, request));
     }
 
+    // 전달된 파일을 스토리지에 업로드하고 업로드 결과를 수집한다.
     private void uploadFiles(List<MultipartFile> files, List<UploadedMedia> uploadedMedias) {
+        // 상품 수정 시 미디어 변경이 없을 수 있으므로 빈 파일 목록은 처리하지 않는다.
         if (CollectionUtils.isEmpty(files)) {
             return;
         }
 
         for (MultipartFile file : files) {
             StorageUploadResult uploadResult = storageService.upload(file, ObjectKeyPrefix.ITEMS);
+
             uploadedMedias.add(
                     new UploadedMedia(
                             uploadResult.objectKey(),
@@ -108,17 +112,25 @@ public class ItemFacade {
         }
     }
 
-    private void compensate(String aggregateId, List<UploadedMedia> uploadedMedias) {
+    private void compensateAll(String aggregateId, List<UploadedMedia> uploadedMedias) {
+        for (UploadedMedia uploadedMedia : uploadedMedias) {
+            compensate(aggregateId, uploadedMedia);
+        }
+    }
+
+    // DB 작업 실패 시, S3에 업로드된 미디어의 삭제를 보상 Outbox에 등록
+    private void compensate(String aggregateId, UploadedMedia uploadedMedia) {
         try {
-            uploadedMedias.forEach(uploadedMedia -> outboxAppender.saveForCompensation(
+            outboxAppender.saveForCompensation(
                     aggregateId,
                     "ITEM",
                     uploadedMedia.objectKey(),
-                    OutboxEventType.DELETE_ITEM_IMAGE));
+                    OutboxEventType.DELETE_ITEM_IMAGE);
+
         } catch (RuntimeException compensationError) {
-            log.error("보상 Outbox 적재 실패: aggregateType=ITEM, aggregateId={}, objectKeys={}, action=고아 파일 수동 정리",
+            log.error("보상 Outbox 적재 실패: aggregateType=ITEM, aggregateId={}, objectKey={}, action=고아 파일 수동 정리",
                     aggregateId,
-                    uploadedMedias.stream().map(UploadedMedia::objectKey).toList(),
+                    uploadedMedia.objectKey(),
                     compensationError);
         }
     }
