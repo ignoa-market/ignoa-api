@@ -79,3 +79,21 @@ jobs:
         run: ./gradlew build
         env:
           SPRING_PROFILES_ACTIVE: ci
+
+      # 임시: 러너 디렉토리 구조 확인용. 확인 후 삭제한다.
+      - name: 디버그 - 러너 디렉토리 구조
+        run: |
+          echo "== pwd =="
+          pwd
+          echo "== 작업 디렉토리 =="
+          ls -la
+          echo "== build/libs =="
+          ls -la build/libs
+          echo "== gradle 캐시 =="
+          du -sh ~/.gradle/caches ~/.gradle/wrapper 2>/dev/null
+
+      # Step 7: Dockerfile 검증
+      # 이미지를 만들어보기만 하고 푸시하지 않는다.
+      # jar 경로나 베이스 이미지 같은 Dockerfile 자체의 오류를 머지 전에 잡는다.
+      - name: Docker 이미지 빌드 검증
+        run: docker build -t ignoa-api:ci .
