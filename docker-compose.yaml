@@ -27,7 +27,7 @@ services:
     restart: unless-stopped
 
   app:
-    build: .
+    image: ghcr.io/ignoa-market/ignoa-api:${IMAGE_TAG:-prod}
     container_name: ignoa-api
     env_file: .env
     environment:
@@ -35,6 +35,12 @@ services:
       TZ: Asia/Seoul
     ports:
       - "38080:38080"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:38080/actuator/health | grep -q UP"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 40s
     depends_on:
       mysql:
         condition: service_healthy
