@@ -1,33 +1,58 @@
 name: CD
 
-# main 브랜치에 push(머지)될 때 트리거
 on:
   push:
     branches: [ main ]
+  workflow_dispatch:
+
+concurrency:
+  group: cd-prod
+  cancel-in-progress: false
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 20
+
+    permissions:
+      contents: read
+      packages: write
 
     steps:
-      # Runner를 Tailscale 네트워크에 참여시켜 RPI 접속 가능하게 함
-      - name: Connect Tailscale
-        uses: tailscale/github-action@v3
-        with:
-          authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
-          tags: tag:ci
+      - name: 소스 체크아웃
+        uses: actions/checkout@v7
 
-      # appleboy/ssh-action: SSH 접속 + 명령어 실행 액션
-      - name: Deploy to RPI
-        uses: appleboy/ssh-action@v1
+      - name: Java 21 설치
+        uses: actions/setup-java@v6
         with:
-          host: ${{ secrets.RPI_HOST }}
-          username: ${{ secrets.RPI_USER }}
-          key: ${{ secrets.RPI_SSH_KEY }}
-          port: ${{ secrets.RPI_PORT }}
-          script: |
-            cd ~/ignoa/ignoa-api
-            git pull origin main
-            docker compose down
-            docker compose up --build -d
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Gradle 캐시 복원
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: jar 빌드
+        run: ./gradlew bootJar
+
+      - name: GHCR 로그인
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 이미지 빌드 및 GHCR 푸시
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/ignoa-market/ignoa-api:${{ github.sha }}
+            ghcr.io/ignoa-market/ignoa-api:prod
