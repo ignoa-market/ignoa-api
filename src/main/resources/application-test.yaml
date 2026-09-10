@@ -16,7 +16,7 @@ cloud:
       region: ap-northeast-2
 
 jwt:
-  secret: test-dummy-secret-key-for-tests-only-not-a-real-secret-value
+  secret: /xsxPBY6BegTjo46rEByxF0QHep3lC+uSXQPwCR6KLHxgXA//Fa47P519CstOXvfbh2Lv1/NHSZ+hDtU10qjww==
   access-expiration: 3600000
   refresh-expiration: 604800000
 
