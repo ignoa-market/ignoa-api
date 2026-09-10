@@ -11,30 +11,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
-    services:
-      mysql:
-        image: mysql:8.0
-        env:
-          MYSQL_ROOT_PASSWORD: test
-          MYSQL_DATABASE: ignoa_test
-        ports:
-          - 3306:3306
-        options: >-
-          --health-cmd="mysqladmin ping -h localhost"
-          --health-interval=5s
-          --health-timeout=3s
-          --health-retries=10
-
-      redis:
-        image: redis:7
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd="redis-cli ping"
-          --health-interval=5s
-          --health-timeout=3s
-          --health-retries=5
-
     steps:
       - name: 소스 체크아웃
         uses: actions/checkout@v7
@@ -55,18 +31,11 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
-      - name: .env 생성
-        env:
-          ENV_FILE: ${{ secrets.ENV_FILE }}
-        run: printf '%s' "$ENV_FILE" > .env
-
       - name: gradlew 실행 권한 부여
         run: chmod +x gradlew
 
       - name: 빌드 및 테스트
         run: ./gradlew build
-        env:
-          SPRING_PROFILES_ACTIVE: ci
 
       - name: Docker 이미지 빌드 검증
         run: docker build -t ignoa-api:ci .
