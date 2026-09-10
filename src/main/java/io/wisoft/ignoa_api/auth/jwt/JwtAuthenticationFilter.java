@@ -1,6 +1,5 @@
 package io.wisoft.ignoa_api.auth.jwt;
 
-import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.wisoft.ignoa_api.auth.service.TokenBlacklistService;
 import jakarta.servlet.FilterChain;
@@ -46,15 +45,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 return;
             }
 
-            Claims claims = jwtTokenProvider.parseToken(token);
-            long userId = Long.parseLong(claims.getSubject());
+            long userId = Long.parseLong(jwtTokenProvider.parseAccessToken(token).getSubject());
 
             SecurityContextHolder.getContext().setAuthentication(
-                    new UsernamePasswordAuthenticationToken(userId, claims, List.of())
+                    new UsernamePasswordAuthenticationToken(userId, null, List.of())
             );
 
         } catch (JwtException e) {
-            log.warn("Invalid JWT token: {}", e.getMessage());
+            log.debug("JWT 인증 실패: reason={}", e.getClass().getSimpleName());
         }
     }
 

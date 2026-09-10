@@ -1,12 +1,9 @@
 package io.wisoft.ignoa_api;
 
+import io.wisoft.ignoa_api.support.IntegrationTestSupport;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.scheduling.annotation.EnableScheduling;
 
-@EnableScheduling
-@SpringBootTest
-class IgnoaApiApplicationTests {
+class IgnoaApiApplicationTests extends IntegrationTestSupport {
 
 	@Test
 	void contextLoads() {

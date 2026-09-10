@@ -6,14 +6,22 @@ import io.wisoft.ignoa_api.user.entity.User;
 import io.wisoft.ignoa_api.global.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.DynamicUpdate;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Getter
+@DynamicUpdate
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-@Table(name = "items")
+@SQLRestriction("status <> 'DELETED'")
+@Table(name = "items",
+        indexes = {
+                @Index(name = "idx_items_status_created", columnList = "status, created_at"),
+                @Index(name = "idx_items_status_end_at", columnList = "status, end_at")
+        })
 public class Item extends BaseEntity {
 
     @Id
@@ -25,8 +33,8 @@ public class Item extends BaseEntity {
     private User seller;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "winner_id")
-    private User winner;
+    @JoinColumn(name = "highest_bidder_id")
+    private User highestBidder;
 
     @Column(nullable = false)
     private String title;
@@ -47,8 +55,11 @@ public class Item extends BaseEntity {
     @Column(nullable = false)
     private Long currentPrice;
 
-    @Column
+    @Column(nullable = false)
     private Long buyNowPrice;
+
+    @Column(nullable = false)
+    private String brand;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -57,34 +68,33 @@ public class Item extends BaseEntity {
     @Column(nullable = false)
     private LocalDateTime endAt;
 
-    public static Item create(User seller, String title, String description, String category,
-                              ItemCondition itemCondition, Long startPrice, Long buyNowPrice,
-                              LocalDateTime endAt) {
+    @Column(nullable = false)
+    private int extensionCount;
+
+    @Version
+    private Long version;
+
+
+    public static Item create(User seller, String title, String description, String category,ItemCondition itemCondition, String brand, Long startPrice, Long buyNowPrice, LocalDateTime endAt) {
         return new Item(
-                null,
-                seller,
-                null,
-                title,
-                description,
-                category,
-                itemCondition,
-                startPrice,
-                startPrice,
-                buyNowPrice,
-                ItemStatus.ACTIVE,
-                endAt
+                null, seller, null,
+                title, description, category, itemCondition,
+                startPrice, startPrice, buyNowPrice,
+                brand, ItemStatus.ACTIVE, endAt, 0, null
         );
     }
 
-    public void updateInfo(String title, String description, String category, LocalDateTime endAt) {
+    public void update(String title, String description, String category, String brand, ItemCondition itemCondition, Long buyNowPrice) {
         if (title != null) this.title = title;
         if (description != null) this.description = description;
         if (category != null) this.category = category;
-        if (endAt != null) this.endAt = endAt;
+        if (brand != null) this.brand = brand;
+        if (itemCondition != null) this.itemCondition = itemCondition;
+        if (buyNowPrice != null) this.buyNowPrice = buyNowPrice;
     }
 
-    public void raisePriceTo(Long newPrice) {
-        this.currentPrice = newPrice;
+    public boolean isSeller(Long userId) {
+        return this.seller.getId().equals(userId);
     }
 
     public boolean isActive() {
@@ -92,24 +102,13 @@ public class Item extends BaseEntity {
                 && this.endAt.isAfter(LocalDateTime.now());
     }
 
-    public boolean isSeller(Long userId) {
-        return this.seller.getId().equals(userId);
+    public boolean isValidBuyNowPrice(Long buyNowPrice) {
+        return buyNowPrice == null
+                || buyNowPrice > this.currentPrice;
     }
 
-    public boolean isValidBidPrice(Long bidPrice) {
-        return this.currentPrice < bidPrice;
-    }
-
-    public void closeAsNoBid() {
-        this.status = ItemStatus.NO_BID_CLOSED;
-    }
-
-    public void closeWithWinner(User winner) {
-        this.winner = winner;
-        this.status = ItemStatus.CLOSED;
-    }
-
-    public boolean isClosed() {
-        return this.status != ItemStatus.ACTIVE;
+    public boolean isBuyNowPriceChanged(Long buyNowPrice) {
+        return buyNowPrice != null
+                && !buyNowPrice.equals(this.buyNowPrice);
     }
 }

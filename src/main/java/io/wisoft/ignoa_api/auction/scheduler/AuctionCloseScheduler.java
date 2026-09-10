@@ -1,9 +1,9 @@
 package io.wisoft.ignoa_api.auction.scheduler;
 
 
-import io.wisoft.ignoa_api.auction.service.AuctionCloseProcessor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -12,11 +12,12 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class AuctionCloseScheduler {
 
-    private final AuctionCloseProcessor auctionCloseProcessor;
+    private final AuctionCloseJob auctionCloseJob;
 
-    @Scheduled(cron = "0 */5 * * * *")
-    public void closeExpiredBids() {
-        log.info("경매 마감 스케줄러 실행");
-        auctionCloseProcessor.closeExpiredBids();
+    @Scheduled(fixedDelay = 5_000L)
+    @SchedulerLock(name = "auctionCloseScheduler")
+    public void closeExpiredAuctions() {
+        log.debug("경매 자동 마감 스케줄러 실행");
+        auctionCloseJob.closeExpiredAuctions();
     }
 }

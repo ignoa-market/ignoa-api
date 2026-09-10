@@ -14,8 +14,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws")
                 .setAllowedOriginPatterns(
-                        "https://task-api.wisoft.io",
-                        "http://localhost:*"
+                        "https://ignoa.wisoft.dev",
+                        "http://localhost:35173"
                 );
     }
 

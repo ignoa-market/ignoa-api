@@ -1,9 +1,13 @@
 package io.wisoft.ignoa_api.user.controller;
 
 import io.wisoft.ignoa_api.global.common.ApiResponse;
+import io.wisoft.ignoa_api.item.dto.response.ItemPreview;
+import io.wisoft.ignoa_api.item.service.ItemQueryService;
 import io.wisoft.ignoa_api.user.dto.request.UpdateUserRequest;
-import io.wisoft.ignoa_api.user.dto.response.UserMeResponse;
-import io.wisoft.ignoa_api.user.service.UserService;
+import io.wisoft.ignoa_api.user.dto.response.MyProfile;
+import io.wisoft.ignoa_api.user.service.UserCommandService;
+import io.wisoft.ignoa_api.user.service.UserFacade;
+import io.wisoft.ignoa_api.user.service.UserQueryService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +19,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 import static io.wisoft.ignoa_api.global.common.CookieUtils.createClearRefreshTokenCookie;
 
 @RestController
@@ -22,53 +28,57 @@ import static io.wisoft.ignoa_api.global.common.CookieUtils.createClearRefreshTo
 @RequiredArgsConstructor
 public class UserController {
 
-    private final UserService userService;
+    private final UserCommandService userCommandService;
+    private final UserQueryService userQueryService;
+    private final UserFacade userFacade;
+
+    private final ItemQueryService itemQueryService;
 
     @GetMapping("/email/duplicate")
     public ResponseEntity<ApiResponse<Void>> checkDuplicateEmail(@RequestParam String email) {
-        userService.checkDuplicateEmail(email);
+        userQueryService.checkDuplicateEmail(email);
         ApiResponse<Void> response = ApiResponse.of(null, "사용 가능한 이메일입니다.");
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/nickname/duplicate")
     public ResponseEntity<ApiResponse<Void>> checkDuplicateNickname(@RequestParam String nickname) {
-        userService.checkDuplicateNickname(nickname);
+        userQueryService.checkDuplicateNickname(nickname);
         ApiResponse<Void> response = ApiResponse.of(null, "사용 가능한 닉네임입니다.");
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/me")
-    public ResponseEntity<ApiResponse<UserMeResponse>> getMe(@AuthenticationPrincipal Long userId) {
-        UserMeResponse data = userService.getMe(userId);
-        ApiResponse<UserMeResponse> response = ApiResponse.of(data, "마이페이지 조회에 성공했습니다.");
+    public ResponseEntity<ApiResponse<MyProfile>> getMe(@AuthenticationPrincipal Long userId) {
+        MyProfile data = userQueryService.getMe(userId);
+        ApiResponse<MyProfile> response = ApiResponse.of(data, "마이페이지 조회에 성공했습니다.");
         return ResponseEntity.ok(response);
     }
 
     @PatchMapping(value = "/me/profile-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ApiResponse<UserMeResponse>> updateProfileImage(
+    public ResponseEntity<ApiResponse<MyProfile>> updateProfileImage(
             @AuthenticationPrincipal Long userId,
             @RequestPart MultipartFile image
     ) {
-        UserMeResponse data = userService.updateProfileImage(userId, image);
-        ApiResponse<UserMeResponse> response = ApiResponse.of(data, "프로필 사진이 변경되었습니다.");
+        MyProfile data = userFacade.updateProfileImage(userId, image);
+        ApiResponse<MyProfile> response = ApiResponse.of(data, "프로필 사진이 변경되었습니다.");
         return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/me/profile-image")
     public ResponseEntity<ApiResponse<Void>> deleteProfileImage(@AuthenticationPrincipal Long userId) {
-        userService.deleteProfileImage(userId);
+        userCommandService.deleteProfileImage(userId);
         ApiResponse<Void> response = ApiResponse.of(null, "프로필 사진이 삭제되었습니다.");
         return ResponseEntity.ok(response);
     }
 
     @PatchMapping("/me")
-    public ResponseEntity<ApiResponse<UserMeResponse>> patchMe(
+    public ResponseEntity<ApiResponse<MyProfile>> updateProfile(
             @AuthenticationPrincipal Long userId,
             @Valid @RequestBody UpdateUserRequest request
     ) {
-        UserMeResponse data = userService.patchMe(userId, request);
-        ApiResponse<UserMeResponse> response = ApiResponse.of(data, "유저 정보가 수정되었습니다.");
+        MyProfile data = userCommandService.updateProfile(userId, request);
+        ApiResponse<MyProfile> response = ApiResponse.of(data, "유저 정보가 수정되었습니다.");
         return ResponseEntity.ok(response);
     }
 
@@ -79,11 +89,29 @@ public class UserController {
             @CookieValue("refresh_token") String refreshToken,
             HttpServletResponse response
     ) {
-        userService.deleteMe(userId, authHeader.substring(7), refreshToken);
+        userFacade.deleteMe(userId, authHeader.substring(7), refreshToken);
 
         ResponseCookie clearCookie = createClearRefreshTokenCookie();
         response.addHeader(HttpHeaders.SET_COOKIE, clearCookie.toString());
 
         return ResponseEntity.ok(ApiResponse.of(null, "회원 탈퇴가 되었습니다."));
+    }
+
+    @GetMapping("/me/items")
+    public ResponseEntity<ApiResponse<List<ItemPreview>>> getMyItems(
+        @AuthenticationPrincipal Long userId
+    ) {
+        List<ItemPreview> data = itemQueryService.getMyItems(userId);
+        ApiResponse<List<ItemPreview>> response = ApiResponse.of(data, "내 상품 목록을 조회했습니다.");
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/me/bids")
+    public ResponseEntity<ApiResponse<List<ItemPreview>>> getMyBids(
+        @AuthenticationPrincipal Long userId
+    ) {
+        List<ItemPreview> data = itemQueryService.getMyBidItems(userId);
+        ApiResponse<List<ItemPreview>> response = ApiResponse.of(data, "내 입찰 목록을 조회했습니다.");
+        return ResponseEntity.ok(response);
     }
 }

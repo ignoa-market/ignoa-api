@@ -22,29 +22,42 @@ public class JwtTokenProvider {
     }
 
     public String createRefreshToken(Long userId) {
-        return createToken(userId, jwtProperties.refreshExpiration());
+        return createToken(userId, "refresh", jwtProperties.refreshExpiration());
     }
 
     public String createAccessToken(Long userId) {
-        return createToken(userId, jwtProperties.accessExpiration());
+        return createToken(userId, "access", jwtProperties.accessExpiration());
     }
 
-    private String createToken(Long userId, long expiration) {
+    private String createToken(Long userId, String type, long expiration) {
         Date now = new Date();
 
         return Jwts.builder()
                 .subject(String.valueOf(userId))
+                .claim("type", type)
                 .issuedAt(now)
                 .expiration(new Date(now.getTime() + expiration))
                 .signWith(secretKey)
                 .compact();
     }
 
-    public Claims parseToken(String token) {
-        return jwtParser.parseSignedClaims(token).getPayload();
+    public Claims parseAccessToken(String token) {
+        Claims claims = parseToken(token);
+        if (!"access".equals(claims.get("type", String.class))) {
+            throw new JwtException("Not an access Token");
+        }
+        return claims;
     }
 
-    public void validateToken(String token) {
-        jwtParser.parseSignedClaims(token);
+    public Claims parseRefreshToken(String token) {
+        Claims claims = parseToken(token);
+        if (!"refresh".equals(claims.get("type", String.class))) {
+            throw new JwtException("Not an refresh Token");
+        }
+        return claims;
+    }
+
+    private Claims parseToken(String token) {
+        return jwtParser.parseSignedClaims(token).getPayload();
     }
 }

@@ -1,0 +1,27 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: create
+    show-sql: false
+    open-in-view: false
+
+  mail:
+    username: test@example.com
+    password: test-dummy-password
+
+cloud:
+  aws:
+    s3:
+      bucket: test-dummy-bucket
+      region: ap-northeast-2
+
+jwt:
+  secret: /xsxPBY6BegTjo46rEByxF0QHep3lC+uSXQPwCR6KLHxgXA//Fa47P519CstOXvfbh2Lv1/NHSZ+hDtU10qjww==
+  access-expiration: 3600000
+  refresh-expiration: 604800000
+
+oauth:
+  kakao:
+    client-id: test-dummy-client-id
+    client-secret: test-dummy-client-secret
+    redirect-uri: http://localhost:38080/api/auth/kakao/callback

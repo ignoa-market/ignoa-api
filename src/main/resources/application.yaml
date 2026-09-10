@@ -2,10 +2,9 @@ server:
   port: 38080
 
 logging:
-  pattern:
-    console: "%clr(%d{HH:mm:ss}){faint} %clr([%15.15thread]){magenta} %clr(%-5level){highlight} %clr(%logger{36}){cyan} - %msg%n"
   level:
-    io.wisoft.ignoa: DEBUG
+    root: INFO
+    io.wisoft.ignoa_api: ${APP_LOG_LEVEL:INFO}
 
 spring:
   application:
@@ -37,13 +36,20 @@ spring:
 cloud:
   aws:
     s3:
-      endpoint: ${S3_ENDPOINT}
       bucket: ${S3_BUCKET}
-      access-key: ${S3_ACCESS_KEY}
-      secret-key: ${S3_SECRET_KEY}
       region: ${S3_REGION}
+    cloudfront:
+      media-base-url: https://ignoa.woomin.dev
 
 jwt:
   secret: ${JWT_SECRET}
   access-expiration: ${JWT_ACCESS_EXPIRATION}
   refresh-expiration: ${JWT_REFRESH_EXPIRATION}
+
+oauth:
+  kakao:
+    client-id: ${KAKAO_CLIENT_ID}
+    client-secret: ${KAKAO_CLIENT_SECRET}
+    redirect-uri: ${KAKAO_REDIRECT_URI}
+    token-uri: https://kauth.kakao.com/oauth/token
+    user-info-uri: https://kapi.kakao.com/v2/user/me

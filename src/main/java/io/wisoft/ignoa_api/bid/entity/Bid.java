@@ -36,6 +36,11 @@ public class Bid extends BaseEntity {
         return new Bid(null, item, bidder, price, BidStatus.ACTIVE);
     }
 
+    public boolean isTopBid(Item item) {
+        return this.price.equals(item.getCurrentPrice());
+    }
+
+
     public void closeAsWon() {
         this.status = BidStatus.WON;
     }

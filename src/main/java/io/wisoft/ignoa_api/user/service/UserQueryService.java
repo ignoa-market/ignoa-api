@@ -1,0 +1,57 @@
+package io.wisoft.ignoa_api.user.service;
+
+import io.wisoft.ignoa_api.global.exception.BusinessException;
+import io.wisoft.ignoa_api.global.exception.ErrorCode;
+import io.wisoft.ignoa_api.global.infra.storage.MediaUrlResolver;
+import io.wisoft.ignoa_api.user.dto.response.MyProfile;
+import io.wisoft.ignoa_api.user.entity.User;
+import io.wisoft.ignoa_api.user.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
+public class UserQueryService {
+
+    private final UserRepository userRepository;
+    private final MediaUrlResolver mediaUrlResolver;
+
+    public User findById(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+    }
+
+    public void checkDuplicateEmail(String email) {
+        if (userRepository.existsByEmail(email)) {
+            throw new BusinessException(ErrorCode.DUPLICATE_EMAIL);
+        }
+    }
+
+    public void checkDuplicateNickname(String nickname) {
+        if (userRepository.existsByNickname(nickname)) {
+            throw new BusinessException(ErrorCode.DUPLICATE_NAME);
+        }
+    }
+
+    public MyProfile getMe(Long userId) {
+        User user = findById(userId);
+        String profileImageUrl = mediaUrlResolver.toUrl(user.getProfileImageReference(), user.getProfileImageSource());
+
+        return MyProfile.from(user, profileImageUrl);
+    }
+
+    public List<User> findPurgeTargets(LocalDateTime startDateTime, LocalDateTime endDateTime, Long lastId, int batchSize) {
+        return userRepository.findPurgeTargets(
+                startDateTime,
+                endDateTime,
+                lastId,
+                PageRequest.of(0, batchSize)
+        );
+    }
+}

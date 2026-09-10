@@ -6,8 +6,10 @@ import io.wisoft.ignoa_api.auth.dto.response.EmailVerifyResponse;
 import io.wisoft.ignoa_api.auth.dto.response.LoginResponse;
 import io.wisoft.ignoa_api.auth.dto.response.RefreshResponse;
 import io.wisoft.ignoa_api.auth.dto.response.SignupResponse;
+import io.wisoft.ignoa_api.auth.oauth.KakaoLoginRequest;
 import io.wisoft.ignoa_api.auth.service.AuthService;
 import io.wisoft.ignoa_api.auth.service.EmailService;
+import io.wisoft.ignoa_api.auth.oauth.KakaoAuthService;
 import io.wisoft.ignoa_api.global.common.ApiResponse;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -24,6 +26,7 @@ import static io.wisoft.ignoa_api.global.common.CookieUtils.createRefreshTokenCo
 public class AuthController {
 
     private final AuthService authService;
+    private final KakaoAuthService kakaoAuthService;
     private final EmailService emailService;
 
     @PostMapping("/signup")
@@ -112,5 +115,19 @@ public class AuthController {
     ) {
         EmailVerifyResponse data = emailService.verifyEmailCode(request);
         return ResponseEntity.ok(ApiResponse.of(data, "이메일 인증에 성공했습니다."));
+    }
+
+    @PostMapping("/oauth/kakao")
+    public ResponseEntity<ApiResponse<LoginResponse>> kakaoLogin(
+            @Valid @RequestBody KakaoLoginRequest request,
+            HttpServletResponse response
+    ) {
+        AuthTokens tokens = kakaoAuthService.login(request.code());
+
+        ResponseCookie cookie = createRefreshTokenCookie(tokens.refreshToken());
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+
+        LoginResponse data = new LoginResponse(tokens.userId(), tokens.accessToken());
+        return ResponseEntity.ok(ApiResponse.of(data, "카카오 소셜 로그인에 성공했습니다."));
     }
 }

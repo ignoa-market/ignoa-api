@@ -2,42 +2,53 @@ package io.wisoft.ignoa_api.item.service;
 
 import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
-import io.wisoft.ignoa_api.item.dto.response.ItemMediaInfo;
-import io.wisoft.ignoa_api.item.entity.Item;
+import io.wisoft.ignoa_api.global.infra.storage.MediaUrlResolver;
+import io.wisoft.ignoa_api.global.outbox.entity.OutboxEventType;
+import io.wisoft.ignoa_api.global.outbox.service.OutboxAppender;
+import io.wisoft.ignoa_api.item.dto.response.ItemMediaUrls;
 import io.wisoft.ignoa_api.item.entity.ItemMedia;
-import io.wisoft.ignoa_api.item.entity.enums.ItemMediaType;
 import io.wisoft.ignoa_api.item.repository.ItemMediaRepository;
-import io.wisoft.ignoa_api.global.infra.storage.StorageService;
+import io.wisoft.ignoa_api.item.service.dto.UploadedMedia;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class ItemMediaService {
 
+    private final MediaUrlResolver mediaUrlResolver;
+    private final OutboxAppender outboxAppender;
     private final ItemMediaRepository itemMediaRepository;
-    private final StorageService storageService;
 
-    public String getFirstMediaUrl(Long itemId) {
+    public Map<Long, String> getFirstMediaUrl(List<Long> itemIds) {
         return itemMediaRepository
-                .findFirstByItemIdOrderByIdAsc(itemId)
-                .map(ItemMedia::getMediaUrl)
-                .orElseThrow(() -> new BusinessException(ErrorCode.ITEM_MEDIA_NOT_FOUND));
+                .findByItemIdIn(itemIds).stream()
+                .collect(Collectors.toMap(
+                        row -> (Long) row[0],
+                        row -> mediaUrlResolver.toUrl((String) row[1]),
+                        (existing, replacement) -> existing
+                ));
     }
 
-    public List<ItemMediaInfo> getMediaInfoByItemId(Long itemId) {
-        return itemMediaRepository.findMediaInfoByItemId(itemId);
+    public List<ItemMediaUrls> getMediaUrls(Long itemId) {
+        return itemMediaRepository
+                .findAllByItemIdOrderByIdAsc(itemId).stream()
+                .map(itemMedia -> new ItemMediaUrls(
+                        itemMedia.getId(),
+                        mediaUrlResolver.toUrl(itemMedia.getObjectKey())))
+                .toList();
     }
 
-    public void validateMinimumMediaCount(Long itemId, List<Long> deleteIds, List<MultipartFile> uploadFiles) {
+    public void validateMediaCount(Long itemId, List<Long> mediaIds, List<UploadedMedia> uploadedMedias) {
         int currentCount = itemMediaRepository.countByItemId(itemId);
-        int toDeleteCount = itemMediaRepository.countByItemIdAndIdIn(itemId, deleteIds);
-        int addCount = uploadFiles == null ? 0 : (int) uploadFiles.stream().filter(file -> !file.isEmpty()).count();
+        int toDeleteCount = itemMediaRepository.countByItemIdAndIdIn(itemId, mediaIds);
+        int addCount = uploadedMedias == null ? 0 : uploadedMedias.size();
 
         if (currentCount - toDeleteCount + addCount < 1) {
             throw new BusinessException(ErrorCode.ITEM_MEDIA_REQUIRED);
@@ -45,32 +56,27 @@ public class ItemMediaService {
     }
 
     @Transactional
-    public void saveMedia(Item item, List<MultipartFile> files) {
-        List<ItemMedia> itemMediaList = files.stream()
-                .filter(file -> !file.isEmpty())
-                .map(file -> {
-                    String mediaUrl = storageService.upload(file);
-                    return ItemMedia.from(item, mediaUrl, ItemMediaType.from(file.getOriginalFilename()));
-                })
-                .toList();
+    public void deleteMedias(Long itemId, List<Long> mediaIds) {
+        itemMediaRepository.findAllByItemIdAndIdIn(itemId, mediaIds)
+                .forEach(itemMedia -> outboxAppender.save(
+                        itemId.toString(), "ITEM", itemMedia.getObjectKey(), OutboxEventType.DELETE_ITEM_IMAGE
+                ));
 
-        if (!itemMediaList.isEmpty()) {
-            itemMediaRepository.saveAll(itemMediaList);
-        }
+        itemMediaRepository.deleteAllByItemIdAndIdIn(itemId, mediaIds);
     }
 
     @Transactional
-    public void deleteMediaByIds(Long itemId, List<Long> deleteIds) {
-        itemMediaRepository.findAllById(deleteIds)
-                .forEach(itemMedia -> storageService.delete(itemMedia.getMediaUrl()));
-
-        itemMediaRepository.deleteAllByItemIdAndIdIn(itemId, deleteIds);
-    }
-
-    @Transactional
-    public void deleteAllByItemId(Long itemId) {
+    public void deleteAllMedia(Long itemId) {
         itemMediaRepository.findAllByItemId(itemId)
-                .forEach(itemMedia -> storageService.delete(itemMedia.getMediaUrl()));
+                .forEach(itemMedia -> outboxAppender.save(
+                        itemId.toString(), "ITEM", itemMedia.getObjectKey(), OutboxEventType.DELETE_ITEM_IMAGE
+                ));
+
         itemMediaRepository.deleteAllByItemId(itemId);
+    }
+
+    @Transactional
+    public void saveAll(List<ItemMedia> itemMedias) {
+        itemMediaRepository.saveAll(itemMedias);
     }
 }
