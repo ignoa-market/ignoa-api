@@ -15,12 +15,14 @@ import org.redisson.client.RedisException;
 
 
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowableOfType;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
@@ -111,5 +113,61 @@ class RedissonDistributedLockTest {
                 .timer();
         assertThat(acquireWaitTimer).isNotNull();
         assertThat(acquireWaitTimer.count()).isEqualTo(1);
+    }
+
+    @Test
+    void 락_보유_여부_확인이_실패해도_task_결과를_반환한다() throws InterruptedException {
+        // Given
+        String key = "item:lock:1";
+        long waitTime = 250L;
+
+        given(lock.tryLock(anyLong(), any(TimeUnit.class))).willReturn(true);
+        given(lock.isHeldByCurrentThread()).willThrow(new RedisException("Redis 장애"));
+
+        // When
+        String result = distributedLock.executeWithLockOrFailOpen(key, LockOperation.BID, waitTime, () -> "입찰 완료");
+
+        // Then
+        assertThat(result).isEqualTo("입찰 완료");
+        verify(lock, never()).unlock();
+    }
+
+    @Test
+    void 락_해제가_실패해도_task_결과를_반환한다() throws InterruptedException {
+        // Given
+        String key = "item:lock:1";
+        long waitTime = 250L;
+
+        given(lock.tryLock(anyLong(), any(TimeUnit.class))).willReturn(true);
+        given(lock.isHeldByCurrentThread()).willReturn(true);
+        willThrow(new RedisException("Redis 장애")).given(lock).unlock();
+
+        // When
+        String result = distributedLock.executeWithLockOrFailOpen(key, LockOperation.BID, waitTime, () -> "입찰 완료");
+
+        // Then
+        assertThat(result).isEqualTo("입찰 완료");
+        verify(lock).unlock();
+    }
+
+    @Test
+    void 락_해제가_실패해도_task를_재실행하지_않는다() throws InterruptedException {
+        // Given
+        String key = "item:lock:1";
+        long waitTime = 250L;
+        AtomicInteger executionCount = new AtomicInteger();
+
+        given(lock.tryLock(anyLong(), any(TimeUnit.class))).willReturn(true);
+        given(lock.isHeldByCurrentThread()).willReturn(true);
+        willThrow(new RedisException("Redis 장애")).given(lock).unlock();
+
+        // When
+        distributedLock.executeWithLockOrFailOpen(key, LockOperation.BID, waitTime, () -> {
+            executionCount.incrementAndGet();
+            return "입찰 완료";
+        });
+
+        // Then
+        assertThat(executionCount.get()).isEqualTo(1);
     }
 }
