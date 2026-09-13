@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -41,7 +42,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private void authenticate(String token) {
         try {
-            if (tokenBlacklistService.isBlacklisted(token)) {
+            if (isBlacklisted(token)) {
                 return;
             }
 
@@ -53,6 +54,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         } catch (JwtException e) {
             log.debug("JWT 인증 실패: reason={}", e.getClass().getSimpleName());
+        }
+    }
+
+    private boolean isBlacklisted(String token) {
+        try {
+            return tokenBlacklistService.isBlacklisted(token);
+
+        } catch (DataAccessException e) {
+            log.warn("블랙리스트 조회 실패 - 검사를 생략하고 인증 진행: reason={}", e.getClass().getSimpleName());
+            return false;
         }
     }
 

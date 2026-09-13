@@ -53,9 +53,16 @@ public class RedissonDistributedLock {
 
         try {
             return recordHoldTime(key, operation, task);
+
         } finally {
-            if (lock.isHeldByCurrentThread()) {
-                lock.unlock();
+            try {
+                if (lock.isHeldByCurrentThread()) {
+                    lock.unlock();
+                }
+
+            } catch (RedisException e) {
+                log.warn("분산 락 해제 실패 - 작업은 정상 완료됨. key={}, operation={}",
+                        key, operation, e);
             }
         }
     }
