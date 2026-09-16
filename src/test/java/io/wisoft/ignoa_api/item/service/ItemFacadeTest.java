@@ -16,7 +16,6 @@ import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
@@ -42,7 +41,7 @@ class ItemFacadeTest {
         ItemBuyNowRequest request = new ItemBuyNowRequest(10_000L);
 
         given(redissonDistributedLock.executeWithLockOrFailOpen(
-                eq(ItemLockKey.of(itemId)), eq(LockOperation.BUY_NOW), anyLong(), any(Supplier.class)))
+                eq(ItemLockKey.of(itemId)), eq(LockOperation.BUY_NOW), any(Supplier.class)))
                 .willThrow(new BusinessException(ErrorCode.LOCK_ACQUISITION_FAILED));
 
         // When

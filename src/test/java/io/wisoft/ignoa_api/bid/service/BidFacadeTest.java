@@ -39,7 +39,7 @@ class BidFacadeTest {
         BidCreateRequest request = new BidCreateRequest(1_000L);
 
         given(distributedLock.executeWithLockOrFailOpen(
-                eq(ItemLockKey.of(itemId)), eq(LockOperation.BID), anyLong(), any(Supplier.class)))
+                eq(ItemLockKey.of(itemId)), eq(LockOperation.BID), any(Supplier.class)))
                 .willThrow(new BusinessException(ErrorCode.LOCK_ACQUISITION_FAILED));
 
         // When

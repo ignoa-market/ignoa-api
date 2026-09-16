@@ -12,8 +12,6 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class BidFacade {
 
-    private static final long BID_WAIT_MILLIS = 200L;
-
     private final RedissonDistributedLock distributedLock;
     private final BidService bidService;
 
@@ -21,7 +19,6 @@ public class BidFacade {
         return distributedLock.executeWithLockOrFailOpen(
                 ItemLockKey.of(itemId),
                 LockOperation.BID,
-                BID_WAIT_MILLIS,
                 () -> bidService.placeBid(itemId, bidderId, request)
         );
     }
