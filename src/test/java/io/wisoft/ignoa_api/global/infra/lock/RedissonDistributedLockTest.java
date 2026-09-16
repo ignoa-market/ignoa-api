@@ -49,7 +49,6 @@ class RedissonDistributedLockTest {
     void 락_획득이_타임아웃되면_LOCK_ACQUISITION_FAILED를_던진다() throws InterruptedException {
         // Given
         String key = "item:lock:1";
-        long waitTime = 250L;
 
         given(lock.tryLock(anyLong(), any(TimeUnit.class)))
                 .willReturn(false);
@@ -57,7 +56,7 @@ class RedissonDistributedLockTest {
         // When
         BusinessException exception = catchThrowableOfType(
                 BusinessException.class,
-                () -> distributedLock.executeWithLockOrFailOpen(key, LockOperation.BID, waitTime, () -> "결과")
+                () -> distributedLock.executeWithLockOrFailOpen(key, LockOperation.BID, () -> "결과")
         );
 
         // Then
@@ -69,13 +68,12 @@ class RedissonDistributedLockTest {
     void 락_획득_중_인프라_장애가_발생하면_락_없이_task를_실행한다() throws InterruptedException {
         // Given
         String key = "item:lock:1";
-        long waitTime = 250L;
 
         given(lock.tryLock(anyLong(), any(TimeUnit.class)))
                 .willThrow(new RedisException("Redis 장애"));
 
         // When
-        String result = distributedLock.executeWithLockOrFailOpen(key, LockOperation.BID, waitTime, () -> "결과");
+        String result = distributedLock.executeWithLockOrFailOpen(key, LockOperation.BID, () -> "결과");
 
         // Then
         assertThat(result).isEqualTo("결과");
@@ -86,13 +84,12 @@ class RedissonDistributedLockTest {
     void 락을_정상적으로_획득하면_task를_실행하고_결과를_반환한_후_락을_해제한다() throws InterruptedException {
         // Given
         String key = "item:lock:1";
-        long waitTime = 250L;
 
         given(lock.tryLock(anyLong(), any(TimeUnit.class))).willReturn(true);
         given(lock.isHeldByCurrentThread()).willReturn(true);
 
         // When
-        String result = distributedLock.executeWithLockOrFailOpen(key, LockOperation.BID, waitTime, () -> "입찰 완료");
+        String result = distributedLock.executeWithLockOrFailOpen(key, LockOperation.BID, () -> "입찰 완료");
 
         // Then
         assertThat(result).isEqualTo("입찰 완료");
@@ -119,13 +116,12 @@ class RedissonDistributedLockTest {
     void 락_보유_여부_확인이_실패해도_task_결과를_반환한다() throws InterruptedException {
         // Given
         String key = "item:lock:1";
-        long waitTime = 250L;
 
         given(lock.tryLock(anyLong(), any(TimeUnit.class))).willReturn(true);
         given(lock.isHeldByCurrentThread()).willThrow(new RedisException("Redis 장애"));
 
         // When
-        String result = distributedLock.executeWithLockOrFailOpen(key, LockOperation.BID, waitTime, () -> "입찰 완료");
+        String result = distributedLock.executeWithLockOrFailOpen(key, LockOperation.BID, () -> "입찰 완료");
 
         // Then
         assertThat(result).isEqualTo("입찰 완료");
@@ -136,14 +132,13 @@ class RedissonDistributedLockTest {
     void 락_해제가_실패해도_task_결과를_반환한다() throws InterruptedException {
         // Given
         String key = "item:lock:1";
-        long waitTime = 250L;
 
         given(lock.tryLock(anyLong(), any(TimeUnit.class))).willReturn(true);
         given(lock.isHeldByCurrentThread()).willReturn(true);
         willThrow(new RedisException("Redis 장애")).given(lock).unlock();
 
         // When
-        String result = distributedLock.executeWithLockOrFailOpen(key, LockOperation.BID, waitTime, () -> "입찰 완료");
+        String result = distributedLock.executeWithLockOrFailOpen(key, LockOperation.BID, () -> "입찰 완료");
 
         // Then
         assertThat(result).isEqualTo("입찰 완료");
@@ -154,7 +149,6 @@ class RedissonDistributedLockTest {
     void 락_해제가_실패해도_task를_재실행하지_않는다() throws InterruptedException {
         // Given
         String key = "item:lock:1";
-        long waitTime = 250L;
         AtomicInteger executionCount = new AtomicInteger();
 
         given(lock.tryLock(anyLong(), any(TimeUnit.class))).willReturn(true);
@@ -162,7 +156,7 @@ class RedissonDistributedLockTest {
         willThrow(new RedisException("Redis 장애")).given(lock).unlock();
 
         // When
-        distributedLock.executeWithLockOrFailOpen(key, LockOperation.BID, waitTime, () -> {
+        distributedLock.executeWithLockOrFailOpen(key, LockOperation.BID, () -> {
             executionCount.incrementAndGet();
             return "입찰 완료";
         });
