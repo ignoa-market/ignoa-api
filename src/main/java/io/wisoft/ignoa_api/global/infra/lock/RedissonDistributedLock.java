@@ -23,18 +23,18 @@ public class RedissonDistributedLock {
     private final RedissonClient redissonClient;
     private final MeterRegistry meterRegistry;
 
-    public <T> T executeWithLockOrFailOpen(String key, LockOperation operation, long waitMillis, Supplier<T> task) {
+    public <T> T executeWithLockOrFailOpen(String key, LockOperation operation, Supplier<T> task) {
         try {
-            return execute(key, operation, waitMillis, task);
+            return execute(key, operation, task);
         } catch (LockInfrastructureException e) {
             log.warn("분산 락 Fail-Open: key={}, operation={}, reason=Redis 인프라 장애", key, operation, e);
             return task.get();
         }
     }
 
-    public void executeWithLockOrFailOpen(String key, LockOperation operation, long waitMillis, Runnable task) {
+    public void executeWithLockOrFailOpen(String key, LockOperation operation, Runnable task) {
         try {
-            execute(key, operation, waitMillis, toSupplier(task));
+            execute(key, operation, toSupplier(task));
         } catch (LockInfrastructureException e) {
             log.warn("분산 락 Fail-Open: key={}, operation={}, reason=Redis 인프라 장애", key, operation, e);
             task.run();
@@ -42,10 +42,10 @@ public class RedissonDistributedLock {
     }
 
     // 실제 락 획득 로직, Task를 실행하고 락을 해제한다.
-    private <T> T execute(String key, LockOperation operation, long waitMillis, Supplier<T> task) {
+    private <T> T execute(String key, LockOperation operation, Supplier<T> task) {
         RLock lock = redissonClient.getLock(key);
 
-        boolean acquired = acquireLock(lock, key, operation, waitMillis);
+        boolean acquired = acquireLock(lock, key, operation);
 
         if (!acquired) {
             throw new BusinessException(ErrorCode.LOCK_ACQUISITION_FAILED);
@@ -67,13 +67,13 @@ public class RedissonDistributedLock {
         }
     }
 
-    private boolean acquireLock(RLock lock, String key, LockOperation operation, long waitMillis) {
+    private boolean acquireLock(RLock lock, String key, LockOperation operation) {
         Sample sample = Timer.start(meterRegistry);
         LockAcquireOutcome outcome = LockAcquireOutcome.ERROR;
 
         try {
             boolean acquired = lock.tryLock(
-                    waitMillis,
+                    operation.waitMillis(),
                     TimeUnit.MILLISECONDS
             );
 

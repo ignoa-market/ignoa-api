@@ -33,9 +33,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ItemFacade {
 
-    private static final long BUY_NOW_WAIT_MILLIS = 250L;
-    private static final long MODIFY_WAIT_MILLIS = 1_000L;
-
     private final StorageService storageService;
     private final ItemCommandService itemCommandService;
     private final RedissonDistributedLock distributedLock;
@@ -63,7 +60,6 @@ public class ItemFacade {
             return distributedLock.executeWithLockOrFailOpen(
                     ItemLockKey.of(itemId),
                     LockOperation.UPDATE,
-                    MODIFY_WAIT_MILLIS,
                     () -> itemCommandService.updateItem(itemId, userId, request, uploadedMedias)
             );
         } catch (ObjectOptimisticLockingFailureException e) {
@@ -81,7 +77,6 @@ public class ItemFacade {
         return distributedLock.executeWithLockOrFailOpen(
                 ItemLockKey.of(itemId),
                 LockOperation.DELETE,
-                MODIFY_WAIT_MILLIS,
                 () -> itemCommandService.deleteItem(itemId, userId));
     }
 
@@ -89,7 +84,6 @@ public class ItemFacade {
         return distributedLock.executeWithLockOrFailOpen(
                 ItemLockKey.of(itemId),
                 LockOperation.BUY_NOW,
-                BUY_NOW_WAIT_MILLIS,
                 () -> itemCommandService.buyNowItem(itemId, buyerId, request));
     }
 
