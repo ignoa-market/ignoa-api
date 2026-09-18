@@ -40,7 +40,7 @@ class ItemFacadeTest {
         long buyerId = 2L;
         ItemBuyNowRequest request = new ItemBuyNowRequest(10_000L);
 
-        given(redissonDistributedLock.executeWithLockOrFailOpen(
+        given(redissonDistributedLock.executeWithRequiredLock(
                 eq(ItemLockKey.of(itemId)), eq(LockOperation.BUY_NOW), any(Supplier.class)))
                 .willThrow(new BusinessException(ErrorCode.LOCK_ACQUISITION_FAILED));
 

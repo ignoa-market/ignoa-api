@@ -19,7 +19,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowableOfType;
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willThrow;
@@ -56,7 +55,7 @@ class RedissonDistributedLockTest {
         // When
         BusinessException exception = catchThrowableOfType(
                 BusinessException.class,
-                () -> distributedLock.executeWithLockOrFailOpen(key, LockOperation.BID, () -> "결과")
+                () -> distributedLock.executeWithRequiredLock(key, LockOperation.BID, () -> "결과")
         );
 
         // Then
@@ -65,7 +64,7 @@ class RedissonDistributedLockTest {
     }
 
     @Test
-    void 락_획득_중_인프라_장애가_발생하면_락_없이_task를_실행한다() throws InterruptedException {
+    void 락_획득_중_인프라_장애가_발생하면_503으로_중단한다() throws InterruptedException {
         // Given
         String key = "item:lock:1";
 
@@ -73,10 +72,13 @@ class RedissonDistributedLockTest {
                 .willThrow(new RedisException("Redis 장애"));
 
         // When
-        String result = distributedLock.executeWithLockOrFailOpen(key, LockOperation.BID, () -> "결과");
+        BusinessException exception = catchThrowableOfType(
+                BusinessException.class,
+                () -> distributedLock.executeWithRequiredLock(key, LockOperation.BID, () -> "결과")
+        );
 
         // Then
-        assertThat(result).isEqualTo("결과");
+        assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.LOCK_INFRASTRUCTURE_ERROR);
         verify(lock, never()).unlock();
     }
 
@@ -89,7 +91,7 @@ class RedissonDistributedLockTest {
         given(lock.isHeldByCurrentThread()).willReturn(true);
 
         // When
-        String result = distributedLock.executeWithLockOrFailOpen(key, LockOperation.BID, () -> "입찰 완료");
+        String result = distributedLock.executeWithRequiredLock(key, LockOperation.BID, () -> "입찰 완료");
 
         // Then
         assertThat(result).isEqualTo("입찰 완료");
@@ -121,7 +123,7 @@ class RedissonDistributedLockTest {
         given(lock.isHeldByCurrentThread()).willThrow(new RedisException("Redis 장애"));
 
         // When
-        String result = distributedLock.executeWithLockOrFailOpen(key, LockOperation.BID, () -> "입찰 완료");
+        String result = distributedLock.executeWithRequiredLock(key, LockOperation.BID, () -> "입찰 완료");
 
         // Then
         assertThat(result).isEqualTo("입찰 완료");
@@ -138,7 +140,7 @@ class RedissonDistributedLockTest {
         willThrow(new RedisException("Redis 장애")).given(lock).unlock();
 
         // When
-        String result = distributedLock.executeWithLockOrFailOpen(key, LockOperation.BID, () -> "입찰 완료");
+        String result = distributedLock.executeWithRequiredLock(key, LockOperation.BID, () -> "입찰 완료");
 
         // Then
         assertThat(result).isEqualTo("입찰 완료");
@@ -156,7 +158,7 @@ class RedissonDistributedLockTest {
         willThrow(new RedisException("Redis 장애")).given(lock).unlock();
 
         // When
-        distributedLock.executeWithLockOrFailOpen(key, LockOperation.BID, () -> {
+        distributedLock.executeWithRequiredLock(key, LockOperation.BID, () -> {
             executionCount.incrementAndGet();
             return "입찰 완료";
         });
