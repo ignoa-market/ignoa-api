@@ -46,6 +46,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 authenticate(token);
 
             } catch (RedisConnectionFailureException | RedisSystemException | QueryTimeoutException e) {
+                // 블랙리스트를 확인할 수 없으면 인증 통과 여부를 판단할 수 없으므로 요청을 진행하지 않는다.
                 log.error("Redis 인프라 장애 - 인증 차단: uri={}, reason={}",
                         request.getRequestURI(),
                         e.getClass().getSimpleName()

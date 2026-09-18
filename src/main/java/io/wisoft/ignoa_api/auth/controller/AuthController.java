@@ -65,10 +65,11 @@ public class AuthController {
             @CookieValue("refresh_token") String refreshToken,
             HttpServletResponse response
     ) {
-        authService.logout(authHeader.substring(7), refreshToken);
-
+        // 서버 폐기가 실패해도 클라이언트 RT는 제거되도록 먼저 만료시킨다.
         ResponseCookie clearCookie = createClearRefreshTokenCookie();
         response.addHeader(HttpHeaders.SET_COOKIE, clearCookie.toString());
+
+        authService.logout(authHeader.substring(7), refreshToken);
 
         return ResponseEntity.ok(ApiResponse.of(null, "로그아웃이 완료되었습니다."));
     }

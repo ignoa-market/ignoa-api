@@ -84,8 +84,10 @@ public class AuthService {
 
     public void logout(String accessToken, String refreshToken) {
         jwtTokenProvider.parseRefreshToken(refreshToken);
-        tokenBlacklistService.blacklist(accessToken);
+
+        // 수명이 긴 RT를 먼저 폐기해, 블랙리스트 등록이 실패해도 RT는 남지 않게 한다.
         refreshTokenService.delete(refreshToken);
+        tokenBlacklistService.blacklist(accessToken);
     }
 
     public AuthTokens refresh(String token) {
