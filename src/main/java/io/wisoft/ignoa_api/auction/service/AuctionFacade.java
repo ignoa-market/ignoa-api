@@ -15,7 +15,7 @@ public class AuctionFacade {
     private final RedissonDistributedLock distributedLock;
 
     public void closeAuction(Long itemId) {
-        distributedLock.executeWithLockOrFailOpen(
+        distributedLock.executeWithOptionalLock(
                 ItemLockKey.of(itemId),
                 LockOperation.AUTO_CLOSE,
                 () -> auctionService.closeAuction(itemId)
@@ -23,7 +23,7 @@ public class AuctionFacade {
     }
 
     public AuctionExtensionResponse extendAuction(Long itemId, Long userId) {
-        return distributedLock.executeWithLockOrFailOpen(
+        return distributedLock.executeWithRequiredLock(
                 ItemLockKey.of(itemId),
                 LockOperation.EXTEND,
                 () -> auctionService.extendAuction(itemId, userId)
