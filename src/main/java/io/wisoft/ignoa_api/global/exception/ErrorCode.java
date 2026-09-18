@@ -19,6 +19,7 @@ public enum ErrorCode {
     INVALID_CREDENTIALS(HttpStatus.UNAUTHORIZED, "이메일 또는 비밀번호가 올바르지 않습니다."),
     INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "유효하지 않은 토큰입니다."),
     MISSING_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "Refresh Token이 존재하지 않습니다."),
+    AUTH_INFRASTRUCTURE_ERROR(HttpStatus.SERVICE_UNAVAILABLE, "일시적인 오류로 요청을 처리할 수 없습니다. 잠시 후 다시 시도해주세요."),
 
     // OAuth
     KAKAO_AUTH_FAILED(HttpStatus.UNAUTHORIZED, "카카오 인증에 실패했습니다."),
