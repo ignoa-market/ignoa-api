@@ -166,4 +166,21 @@ class RedissonDistributedLockTest {
         // Then
         assertThat(executionCount.get()).isEqualTo(1);
     }
+
+    @Test
+    void 자동_마감은_락_획득_중_인프라_장애가_발생해도_락_없이_task를_실행한다() throws InterruptedException {
+        // Given
+        String key = "item:lock:1";
+        AtomicInteger executionCount = new AtomicInteger();
+
+        given(lock.tryLock(anyLong(), any(TimeUnit.class)))
+                .willThrow(new RedisException("Redis 장애"));
+
+        // When
+        distributedLock.executeWithOptionalLock(key, LockOperation.AUTO_CLOSE, executionCount::incrementAndGet);
+
+        // Then
+        assertThat(executionCount.get()).isEqualTo(1);
+        verify(lock, never()).unlock();
+    }
 }
