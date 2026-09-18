@@ -27,6 +27,7 @@ public enum ErrorCode {
 
     // Lock
     LOCK_ACQUISITION_FAILED(HttpStatus.CONFLICT, "다른 요청을 처리 중입니다. 잠시 후 다시 시도해주세요."),
+    LOCK_INFRASTRUCTURE_ERROR(HttpStatus.SERVICE_UNAVAILABLE, "일시적인 오류로 요청을 처리할 수 없습니다. 잠시 후 다시 시도해주세요."),
 
     // Email
     EMAIL_SEND_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "이메일 발송에 실패했습니다."),
