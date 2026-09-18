@@ -1,5 +1,6 @@
 package io.wisoft.ignoa_api.global.exception;
 
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
@@ -154,5 +155,16 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(ErrorCode.AUTH_INFRASTRUCTURE_ERROR.getHttpStatus())
                 .body(ErrorResponse.of(ErrorCode.AUTH_INFRASTRUCTURE_ERROR));
+    }
+
+    @ExceptionHandler(JwtException.class)
+    public ResponseEntity<ErrorResponse> handleJwtException(JwtException e) {
+        log.debug(
+                "JWT 검증 실패: reason={}",
+                e.getClass().getSimpleName()
+        );
+        return ResponseEntity
+                .status(ErrorCode.INVALID_TOKEN.getHttpStatus())
+                .body(ErrorResponse.of(ErrorCode.INVALID_TOKEN));
     }
 }
