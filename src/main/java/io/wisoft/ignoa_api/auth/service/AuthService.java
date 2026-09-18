@@ -1,5 +1,6 @@
 package io.wisoft.ignoa_api.auth.service;
 
+import io.jsonwebtoken.Claims;
 import io.wisoft.ignoa_api.auth.dto.AuthTokens;
 import io.wisoft.ignoa_api.auth.dto.request.LoginRequest;
 import io.wisoft.ignoa_api.auth.dto.request.SignupRequest;
@@ -88,21 +89,21 @@ public class AuthService {
     }
 
     public AuthTokens refresh(String token) {
-        jwtTokenProvider.parseRefreshToken(token);
+        Claims claims = jwtTokenProvider.parseRefreshToken(token);
 
-        Long consumedUserId = refreshTokenService.consumeToken(token);
+        Long userId = refreshTokenService.consume(token);
 
-        if (consumedUserId == null) {
-            long userId = Long.parseLong(jwtTokenProvider.parseRefreshToken(token).getSubject());
-            refreshTokenService.deleteAllByUserId(userId);
+        // 이미 사용된 RT는 탈취 가능성이 있어 해당 사용자의 모든 RT를 폐기
+        if (userId == null) {
+            refreshTokenService.deleteAllByUserId(Long.parseLong(claims.getSubject()));
             throw new BusinessException(ErrorCode.INVALID_TOKEN);
         }
 
-        String accessToken = jwtTokenProvider.createAccessToken(consumedUserId);
-        String refreshToken = jwtTokenProvider.createRefreshToken(consumedUserId);
-        refreshTokenService.save(refreshToken, consumedUserId);
+        String accessToken = jwtTokenProvider.createAccessToken(userId);
+        String refreshToken = jwtTokenProvider.createRefreshToken(userId);
+        refreshTokenService.save(refreshToken, userId);
 
-        return new AuthTokens(consumedUserId, accessToken, refreshToken);
+        return new AuthTokens(userId, accessToken, refreshToken);
     }
 
     @Transactional

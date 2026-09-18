@@ -41,7 +41,7 @@ public class RefreshTokenService {
                 });
     }
 
-    public Long consumeToken(String refreshToken) {
+    public Long consume(String refreshToken) {
         String userId = redisTemplate.opsForValue()
                 .getAndDelete(REFRESH_TOKEN_PREFIX + refreshToken);
 
