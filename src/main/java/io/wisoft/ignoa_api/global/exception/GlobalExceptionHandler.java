@@ -1,7 +1,11 @@
 package io.wisoft.ignoa_api.global.exception;
 
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
+import org.springframework.data.redis.RedisConnectionFailureException;
+import org.springframework.data.redis.RedisSystemException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
@@ -138,5 +142,29 @@ public class GlobalExceptionHandler {
         log.debug("낙관적 락 충돌");
         return ResponseEntity.status(ErrorCode.ITEM_CONFLICT.getHttpStatus())
                 .body(ErrorResponse.of(ErrorCode.ITEM_CONFLICT));
+    }
+
+    @ExceptionHandler({RedisConnectionFailureException.class, RedisSystemException.class})
+    public ResponseEntity<ErrorResponse> handleRedisFailure(DataAccessException e, HttpServletRequest request) {
+        log.error(
+                "Redis 인프라 장애: method={}, uri={}",
+                request.getMethod(),
+                request.getRequestURI(),
+                e
+        );
+        return ResponseEntity
+                .status(ErrorCode.AUTH_INFRASTRUCTURE_ERROR.getHttpStatus())
+                .body(ErrorResponse.of(ErrorCode.AUTH_INFRASTRUCTURE_ERROR));
+    }
+
+    @ExceptionHandler(JwtException.class)
+    public ResponseEntity<ErrorResponse> handleJwtException(JwtException e) {
+        log.debug(
+                "JWT 검증 실패: reason={}",
+                e.getClass().getSimpleName()
+        );
+        return ResponseEntity
+                .status(ErrorCode.INVALID_TOKEN.getHttpStatus())
+                .body(ErrorResponse.of(ErrorCode.INVALID_TOKEN));
     }
 }
