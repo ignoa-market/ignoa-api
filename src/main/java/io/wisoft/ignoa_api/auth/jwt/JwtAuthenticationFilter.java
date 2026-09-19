@@ -5,6 +5,7 @@ import io.jsonwebtoken.JwtException;
 import io.wisoft.ignoa_api.auth.service.TokenBlacklistService;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
 import io.wisoft.ignoa_api.global.exception.ErrorResponse;
+import io.wisoft.ignoa_api.global.security.PublicEndpointMatcher;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -36,9 +37,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtTokenProvider jwtTokenProvider;
     private final TokenBlacklistService tokenBlacklistService;
     private final ObjectMapper objectMapper;
+    private final PublicEndpointMatcher publicEndpointMatcher;
 
     @Override
-        protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String token = resolveToken(request);
 
         if (token != null) {
@@ -46,7 +48,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 authenticate(token);
 
             } catch (RedisConnectionFailureException | RedisSystemException | QueryTimeoutException e) {
-                // 블랙리스트를 확인할 수 없으면 인증 통과 여부를 판단할 수 없으므로 요청을 진행하지 않는다.
+                if (publicEndpointMatcher.matches(request)) {
+                    log.warn(
+                            "Redis 인프라 장애 - 공개 요청을 익명 처리: method={}, uri={}, reason={}",
+                            request.getMethod(),
+                            request.getRequestURI(),
+                            e.getClass().getSimpleName()
+                    );
+
+                    SecurityContextHolder.clearContext();
+                    filterChain.doFilter(request, response);
+                    return;
+                }
+
                 log.error("Redis 인프라 장애 - 인증 차단: uri={}, reason={}",
                         request.getRequestURI(),
                         e.getClass().getSimpleName()
@@ -55,7 +69,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 response.setStatus(ErrorCode.AUTH_INFRASTRUCTURE_ERROR.getHttpStatus().value());
                 response.setContentType(MediaType.APPLICATION_JSON_VALUE);
                 response.setCharacterEncoding(StandardCharsets.UTF_8.name());
-                objectMapper.writeValue(response.getWriter(), ErrorResponse.of(ErrorCode.AUTH_INFRASTRUCTURE_ERROR));
+                objectMapper.writeValue(
+                        response.getWriter(),
+                        ErrorResponse.of(ErrorCode.AUTH_INFRASTRUCTURE_ERROR)
+                );
                 return;
             }
         }

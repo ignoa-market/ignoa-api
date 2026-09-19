@@ -4,6 +4,8 @@ import io.jsonwebtoken.Claims;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.wisoft.ignoa_api.auth.service.TokenBlacklistService;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
+import io.wisoft.ignoa_api.global.security.PublicEndpointMatcher;
+import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -20,6 +22,7 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 
@@ -33,6 +36,9 @@ class JwtAuthenticationFilterTest {
 
     @Mock
     TokenBlacklistService tokenBlacklistService;
+
+    @Mock
+    PublicEndpointMatcher publicEndpointMatcher;
 
     @Mock
     Claims claims;
@@ -95,6 +101,29 @@ class JwtAuthenticationFilterTest {
 
         // Then
         assertThat(filterChain.getRequest()).isNull();
+    }
+
+    @Test
+    void 공개_API는_Redis_장애가_발생해도_익명으로_요청을_계속한다() throws Exception {
+        // Given
+        given(tokenBlacklistService.isBlacklisted(anyString()))
+                .willThrow(new RedisConnectionFailureException("Redis 연결 실패"));
+        given(publicEndpointMatcher.matches(any(HttpServletRequest.class)))
+                .willReturn(true);
+
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader("Authorization", "Bearer " + TOKEN);
+
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        MockFilterChain filterChain = new MockFilterChain();
+
+        // When
+        filter.doFilter(request, response, filterChain);
+
+        // Then
+        assertThat(filterChain.getRequest()).isNotNull();
+        assertThat(response.getStatus()).isEqualTo(HttpStatus.OK.value());
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
     }
 
     @Test
