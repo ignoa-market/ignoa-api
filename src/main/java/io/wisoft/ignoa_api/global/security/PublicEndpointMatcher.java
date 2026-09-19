@@ -16,15 +16,17 @@ public class PublicEndpointMatcher implements RequestMatcher {
         PathPatternRequestMatcher.Builder paths = PathPatternRequestMatcher.withDefaults();
 
         this.publicEndpoints = new OrRequestMatcher(
-                paths.matcher("/api/auth/login"),
-                paths.matcher("/api/auth/recover"),
-                paths.matcher("/api/auth/signup"),
-                paths.matcher("/api/auth/refresh"),
-                paths.matcher("/api/auth/email/send"),
-                paths.matcher("/api/auth/email/verify"),
-                paths.matcher("/api/auth/oauth/kakao"),
-                paths.matcher("/api/users/email/duplicate"),
-                paths.matcher("/api/users/nickname/duplicate"),
+                paths.matcher(HttpMethod.POST, "/api/auth/login"),
+                paths.matcher(HttpMethod.POST, "/api/auth/logout"),
+                paths.matcher(HttpMethod.POST, "/api/auth/recover"),
+                paths.matcher(HttpMethod.POST, "/api/auth/signup"),
+                paths.matcher(HttpMethod.POST, "/api/auth/oauth/kakao"),
+                paths.matcher(HttpMethod.POST, "/api/auth/refresh"),
+
+                paths.matcher(HttpMethod.POST, "/api/auth/email/send"),
+                paths.matcher(HttpMethod.POST, "/api/auth/email/verify"),
+                paths.matcher(HttpMethod.GET, "/api/users/email/duplicate"),
+                paths.matcher(HttpMethod.GET, "/api/users/nickname/duplicate"),
 
                 paths.matcher(HttpMethod.GET, "/api/items"),
                 paths.matcher(HttpMethod.GET, "/api/items/{itemId}"),

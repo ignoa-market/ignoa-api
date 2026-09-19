@@ -11,10 +11,13 @@ import io.wisoft.ignoa_api.auth.service.AuthService;
 import io.wisoft.ignoa_api.auth.service.EmailService;
 import io.wisoft.ignoa_api.auth.oauth.KakaoAuthService;
 import io.wisoft.ignoa_api.global.common.ApiResponse;
+import io.wisoft.ignoa_api.global.exception.BusinessException;
+import io.wisoft.ignoa_api.global.exception.ErrorCode;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import static io.wisoft.ignoa_api.global.common.CookieUtils.createClearRefreshTokenCookie;
@@ -24,6 +27,8 @@ import static io.wisoft.ignoa_api.global.common.CookieUtils.createRefreshTokenCo
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class AuthController {
+
+    private static final String BEARER_PREFIX = "Bearer ";
 
     private final AuthService authService;
     private final KakaoAuthService kakaoAuthService;
@@ -61,7 +66,7 @@ public class AuthController {
 
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse<Void>> logout(
-            @RequestHeader("Authorization") String authHeader,
+            @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authHeader,
             @CookieValue("refresh_token") String refreshToken,
             HttpServletResponse response
     ) {
@@ -69,7 +74,8 @@ public class AuthController {
         ResponseCookie clearCookie = createClearRefreshTokenCookie();
         response.addHeader(HttpHeaders.SET_COOKIE, clearCookie.toString());
 
-        authService.logout(authHeader.substring(7), refreshToken);
+        String accessToken = extractAccessToken(authHeader);
+        authService.logout(accessToken, refreshToken);
 
         return ResponseEntity.ok(ApiResponse.of(null, "로그아웃이 완료되었습니다."));
     }
@@ -130,5 +136,20 @@ public class AuthController {
 
         LoginResponse data = new LoginResponse(tokens.userId(), tokens.accessToken());
         return ResponseEntity.ok(ApiResponse.of(data, "카카오 소셜 로그인에 성공했습니다."));
+    }
+
+    private String extractAccessToken(String authHeader) {
+        if (!StringUtils.hasText(authHeader)
+                || !authHeader.startsWith(BEARER_PREFIX)) {
+            throw new BusinessException(ErrorCode.INVALID_TOKEN);
+        }
+
+        String accessToken = authHeader.substring(BEARER_PREFIX.length());
+
+        if (!StringUtils.hasText(accessToken)) {
+            throw new BusinessException(ErrorCode.INVALID_TOKEN);
+        }
+
+        return accessToken;
     }
 }
