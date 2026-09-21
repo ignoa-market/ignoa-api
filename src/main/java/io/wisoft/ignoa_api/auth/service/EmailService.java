@@ -25,7 +25,7 @@ import java.time.Duration;
 public class EmailService {
 
     private static final String VERIFY_PREFIX = "email:verify:";
-    private static final String VERIFIED_PREFIX = "email:verified:";
+    private static final String VERIFIED_VALUE = "VERIFIED";
     private final JavaMailSender mailSender;
     private final StringRedisTemplate redisTemplate;
     private final UserRepository userRepository;
@@ -50,8 +50,11 @@ public class EmailService {
             throw new BusinessException(ErrorCode.INVALID_VERIFICATION_CODE);
         }
 
-        redisTemplate.opsForValue().set(VERIFIED_PREFIX + email, "true", Duration.ofMinutes(10));
-        redisTemplate.delete(VERIFY_PREFIX + email);
+        redisTemplate.opsForValue().set(
+                VERIFY_PREFIX + email,
+                VERIFIED_VALUE,
+                Duration.ofMinutes(10)
+        );
 
         return new EmailVerifyResponse(email);
     }
@@ -72,10 +75,12 @@ public class EmailService {
     }
 
     public boolean isVerified(String email) {
-        return redisTemplate.opsForValue().get(VERIFIED_PREFIX + email) != null;
+        return VERIFIED_VALUE.equals(
+                redisTemplate.opsForValue().get(VERIFY_PREFIX + email)
+        );
     }
 
     public void deleteVerified(String email) {
-        redisTemplate.delete(VERIFIED_PREFIX + email);
+        redisTemplate.delete(VERIFY_PREFIX + email);
     }
 }
