@@ -1,9 +1,9 @@
 package io.wisoft.ignoa_api.global.exception;
 
 import io.jsonwebtoken.JwtException;
+import io.wisoft.ignoa_api.global.infra.redis.RedisInfrastructureException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.data.redis.RedisSystemException;
 import org.springframework.http.ResponseEntity;
@@ -144,8 +144,8 @@ public class GlobalExceptionHandler {
                 .body(ErrorResponse.of(ErrorCode.ITEM_CONFLICT));
     }
 
-    @ExceptionHandler({RedisConnectionFailureException.class, RedisSystemException.class})
-    public ResponseEntity<ErrorResponse> handleRedisFailure(DataAccessException e, HttpServletRequest request) {
+    @ExceptionHandler({RedisConnectionFailureException.class, RedisSystemException.class, RedisInfrastructureException.class})
+    public ResponseEntity<ErrorResponse> handleRedisFailure(RuntimeException e, HttpServletRequest request) {
         log.error(
                 "Redis 인프라 장애: method={}, uri={}",
                 request.getMethod(),
