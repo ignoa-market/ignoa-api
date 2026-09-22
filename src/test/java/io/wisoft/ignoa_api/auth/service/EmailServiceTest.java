@@ -14,13 +14,13 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.mail.javamail.JavaMailSender;
 
-import java.time.Duration;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -50,10 +50,15 @@ class EmailServiceTest {
     }
 
     @Test
-    void 올바른_코드를_인증하면_같은_키가_인증_완료_상태로_전환된다() {
+    void Lua_인증이_성공하면_인증된_이메일을_반환한다() {
         // Given
-        given(redisTemplate.opsForValue()).willReturn(valueOperations);
-        given(valueOperations.get(VERIFY_KEY)).willReturn(CODE);
+        given(redisTemplate.execute(
+                any(),
+                eq(List.of(VERIFY_KEY)),
+                eq(CODE),
+                eq("VERIFIED"),
+                eq("600")
+        )).willReturn(1L);
         EmailVerifyRequest request = new EmailVerifyRequest(EMAIL, CODE);
 
         // When
@@ -61,17 +66,19 @@ class EmailServiceTest {
 
         // Then
         assertThat(response.email()).isEqualTo(EMAIL);
-        verify(valueOperations).set(VERIFY_KEY, "VERIFIED", Duration.ofMinutes(10));
-        verify(redisTemplate, never()).delete(VERIFY_KEY);
     }
 
     @Test
-    void 인증에_사용한_코드는_다시_사용할_수_없다() {
+    void Lua_인증이_실패하면_잘못된_인증_코드_예외가_발생한다() {
         // Given
-        given(redisTemplate.opsForValue()).willReturn(valueOperations);
-        given(valueOperations.get(VERIFY_KEY)).willReturn(CODE, "VERIFIED");
+        given(redisTemplate.execute(
+                any(),
+                eq(List.of(VERIFY_KEY)),
+                eq(CODE),
+                eq("VERIFIED"),
+                eq("600")
+        )).willReturn(0L);
         EmailVerifyRequest request = new EmailVerifyRequest(EMAIL, CODE);
-        emailService.verifyEmailCode(request);
 
         // When
         var exception = assertThatThrownBy(() -> emailService.verifyEmailCode(request));
@@ -82,28 +89,6 @@ class EmailServiceTest {
                 businessException -> assertThat(businessException.getErrorCode())
                         .isEqualTo(ErrorCode.INVALID_VERIFICATION_CODE)
         );
-        verify(valueOperations, times(1))
-                .set(VERIFY_KEY, "VERIFIED", Duration.ofMinutes(10));
-    }
-
-    @Test
-    void 잘못된_코드를_입력하면_인증_상태를_변경하지_않는다() {
-        // Given
-        given(redisTemplate.opsForValue()).willReturn(valueOperations);
-        given(valueOperations.get(VERIFY_KEY)).willReturn(CODE);
-        EmailVerifyRequest request = new EmailVerifyRequest(EMAIL, "654321");
-
-        // When
-        var exception = assertThatThrownBy(() -> emailService.verifyEmailCode(request));
-
-        // Then
-        exception.isInstanceOfSatisfying(
-                BusinessException.class,
-                businessException -> assertThat(businessException.getErrorCode())
-                        .isEqualTo(ErrorCode.INVALID_VERIFICATION_CODE)
-        );
-        verify(valueOperations, never())
-                .set(VERIFY_KEY, "VERIFIED", Duration.ofMinutes(10));
     }
 
     @Test
