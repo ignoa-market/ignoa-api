@@ -32,7 +32,9 @@ public class EmailService {
 
     private static final DefaultRedisScript<Long> VERIFY_EMAIL_SCRIPT =
             new DefaultRedisScript<>("""
-                    if redis.call('GET', KEYS[1]) == ARGV[1] then
+                    local current = redis.call('GET', KEYS[1])
+
+                    if current ~= ARGV[2] and current == ARGV[1] then
                         redis.call(
                             'SET',
                             KEYS[1],
