@@ -1,6 +1,7 @@
 package io.wisoft.ignoa_api.global.exception;
 
 import io.jsonwebtoken.ExpiredJwtException;
+import io.wisoft.ignoa_api.global.infra.redis.RedisInfrastructureException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.redis.RedisConnectionFailureException;
@@ -38,6 +39,13 @@ class GlobalExceptionHandlerTest {
                 .andExpect(jsonPath("$.code").value(ErrorCode.AUTH_INFRASTRUCTURE_ERROR.name()));
     }
 
+    @Test
+    void Redis_인프라_장애는_503과_AUTH_INFRASTRUCTURE_ERROR로_응답한다() throws Exception {
+        mockMvc.perform(get("/test/redis-infrastructure-error"))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.code").value(ErrorCode.AUTH_INFRASTRUCTURE_ERROR.name()));
+    }
+
     @RestController
     static class ThrowingController {
 
@@ -49,6 +57,11 @@ class GlobalExceptionHandlerTest {
         @GetMapping("/test/redis-down")
         void redisDown() {
             throw new RedisConnectionFailureException("Redis 연결 실패");
+        }
+
+        @GetMapping("/test/redis-infrastructure-error")
+        void redisInfrastructureError() {
+            throw new RedisInfrastructureException("Redis 인프라 장애", new RuntimeException());
         }
     }
 }

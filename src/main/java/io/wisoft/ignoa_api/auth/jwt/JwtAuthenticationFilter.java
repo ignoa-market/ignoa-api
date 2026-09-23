@@ -5,6 +5,7 @@ import io.jsonwebtoken.JwtException;
 import io.wisoft.ignoa_api.auth.service.TokenBlacklistService;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
 import io.wisoft.ignoa_api.global.exception.ErrorResponse;
+import io.wisoft.ignoa_api.global.infra.redis.RedisInfrastructureException;
 import io.wisoft.ignoa_api.global.security.PublicEndpointMatcher;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -12,7 +13,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.QueryTimeoutException;
 import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.data.redis.RedisSystemException;
 import org.springframework.http.MediaType;
@@ -47,7 +47,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             try {
                 authenticate(token);
 
-            } catch (RedisConnectionFailureException | RedisSystemException | QueryTimeoutException e) {
+            } catch (RedisConnectionFailureException
+                     | RedisSystemException
+                     | RedisInfrastructureException e) {
                 if (publicEndpointMatcher.matches(request)) {
                     log.warn(
                             "Redis 인프라 장애 - 공개 요청을 익명 처리: method={}, uri={}, reason={}",
