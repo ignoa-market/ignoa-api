@@ -4,6 +4,7 @@ import io.wisoft.ignoa_api.auth.dto.request.EmailVerifyRequest;
 import io.wisoft.ignoa_api.auth.dto.response.EmailVerifyResponse;
 import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
+import io.wisoft.ignoa_api.global.infra.redis.RedisOperationExecutor;
 import io.wisoft.ignoa_api.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -46,7 +47,11 @@ class EmailServiceTest {
 
     @BeforeEach
     void setUp() {
-        emailService = new EmailService(mailSender, redisTemplate, userRepository);
+        emailService = new EmailService(
+                mailSender,
+                redisTemplate,
+                new RedisOperationExecutor(),
+                userRepository);
     }
 
     @Test

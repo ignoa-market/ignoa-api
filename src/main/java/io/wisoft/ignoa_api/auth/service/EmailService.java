@@ -7,6 +7,7 @@ import io.wisoft.ignoa_api.auth.dto.response.EmailVerifyResponse;
 import io.wisoft.ignoa_api.auth.support.EmailTemplateBuilder;
 import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
+import io.wisoft.ignoa_api.global.infra.redis.RedisOperationExecutor;
 import io.wisoft.ignoa_api.user.repository.UserRepository;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
@@ -28,12 +29,12 @@ public class EmailService {
 
     private static final String VERIFY_PREFIX = "email:verify:";
     private static final String VERIFIED_VALUE = "VERIFIED";
+    private static final Duration VERIFICATION_CODE_TTL = Duration.ofMinutes(5);
     private static final Duration VERIFIED_TTL = Duration.ofMinutes(10);
 
     private static final DefaultRedisScript<Long> VERIFY_EMAIL_SCRIPT =
             new DefaultRedisScript<>("""
                     local current = redis.call('GET', KEYS[1])
-
                     if current ~= ARGV[2] and current == ARGV[1] then
                         redis.call(
                             'SET',
@@ -44,12 +45,12 @@ public class EmailService {
                         )
                         return 1
                     end
-
                     return 0
                     """, Long.class);
 
     private final JavaMailSender mailSender;
     private final StringRedisTemplate redisTemplate;
+    private final RedisOperationExecutor redisOperationExecutor;
     private final UserRepository userRepository;
 
     public void sendEmailCode(EmailVerifyCodeRequest request) {
@@ -60,7 +61,9 @@ public class EmailService {
         }
 
         String code = String.format("%06d", new SecureRandom().nextInt(1000000));
-        redisTemplate.opsForValue().set(VERIFY_PREFIX + email, code, Duration.ofMinutes(5));
+        redisOperationExecutor.run(() ->
+                redisTemplate.opsForValue().set(VERIFY_PREFIX + email, code, VERIFICATION_CODE_TTL));
+
         send(email, "[Ignoa] 이메일 인증 코드", EmailTemplateBuilder.buildVerificationEmail(code));
     }
 
@@ -68,12 +71,14 @@ public class EmailService {
         String email = request.email();
         String key = VERIFY_PREFIX + email;
 
-        Long result = redisTemplate.execute(
-                VERIFY_EMAIL_SCRIPT,
-                List.of(key),
-                request.code(),
-                VERIFIED_VALUE,
-                String.valueOf(VERIFIED_TTL.toSeconds())
+        Long result = redisOperationExecutor.execute(() ->
+                redisTemplate.execute(
+                        VERIFY_EMAIL_SCRIPT,
+                        List.of(key),
+                        request.code(),
+                        VERIFIED_VALUE,
+                        String.valueOf(VERIFIED_TTL.toSeconds())
+                )
         );
 
         if (!Long.valueOf(1L).equals(result)) {
@@ -99,12 +104,14 @@ public class EmailService {
     }
 
     public boolean isVerified(String email) {
-        return VERIFIED_VALUE.equals(
-                redisTemplate.opsForValue().get(VERIFY_PREFIX + email)
+        return redisOperationExecutor.execute(() ->
+                VERIFIED_VALUE.equals(redisTemplate.opsForValue().get(VERIFY_PREFIX + email))
         );
     }
 
     public void deleteVerified(String email) {
-        redisTemplate.delete(VERIFY_PREFIX + email);
+        redisOperationExecutor.run(() ->
+                redisTemplate.delete(VERIFY_PREFIX + email)
+        );
     }
 }

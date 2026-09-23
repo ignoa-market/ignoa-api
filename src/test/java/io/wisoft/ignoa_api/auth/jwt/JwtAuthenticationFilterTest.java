@@ -4,6 +4,7 @@ import io.jsonwebtoken.Claims;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.wisoft.ignoa_api.auth.service.TokenBlacklistService;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
+import io.wisoft.ignoa_api.global.infra.redis.RedisInfrastructureException;
 import io.wisoft.ignoa_api.global.security.PublicEndpointMatcher;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.AfterEach;
@@ -74,7 +75,10 @@ class JwtAuthenticationFilterTest {
     void Redis_응답_지연으로_블랙리스트_조회가_실패하면_503으로_차단한다() throws Exception {
         // Given
         given(tokenBlacklistService.isBlacklisted(anyString()))
-                .willThrow(new QueryTimeoutException("Redis 명령 타임아웃"));
+                .willThrow(new RedisInfrastructureException(
+                        "Redis 명령 시간 초과",
+                        new QueryTimeoutException("Redis 명령 타임아웃")
+                ));
 
         // When
         MockHttpServletResponse response = doFilter();
