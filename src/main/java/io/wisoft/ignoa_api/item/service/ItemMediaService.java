@@ -72,7 +72,7 @@ public class ItemMediaService {
     public void deleteMedias(Long itemId, List<Long> mediaIds) {
         itemMediaRepository.findAllByItemIdAndIdIn(itemId, mediaIds)
                 .forEach(itemMedia -> outboxAppender.save(
-                        itemId.toString(), "ITEM", itemMedia.getObjectKey(), OutboxEventType.DELETE_ITEM_IMAGE
+                        itemId.toString(), "ITEM", itemMedia.getObjectKey(), OutboxEventType.DELETE_ITEM_MEDIA
                 ));
 
         itemMediaRepository.deleteAllByItemIdAndIdIn(itemId, mediaIds);
@@ -82,7 +82,7 @@ public class ItemMediaService {
     public void deleteAllMedia(Long itemId) {
         itemMediaRepository.findAllByItemId(itemId)
                 .forEach(itemMedia -> outboxAppender.save(
-                        itemId.toString(), "ITEM", itemMedia.getObjectKey(), OutboxEventType.DELETE_ITEM_IMAGE
+                        itemId.toString(), "ITEM", itemMedia.getObjectKey(), OutboxEventType.DELETE_ITEM_MEDIA
                 ));
 
         itemMediaRepository.deleteAllByItemId(itemId);

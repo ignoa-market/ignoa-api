@@ -137,7 +137,7 @@ public class ItemFacade {
                     aggregateId,
                     "ITEM",
                     uploadedMedia.objectKey(),
-                    OutboxEventType.DELETE_ITEM_IMAGE);
+                    OutboxEventType.DELETE_ITEM_MEDIA);
 
         } catch (RuntimeException compensationError) {
             log.error("보상 Outbox 적재 실패: aggregateType=ITEM, aggregateId={}, objectKey={}, action=고아 파일 수동 정리",
