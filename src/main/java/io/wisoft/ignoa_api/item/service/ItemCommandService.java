@@ -72,12 +72,18 @@ public class ItemCommandService {
 
         validateBuyNowPrice(item, itemId, request.buyNowPrice());
 
-        item.update(request.title(), request.description(), request.category(),
-                request.brand(), request.itemCondition(), request.buyNowPrice()
+        itemMediaService.validateMediaComposition(itemId, request.deleteMediaIds(), uploadedMedias);
+
+        item.update(
+                request.title(),
+                request.description(),
+                request.category(),
+                request.brand(),
+                request.itemCondition(),
+                request.buyNowPrice()
         );
 
         if (!CollectionUtils.isEmpty(request.deleteMediaIds())) {
-            itemMediaService.validateMediaCount(itemId, request.deleteMediaIds(), uploadedMedias);
             itemMediaService.deleteMedias(itemId, request.deleteMediaIds());
         }
 
