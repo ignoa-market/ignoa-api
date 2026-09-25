@@ -83,9 +83,10 @@ public class StorageService {
         );
     }
 
-    private String detectContentType(MultipartFile file) {
+    public String detectContentType(MultipartFile file) {
         try (InputStream inputStream = file.getInputStream()) {
             return tika.detect(inputStream);
+
         } catch (IOException e) {
             throw new BusinessException(ErrorCode.FILE_UPLOAD_FAILED, e);
         }

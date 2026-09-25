@@ -64,6 +64,8 @@ public enum ErrorCode {
     ITEM_DELETE_CONFLICT(HttpStatus.CONFLICT, "상품을 삭제할 수 없습니다. 진행 중이거나 입찰이 있는 상품은 삭제할 수 없습니다."),
     AUCTION_EXTEND_CONFLICT(HttpStatus.CONFLICT, "경매를 연장할 수 없습니다. 마감 상태와 연장 가능 횟수를 확인해주세요."),
     BUY_NOW_PRICE_CHANGED_NOT_ALLOWED(HttpStatus.CONFLICT, "첫 입찰 이후에는 즉시구매가를 변경할 수 없습니다."),
+    ITEM_VIDEO_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "상품 동영상은 최대 1개까지 등록할 수 있습니다."),
+    ITEM_IMAGE_REQUIRED(HttpStatus.BAD_REQUEST, "상품 이미지는 최소 1장 이상이어야 합니다."),
 
     // Bid
     BID_CONFLICT(HttpStatus.CONFLICT, "입찰이 반영되지 않았습니다. 최신 경매 상태를 확인 후 다시 시도해주세요."),
