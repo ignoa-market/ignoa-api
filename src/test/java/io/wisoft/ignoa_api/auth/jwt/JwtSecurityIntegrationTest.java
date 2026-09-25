@@ -1,9 +1,11 @@
 package io.wisoft.ignoa_api.auth.jwt;
 
+import io.jsonwebtoken.Claims;
 import io.wisoft.ignoa_api.auth.service.TokenBlacklistService;
 import io.wisoft.ignoa_api.global.config.SecurityConfig;
 import io.wisoft.ignoa_api.global.security.CloudFrontOriginFilter;
 import io.wisoft.ignoa_api.global.security.PublicEndpointMatcher;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mock;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -41,6 +44,13 @@ class JwtSecurityIntegrationTest {
 
     @MockitoBean
     TokenBlacklistService tokenBlacklistService;
+
+    @BeforeEach
+    void setUp() {
+        Claims claims = mock(Claims.class);
+        given(claims.getSubject()).willReturn("1");
+        given(jwtTokenProvider.parseAccessToken(anyString())).willReturn(claims);
+    }
 
     @Test
     void 공개_API는_Redis_장애_시_익명으로_컨트롤러까지_도달한다() throws Exception {
