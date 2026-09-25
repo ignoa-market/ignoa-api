@@ -6,11 +6,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface ItemMediaRepository extends JpaRepository<ItemMedia, Long> {
-
-    Optional<ItemMedia> findFirstByItemIdOrderByIdAsc(Long itemId);
 
     List<ItemMedia> findAllByItemIdOrderByIdAsc(Long itemId);
 
@@ -20,10 +17,6 @@ public interface ItemMediaRepository extends JpaRepository<ItemMedia, Long> {
 
     @Query("SELECT im FROM ItemMedia im WHERE im.item.id = :itemId")
     List<ItemMedia> findAllByItemId(@Param("itemId") Long itemId);
-
-    int countByItemId(long itemId);
-
-    int countByItemIdAndIdIn(Long itemId, List<Long> ids);
 
     List<ItemMedia> findAllByItemIdAndIdIn(Long itemId, List<Long> mediaIds);
 

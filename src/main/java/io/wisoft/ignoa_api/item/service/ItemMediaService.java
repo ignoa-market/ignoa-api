@@ -7,12 +7,15 @@ import io.wisoft.ignoa_api.global.outbox.entity.OutboxEventType;
 import io.wisoft.ignoa_api.global.outbox.service.OutboxAppender;
 import io.wisoft.ignoa_api.item.dto.response.ItemMediaUrls;
 import io.wisoft.ignoa_api.item.entity.ItemMedia;
+import io.wisoft.ignoa_api.item.entity.enums.ItemMediaType;
 import io.wisoft.ignoa_api.item.repository.ItemMediaRepository;
 import io.wisoft.ignoa_api.item.service.dto.UploadedMedia;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -45,13 +48,23 @@ public class ItemMediaService {
                 .toList();
     }
 
-    public void validateMediaCount(Long itemId, List<Long> mediaIds, List<UploadedMedia> uploadedMedias) {
-        int currentCount = itemMediaRepository.countByItemId(itemId);
-        int toDeleteCount = itemMediaRepository.countByItemIdAndIdIn(itemId, mediaIds);
-        int addCount = uploadedMedias == null ? 0 : uploadedMedias.size();
+    public void validateMediaComposition(Long itemId, List<Long> deleteMediaIds, List<UploadedMedia> uploadedMedias) {
+        List<Long> deleteIds = deleteMediaIds == null ? List.of() : deleteMediaIds;
 
-        if (currentCount - toDeleteCount + addCount < 1) {
-            throw new BusinessException(ErrorCode.ITEM_MEDIA_REQUIRED);
+        List<ItemMediaType> mediaTypes = new ArrayList<>();
+
+        itemMediaRepository.findAllByItemId(itemId).stream()
+                .filter(itemMedia -> !deleteIds.contains(itemMedia.getId()))
+                .forEach(itemMedia -> mediaTypes.add(itemMedia.getMediaType()));
+
+        uploadedMedias.forEach(uploadedMedia -> mediaTypes.add(uploadedMedia.mediaType()));
+
+        if (Collections.frequency(mediaTypes, ItemMediaType.VIDEO) > 1) {
+            throw new BusinessException(ErrorCode.ITEM_VIDEO_LIMIT_EXCEEDED);
+        }
+
+        if (!mediaTypes.contains(ItemMediaType.IMAGE)) {
+            throw new BusinessException(ErrorCode.ITEM_IMAGE_REQUIRED);
         }
     }
 

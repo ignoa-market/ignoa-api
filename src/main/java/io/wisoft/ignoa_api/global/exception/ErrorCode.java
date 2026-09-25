@@ -56,7 +56,6 @@ public enum ErrorCode {
     ITEM_UPDATE_FORBIDDEN(HttpStatus.FORBIDDEN, "본인 상품만 수정할 수 있습니다."),
     ITEM_DELETE_FORBIDDEN(HttpStatus.FORBIDDEN, "본인 상품만 삭제할 수 있습니다."),
     ITEM_EXTEND_FORBIDDEN(HttpStatus.FORBIDDEN, "본인 상품만 마감 연장할 수 있습니다."),
-    ITEM_MEDIA_REQUIRED(HttpStatus.BAD_REQUEST, "상품 미디어는 최소 1개 이상이어야 합니다."),
     AUCTION_ALREADY_CLOSED(HttpStatus.BAD_REQUEST, "이미 마감된 경매입니다."),
     INVALID_BUY_NOW_PRICE(HttpStatus.BAD_REQUEST, "즉시 구매가는 현재 입찰가보다 낮을 수 없습니다."),
     ITEM_CONFLICT(HttpStatus.CONFLICT, "수정하는 사이 상품 정보가 변경되었습니다. 최신 정보를 확인 후 다시 시도해주세요."),
