@@ -31,7 +31,7 @@ public class ItemMediaService {
 
     public Map<Long, String> getFirstMediaUrl(List<Long> itemIds) {
         return itemMediaRepository
-                .findByItemIdIn(itemIds).stream()
+                .findObjectKeysByItemIds(itemIds, ItemMediaType.IMAGE).stream()
                 .collect(Collectors.toMap(
                         row -> (Long) row[0],
                         row -> mediaUrlResolver.toUrl((String) row[1]),
