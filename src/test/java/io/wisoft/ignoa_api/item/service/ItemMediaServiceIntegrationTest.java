@@ -2,6 +2,7 @@ package io.wisoft.ignoa_api.item.service;
 
 import io.wisoft.ignoa_api.auction.scheduler.AuctionCloseScheduler;
 import io.wisoft.ignoa_api.chat.service.ChatRoomService;
+import io.wisoft.ignoa_api.item.dto.response.ItemMediaUrls;
 import io.wisoft.ignoa_api.item.entity.Item;
 import io.wisoft.ignoa_api.item.entity.ItemMedia;
 import io.wisoft.ignoa_api.item.entity.enums.ItemMediaType;
@@ -62,5 +63,25 @@ class ItemMediaServiceIntegrationTest extends IntegrationTestSupport {
 
         // Then
         assertThat(urls.get(item.getId())).endsWith("items/first.jpg");
+    }
+
+    @Test
+    void 상품_미디어_목록은_등록_순서대로_미디어_종류를_함께_반환한다() {
+        // Given
+        User seller = userRepository.save(newUser("seller@test.com", "판매자"));
+        Item item = itemRepository.save(newItem(seller));
+
+        itemMediaRepository.save(ItemMedia.from(item, "items/video.mp4", ItemMediaType.VIDEO));
+        itemMediaRepository.save(ItemMedia.from(item, "items/first.jpg", ItemMediaType.IMAGE));
+
+        // When
+        List<ItemMediaUrls> mediaUrls = itemMediaService.getMediaUrls(item.getId());
+
+        // Then
+        assertThat(mediaUrls)
+                .extracting(ItemMediaUrls::itemMediaType)
+                .containsExactly(ItemMediaType.VIDEO, ItemMediaType.IMAGE);
+        assertThat(mediaUrls.get(0).url()).endsWith("items/video.mp4");
+        assertThat(mediaUrls.get(0).itemMediaId()).isNotNull();
     }
 }
