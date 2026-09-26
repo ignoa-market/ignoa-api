@@ -46,8 +46,12 @@ public class ChatRoom extends BaseEntity {
     @JoinColumn(name = "buyer_id", nullable = false)
     private User buyer;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "last_message_id")
+    private ChatMessage lastMessage;
+
     public static ChatRoom create(Item item, User seller, User buyer) {
-        return new ChatRoom(null, item, seller, buyer);
+        return new ChatRoom(null, item, seller, buyer, null);
     }
 
     public boolean isSeller(Long userId) {
