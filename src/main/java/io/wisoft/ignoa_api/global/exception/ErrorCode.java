@@ -73,7 +73,12 @@ public enum ErrorCode {
 
     // Wish
     WISH_NOT_FOUND(HttpStatus.NOT_FOUND, "찜을 찾을 수 없습니다."),
-    WISH_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 찜한 상품입니다.");
+    WISH_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 찜한 상품입니다."),
+
+    // Chat
+    CHAT_ROOM_NOT_FOUND(HttpStatus.NOT_FOUND, "채팅방을 찾을 수 없습니다."),
+    CHAT_ROOM_ACCESS_DENIED(HttpStatus.FORBIDDEN, "채팅방 참여자만 이용할 수 있습니다."),
+    SELF_CHAT_NOT_ALLOWED(HttpStatus.FORBIDDEN, "본인 상품에는 채팅할 수 없습니다.");
 
     private final HttpStatus httpStatus;
     private final String message;
