@@ -44,7 +44,8 @@ public class ItemMediaService {
                 .findAllByItemIdOrderByIdAsc(itemId).stream()
                 .map(itemMedia -> new ItemMediaUrls(
                         itemMedia.getId(),
-                        mediaUrlResolver.toUrl(itemMedia.getObjectKey())))
+                        mediaUrlResolver.toUrl(itemMedia.getObjectKey()),
+                        itemMedia.getMediaType()))
                 .toList();
     }
 
