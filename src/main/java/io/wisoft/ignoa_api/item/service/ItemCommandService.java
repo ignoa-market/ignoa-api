@@ -133,7 +133,7 @@ public class ItemCommandService {
         }
 
         bidRepository.markLosingBids(itemId);
-        chatRoomService.createChat(itemId);
+        chatRoomService.createChatRoom(itemId);
 
         return new BuyNowResponse(itemId, buyerId, request.buyNowPrice(), ItemStatus.BUY_NOW_CLOSED);
     }

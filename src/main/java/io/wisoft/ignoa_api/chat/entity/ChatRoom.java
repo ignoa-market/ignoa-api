@@ -49,4 +49,17 @@ public class ChatRoom extends BaseEntity {
     public static ChatRoom create(Item item, User seller, User buyer) {
         return new ChatRoom(null, item, seller, buyer);
     }
+
+    public boolean isSeller(Long userId) {
+        return seller.getId().equals(userId);
+    }
+
+    public boolean isParticipant(Long userId) {
+        return isSeller(userId)
+                || buyer.getId().equals(userId);
+    }
+
+    public User getPartner(Long userId) {
+        return isSeller(userId) ? buyer : seller;
+    }
 }
