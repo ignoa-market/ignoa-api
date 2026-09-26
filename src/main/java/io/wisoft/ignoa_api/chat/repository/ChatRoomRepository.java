@@ -22,9 +22,10 @@ public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
             JOIN FETCH cr.item
             JOIN FETCH cr.seller
             JOIN FETCH cr.buyer
+            LEFT JOIN FETCH cr.lastMessage lm
             WHERE cr.seller.id = :userId
                OR cr.buyer.id = :userId
-            ORDER BY cr.createdAt DESC
+            ORDER BY COALESCE(lm.createdAt, cr.createdAt) DESC 
             """)
     List<ChatRoom> findAllByParticipantId(@Param("userId") Long userId);
 

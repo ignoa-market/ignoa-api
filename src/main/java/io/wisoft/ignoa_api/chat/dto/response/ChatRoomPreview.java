@@ -1,5 +1,6 @@
 package io.wisoft.ignoa_api.chat.dto.response;
 
+import io.wisoft.ignoa_api.chat.entity.ChatMessage;
 import io.wisoft.ignoa_api.chat.entity.ChatRoom;
 import io.wisoft.ignoa_api.item.entity.Item;
 import io.wisoft.ignoa_api.user.entity.User;
@@ -15,6 +16,8 @@ public record ChatRoomPreview(
         String partnerNickname,
         String partnerProfileImageUrl,
         String role,
+        String lastMessage,
+        LocalDateTime lastMessageAt,
         LocalDateTime createdAt
 ) {
 
@@ -26,6 +29,7 @@ public record ChatRoomPreview(
             boolean isSeller
     ) {
         Item item = chatRoom.getItem();
+        ChatMessage lastMessage = chatRoom.getLastMessage();
 
         return new ChatRoomPreview(
                 chatRoom.getId(),
@@ -36,6 +40,8 @@ public record ChatRoomPreview(
                 partner.getNickname(),
                 partnerProfileImageUrl,
                 isSeller ? "SELLER" : "BUYER",
+                lastMessage == null ? null : lastMessage.getContent(),
+                lastMessage == null ? null : lastMessage.getCreatedAt(),
                 chatRoom.getCreatedAt()
         );
     }
