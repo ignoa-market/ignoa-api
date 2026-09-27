@@ -56,7 +56,7 @@ public class ItemController {
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<ItemIdResponse>> createItem(
             @Valid @RequestPart ItemCreateRequest request,
-            @RequestPart @NotEmpty(message = "상품 이미지는 최소 1개 이상이어야 합니다.") List<MultipartFile> files,
+            @RequestPart @NotEmpty(message = "상품 미디어는 최소 1개 이상이어야 합니다.") List<MultipartFile> files,
             @AuthenticationPrincipal Long sellerId
     ) {
         ItemIdResponse data = itemFacade.createItem(sellerId, request, files);

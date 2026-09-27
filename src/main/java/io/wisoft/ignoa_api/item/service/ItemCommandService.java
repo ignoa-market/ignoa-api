@@ -72,12 +72,18 @@ public class ItemCommandService {
 
         validateBuyNowPrice(item, itemId, request.buyNowPrice());
 
-        item.update(request.title(), request.description(), request.category(),
-                request.brand(), request.itemCondition(), request.buyNowPrice()
+        itemMediaService.validateMediaComposition(itemId, request.deleteMediaIds(), uploadedMedias);
+
+        item.update(
+                request.title(),
+                request.description(),
+                request.category(),
+                request.brand(),
+                request.itemCondition(),
+                request.buyNowPrice()
         );
 
         if (!CollectionUtils.isEmpty(request.deleteMediaIds())) {
-            itemMediaService.validateMediaCount(itemId, request.deleteMediaIds(), uploadedMedias);
             itemMediaService.deleteMedias(itemId, request.deleteMediaIds());
         }
 
@@ -127,7 +133,7 @@ public class ItemCommandService {
         }
 
         bidRepository.markLosingBids(itemId);
-        chatRoomService.createChat(itemId);
+        chatRoomService.createChatRoom(itemId);
 
         return new BuyNowResponse(itemId, buyerId, request.buyNowPrice(), ItemStatus.BUY_NOW_CLOSED);
     }

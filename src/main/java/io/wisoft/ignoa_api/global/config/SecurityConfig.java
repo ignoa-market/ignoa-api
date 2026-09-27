@@ -2,11 +2,12 @@ package io.wisoft.ignoa_api.global.config;
 
 import io.wisoft.ignoa_api.auth.jwt.JwtAuthenticationFilter;
 import io.wisoft.ignoa_api.global.security.CloudFrontOriginFilter;
+import io.wisoft.ignoa_api.global.security.PublicEndpointMatcher;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -28,6 +29,7 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CloudFrontOriginFilter cloudFrontOriginFilter;
+    private final PublicEndpointMatcher publicEndpointMatcher;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -37,20 +39,8 @@ public class SecurityConfig {
                         session
                                 -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
-                                "/api/auth/login",
-                                "/api/auth/recover",
-                                "/api/auth/signup",
-                                "/api/auth/refresh",
-                                "/api/auth/email/send",
-                                "/api/auth/email/verify",
-                                "/api/auth/oauth/kakao",
-                                "/api/users/email/duplicate",
-                                "/api/users/nickname/duplicate"
-                        ).permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/items", "/api/items/{itemId}", "/api/items/{itemId}/bids").permitAll()
-                        .requestMatchers("/ws").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/actuator/**").permitAll()
+                        .requestMatchers(publicEndpointMatcher)
+                        .permitAll()
                         .anyRequest().authenticated()
                 ).exceptionHandling(exception -> exception
                         .authenticationEntryPoint((request, response, authException) ->
@@ -83,5 +73,27 @@ public class SecurityConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public FilterRegistrationBean<JwtAuthenticationFilter> jwtFilterRegistration(
+            JwtAuthenticationFilter filter
+    ) {
+        FilterRegistrationBean<JwtAuthenticationFilter> registration =
+                new FilterRegistrationBean<>(filter);
+
+        registration.setEnabled(false);
+        return registration;
+    }
+
+    @Bean
+    public FilterRegistrationBean<CloudFrontOriginFilter> cloudFrontFilterRegistration(
+            CloudFrontOriginFilter filter
+    ) {
+        FilterRegistrationBean<CloudFrontOriginFilter> registration =
+                new FilterRegistrationBean<>(filter);
+
+        registration.setEnabled(false);
+        return registration;
     }
 }

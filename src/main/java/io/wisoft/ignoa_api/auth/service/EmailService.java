@@ -7,11 +7,13 @@ import io.wisoft.ignoa_api.auth.dto.response.EmailVerifyResponse;
 import io.wisoft.ignoa_api.auth.support.EmailTemplateBuilder;
 import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
+import io.wisoft.ignoa_api.global.infra.redis.RedisOperationExecutor;
 import io.wisoft.ignoa_api.user.repository.UserRepository;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -19,15 +21,36 @@ import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
 import java.time.Duration;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class EmailService {
 
     private static final String VERIFY_PREFIX = "email:verify:";
-    private static final String VERIFIED_PREFIX = "email:verified:";
+    private static final String VERIFIED_VALUE = "VERIFIED";
+    private static final Duration VERIFICATION_CODE_TTL = Duration.ofMinutes(5);
+    private static final Duration VERIFIED_TTL = Duration.ofMinutes(10);
+
+    private static final DefaultRedisScript<Long> VERIFY_EMAIL_SCRIPT =
+            new DefaultRedisScript<>("""
+                    local current = redis.call('GET', KEYS[1])
+                    if current ~= ARGV[2] and current == ARGV[1] then
+                        redis.call(
+                            'SET',
+                            KEYS[1],
+                            ARGV[2],
+                            'EX',
+                            tonumber(ARGV[3])
+                        )
+                        return 1
+                    end
+                    return 0
+                    """, Long.class);
+
     private final JavaMailSender mailSender;
     private final StringRedisTemplate redisTemplate;
+    private final RedisOperationExecutor redisOperationExecutor;
     private final UserRepository userRepository;
 
     public void sendEmailCode(EmailVerifyCodeRequest request) {
@@ -38,20 +61,29 @@ public class EmailService {
         }
 
         String code = String.format("%06d", new SecureRandom().nextInt(1000000));
-        redisTemplate.opsForValue().set(VERIFY_PREFIX + email, code, Duration.ofMinutes(5));
+        redisOperationExecutor.run(() ->
+                redisTemplate.opsForValue().set(VERIFY_PREFIX + email, code, VERIFICATION_CODE_TTL));
+
         send(email, "[Ignoa] 이메일 인증 코드", EmailTemplateBuilder.buildVerificationEmail(code));
     }
 
     public EmailVerifyResponse verifyEmailCode(EmailVerifyRequest request) {
         String email = request.email();
-        String savedCode = redisTemplate.opsForValue().get(VERIFY_PREFIX + email);
+        String key = VERIFY_PREFIX + email;
 
-        if (!request.code().equals(savedCode)) {
+        Long result = redisOperationExecutor.execute(() ->
+                redisTemplate.execute(
+                        VERIFY_EMAIL_SCRIPT,
+                        List.of(key),
+                        request.code(),
+                        VERIFIED_VALUE,
+                        String.valueOf(VERIFIED_TTL.toSeconds())
+                )
+        );
+
+        if (!Long.valueOf(1L).equals(result)) {
             throw new BusinessException(ErrorCode.INVALID_VERIFICATION_CODE);
         }
-
-        redisTemplate.opsForValue().set(VERIFIED_PREFIX + email, "true", Duration.ofMinutes(10));
-        redisTemplate.delete(VERIFY_PREFIX + email);
 
         return new EmailVerifyResponse(email);
     }
@@ -72,10 +104,14 @@ public class EmailService {
     }
 
     public boolean isVerified(String email) {
-        return redisTemplate.opsForValue().get(VERIFIED_PREFIX + email) != null;
+        return redisOperationExecutor.execute(() ->
+                VERIFIED_VALUE.equals(redisTemplate.opsForValue().get(VERIFY_PREFIX + email))
+        );
     }
 
     public void deleteVerified(String email) {
-        redisTemplate.delete(VERIFIED_PREFIX + email);
+        redisOperationExecutor.run(() ->
+                redisTemplate.delete(VERIFY_PREFIX + email)
+        );
     }
 }

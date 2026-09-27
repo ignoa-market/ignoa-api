@@ -21,7 +21,6 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -76,7 +75,7 @@ class AuctionCloseJobRollbackIntegrationTest extends IntegrationTestSupport {
         doThrow(new RuntimeException("채팅방 생성 실패"))
                 .doNothing()
                 .when(chatRoomService)
-                .createChat(retryItem.getId());
+                .createChatRoom(retryItem.getId());
 
         // When: 첫 번째 실행에서 retryItem은 롤백되고, noBidItem은 계속 처리된다.
         auctionCloseJob.closeExpiredAuctions();
@@ -103,7 +102,7 @@ class AuctionCloseJobRollbackIntegrationTest extends IntegrationTestSupport {
                 .singleElement()
                 .extracting(Bid::getStatus)
                 .isEqualTo(BidStatus.WON);
-        verify(chatRoomService, times(2)).createChat(retryItem.getId());
+        verify(chatRoomService, times(2)).createChatRoom(retryItem.getId());
     }
 
     private void expire(Long itemId, LocalDateTime endAt) {

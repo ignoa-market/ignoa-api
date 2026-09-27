@@ -13,6 +13,14 @@ spring:
   profiles:
     default: local
 
+  data:
+    redis:
+      connect-timeout: 500ms
+      timeout: 500ms
+      lettuce:
+        pool:
+          max-wait: 500ms
+
   jackson:
     property-naming-strategy: SNAKE_CASE
 
@@ -32,6 +40,14 @@ spring:
           auth: true
           starttls:
             enable: true
+
+ignoa:
+  redis:
+    redisson:
+      connect-timeout: 500ms
+      response-timeout: 500ms
+      retry-attempts: 1
+      retry-delay: 100ms
 
 cloud:
   aws:

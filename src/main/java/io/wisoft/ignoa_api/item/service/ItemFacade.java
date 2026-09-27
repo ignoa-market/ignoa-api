@@ -26,6 +26,7 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @Slf4j
@@ -39,6 +40,8 @@ public class ItemFacade {
     private final OutboxAppender outboxAppender;
 
     public ItemIdResponse createItem(Long sellerId, ItemCreateRequest request, List<MultipartFile> files) {
+        validateMediaComposition(files);
+
         List<UploadedMedia> uploadedMedias = new ArrayList<>();
 
         try {
@@ -51,13 +54,28 @@ public class ItemFacade {
         }
     }
 
+    // 업로드 전에 미디어 구성을 검증 (동영상은 최대 1개, 이미지는 최소 1장)
+    private void validateMediaComposition(List<MultipartFile> files) {
+        List<ItemMediaType> mediaTypes = files.stream()
+                .map(file -> ItemMediaType.from(storageService.detectContentType(file)))
+                .toList();
+
+        if (Collections.frequency(mediaTypes, ItemMediaType.VIDEO) > 1) {
+            throw new BusinessException(ErrorCode.ITEM_VIDEO_LIMIT_EXCEEDED);
+        }
+
+        if (!mediaTypes.contains(ItemMediaType.IMAGE)) {
+            throw new BusinessException(ErrorCode.ITEM_IMAGE_REQUIRED);
+        }
+    }
+
     public ItemDetail updateItem(Long itemId, Long userId, ItemUpdateRequest request, List<MultipartFile> files) {
         List<UploadedMedia> uploadedMedias = new ArrayList<>();
 
         try {
             uploadFiles(files, uploadedMedias);
 
-            return distributedLock.executeWithLockOrFailOpen(
+            return distributedLock.executeWithRequiredLock(
                     ItemLockKey.of(itemId),
                     LockOperation.UPDATE,
                     () -> itemCommandService.updateItem(itemId, userId, request, uploadedMedias)
@@ -74,14 +92,14 @@ public class ItemFacade {
     }
 
     public ItemIdResponse deleteItem(Long itemId, Long userId) {
-        return distributedLock.executeWithLockOrFailOpen(
+        return distributedLock.executeWithRequiredLock(
                 ItemLockKey.of(itemId),
                 LockOperation.DELETE,
                 () -> itemCommandService.deleteItem(itemId, userId));
     }
 
     public BuyNowResponse buyNowItem(Long itemId, Long buyerId, ItemBuyNowRequest request) {
-        return distributedLock.executeWithLockOrFailOpen(
+        return distributedLock.executeWithRequiredLock(
                 ItemLockKey.of(itemId),
                 LockOperation.BUY_NOW,
                 () -> itemCommandService.buyNowItem(itemId, buyerId, request));
@@ -119,7 +137,7 @@ public class ItemFacade {
                     aggregateId,
                     "ITEM",
                     uploadedMedia.objectKey(),
-                    OutboxEventType.DELETE_ITEM_IMAGE);
+                    OutboxEventType.DELETE_ITEM_MEDIA);
 
         } catch (RuntimeException compensationError) {
             log.error("보상 Outbox 적재 실패: aggregateType=ITEM, aggregateId={}, objectKey={}, action=고아 파일 수동 정리",

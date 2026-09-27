@@ -23,18 +23,20 @@ public class RedissonDistributedLock {
     private final RedissonClient redissonClient;
     private final MeterRegistry meterRegistry;
 
-    public <T> T executeWithLockOrFailOpen(String key, LockOperation operation, Supplier<T> task) {
+    public <T> T executeWithRequiredLock(String key, LockOperation operation, Supplier<T> task) {
         try {
             return execute(key, operation, task);
+
         } catch (LockInfrastructureException e) {
-            log.warn("분산 락 Fail-Open: key={}, operation={}, reason=Redis 인프라 장애", key, operation, e);
-            return task.get();
+            log.warn("분산 락 Fail-Closed: key={}, operation={}, reason=Redis 인프라 장애", key, operation, e);
+            throw new BusinessException(ErrorCode.LOCK_INFRASTRUCTURE_ERROR, e);
         }
     }
 
-    public void executeWithLockOrFailOpen(String key, LockOperation operation, Runnable task) {
+    public void executeWithOptionalLock(String key, LockOperation operation, Runnable task) {
         try {
             execute(key, operation, toSupplier(task));
+
         } catch (LockInfrastructureException e) {
             log.warn("분산 락 Fail-Open: key={}, operation={}, reason=Redis 인프라 장애", key, operation, e);
             task.run();

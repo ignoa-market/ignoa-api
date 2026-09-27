@@ -43,7 +43,7 @@ public class AuctionService {
             return;
         }
 
-        chatRoomService.createChat(itemId);
+        chatRoomService.createChatRoom(itemId);
         log.debug("경매 마감 완료: itemId={}, result=낙찰, chatRoomCreated=true", itemId);
     }
 
