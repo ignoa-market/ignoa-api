@@ -46,4 +46,14 @@ public class ChatRoomController {
         ApiResponse<ChatRoomPreview> response = ApiResponse.of(data, "채팅방을 조회했습니다.");
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping("/items/{itemId}/chat-rooms/me")
+    public ResponseEntity<ApiResponse<ChatRoomIdResponse>> checkMyChatRoom(
+            @PathVariable Long itemId,
+            @AuthenticationPrincipal Long userId
+    ) {
+        ChatRoomIdResponse data = chatRoomService.checkMyChatRoom(itemId, userId);
+        ApiResponse<ChatRoomIdResponse> response = ApiResponse.of(data, "채팅방을 조회했습니다.");
+        return ResponseEntity.ok(response);
+    }
 }

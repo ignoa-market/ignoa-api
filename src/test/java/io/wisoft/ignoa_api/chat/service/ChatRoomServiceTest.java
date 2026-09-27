@@ -214,6 +214,67 @@ class ChatRoomServiceTest extends IntegrationTestSupport {
                 .isEqualTo(ErrorCode.CHAT_ROOM_NOT_FOUND);
     }
 
+    @Test
+    void 상품에_내_채팅방이_있으면_채팅방_ID를_반환한다() {
+        // Given
+        User seller = userRepository.save(newUser("seller@test.com", "판매자"));
+        User buyer = userRepository.save(newUser("buyer@test.com", "구매자"));
+        Item item = itemRepository.save(newItem(seller));
+        Long chatRoomId = chatRoomService.openChatRoom(buyer.getId(), item.getId()).chatRoomId();
+
+        // When
+        Long found = chatRoomService.checkMyChatRoom(item.getId(), buyer.getId()).chatRoomId();
+
+        // Then
+        assertThat(found).isEqualTo(chatRoomId);
+    }
+
+    @Test
+    void 상품에_내_채팅방이_없으면_null을_반환하고_채팅방을_만들지_않는다() {
+        // Given
+        User seller = userRepository.save(newUser("seller@test.com", "판매자"));
+        User buyer = userRepository.save(newUser("buyer@test.com", "구매자"));
+        Item item = itemRepository.save(newItem(seller));
+
+        // When
+        Long found = chatRoomService.checkMyChatRoom(item.getId(), buyer.getId()).chatRoomId();
+
+        // Then
+        assertThat(found).isNull();
+        assertThat(chatRoomRepository.count()).isZero();
+    }
+
+    @Test
+    void 판매자가_자기_상품을_조회하면_null을_반환한다() {
+        // Given
+        User seller = userRepository.save(newUser("seller@test.com", "판매자"));
+        User buyer = userRepository.save(newUser("buyer@test.com", "구매자"));
+        Item item = itemRepository.save(newItem(seller));
+        chatRoomService.openChatRoom(buyer.getId(), item.getId());
+
+        // When
+        Long found = chatRoomService.checkMyChatRoom(item.getId(), seller.getId()).chatRoomId();
+
+        // Then
+        assertThat(found).isNull();
+    }
+
+    @Test
+    void 삭제된_상품의_채팅방은_조회되지_않는다() {
+        // Given
+        User seller = userRepository.save(newUser("seller@test.com", "판매자"));
+        User buyer = userRepository.save(newUser("buyer@test.com", "구매자"));
+        Item item = itemRepository.save(newItem(seller));
+        chatRoomService.openChatRoom(buyer.getId(), item.getId());
+        transactionTemplate.executeWithoutResult(status -> itemRepository.softDeleteIfActive(item.getId()));
+
+        // When & Then
+        assertThatThrownBy(() -> chatRoomService.checkMyChatRoom(item.getId(), buyer.getId()))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.ITEM_NOT_FOUND);
+    }
+
     private Long openRoom(User seller, User buyer) {
         Item item = itemRepository.save(newItem(seller));
         return chatRoomService.openChatRoom(buyer.getId(), item.getId()).chatRoomId();
