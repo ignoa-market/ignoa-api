@@ -102,6 +102,16 @@ public class ChatRoomService {
         return toPreview(chatRoom, userId, itemImageUrl);
     }
 
+    public ChatRoomIdResponse checkMyChatRoom(Long itemId, Long userId) {
+        itemReader.getById(itemId);
+
+        Long chatRoomId = chatRoomRepository.findByItemIdAndBuyerId(itemId, userId)
+                .map(ChatRoom::getId)
+                .orElse(null);
+
+        return new ChatRoomIdResponse(chatRoomId);
+    }
+
     private ChatRoomPreview toPreview(ChatRoom chatRoom, Long userId, String itemImageUrl) {
         boolean isSeller = chatRoom.isSeller(userId);
         User partner = chatRoom.getPartner(userId);
