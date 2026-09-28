@@ -22,7 +22,7 @@ import java.time.LocalDateTime;
 public abstract class IntegrationTestSupport {
 
     @ServiceConnection
-    static final MySQLContainer<?> MYSQL_CONTAINER = new MySQLContainer<>("mysql:8.0");
+    static final MySQLContainer<?> MYSQL_CONTAINER = new MySQLContainer<>("mysql:8.4");
 
     static final GenericContainer<?> REDIS_CONTAINER = new GenericContainer<>(
             "redis:7-alpine").withExposedPorts(6379);
