@@ -1,3 +1,4 @@
+### 기본 설정 ###
 server:
   port: 38080
 
@@ -6,20 +7,13 @@ logging:
     root: INFO
     io.wisoft.ignoa_api: ${APP_LOG_LEVEL:INFO}
 
+### Spring 공통 ###
 spring:
   application:
     name: Ignoa API
 
   profiles:
     default: local
-
-  data:
-    redis:
-      connect-timeout: 500ms
-      timeout: 500ms
-      lettuce:
-        pool:
-          max-wait: 500ms
 
   jackson:
     property-naming-strategy: SNAKE_CASE
@@ -41,6 +35,21 @@ spring:
           starttls:
             enable: true
 
+  # DB·Redis 연결
+  datasource:
+    hikari:
+      maximum-pool-size: 10
+      connection-timeout: 500
+
+  data:
+    redis:
+      connect-timeout: 500ms
+      timeout: 500ms
+      lettuce:
+        pool:
+          max-wait: 500ms
+
+### Redisson (분산 락) ###
 ignoa:
   redis:
     redisson:
@@ -49,14 +58,7 @@ ignoa:
       retry-attempts: 1
       retry-delay: 100ms
 
-cloud:
-  aws:
-    s3:
-      bucket: ${S3_BUCKET}
-      region: ${S3_REGION}
-    cloudfront:
-      media-base-url: https://ignoa.woomin.dev
-
+### 인증 ###
 jwt:
   secret: ${JWT_SECRET}
   access-expiration: ${JWT_ACCESS_EXPIRATION}
@@ -69,3 +71,12 @@ oauth:
     redirect-uri: ${KAKAO_REDIRECT_URI}
     token-uri: https://kauth.kakao.com/oauth/token
     user-info-uri: https://kapi.kakao.com/v2/user/me
+
+### AWS (S3·CloudFront) ###
+cloud:
+  aws:
+    s3:
+      bucket: ${S3_BUCKET}
+      region: ${S3_REGION}
+    cloudfront:
+      media-base-url: https://ignoa.woomin.dev
