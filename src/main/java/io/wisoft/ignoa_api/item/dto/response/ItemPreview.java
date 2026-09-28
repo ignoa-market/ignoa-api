@@ -14,7 +14,8 @@ public record ItemPreview(
         Boolean isWished,
         Integer wishCount,
         ItemStatus status,
-        LocalDateTime endAt
+        LocalDateTime endAt,
+        int extensionCount
 ) {
 
     public static ItemPreview from(Item item, String mediaUrl, int wishCount, boolean isWished) {
@@ -27,7 +28,8 @@ public record ItemPreview(
                 isWished,
                 wishCount,
                 item.getStatus(),
-                item.getEndAt()
+                item.getEndAt(),
+                item.getExtensionCount()
         );
     }
 }
