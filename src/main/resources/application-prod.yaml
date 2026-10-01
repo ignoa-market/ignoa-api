@@ -18,7 +18,7 @@ spring:
 ### CloudFront 오리진 검증 ###
 ignoa:
   cloudfront-origin:
-    enabled: ${CLOUDFRONT_ORIGIN_VERIFICATION_ENABLED}
+    enabled: true
     secret: ${CLOUDFRONT_ORIGIN_VERIFY_SECRET}
 
 ### 운영·모니터링 ###
