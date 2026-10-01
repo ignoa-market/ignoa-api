@@ -25,3 +25,7 @@ oauth:
     client-id: test-dummy-client-id
     client-secret: test-dummy-client-secret
     redirect-uri: http://localhost:38080/api/auth/kakao/callback
+
+payment:
+  base-url: http://localhost:48080
+  internal-api-key: test-dummy-internal-api-key
