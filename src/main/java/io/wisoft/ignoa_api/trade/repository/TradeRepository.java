@@ -48,4 +48,14 @@ public interface TradeRepository extends JpaRepository<Trade, Long> {
             """)
     int failConfirmIfConfirming(@Param("id") Long id, @Param("orderId") String orderId,
                                 @Param("nextStatus") TradeStatus nextStatus);
+
+    // 결제 기한 만료: PAYMENT_PENDING → CANCELED (CONFIRMING은 건드리지 않음)
+    @Modifying
+    @Query("""
+            UPDATE Trade t
+            SET t.status = 'CANCELED'
+            WHERE t.status = 'PAYMENT_PENDING'
+                AND t.paymentDeadline <= :now
+            """)
+    int cancelExpiredIfPending(@Param("now") LocalDateTime now);
 }

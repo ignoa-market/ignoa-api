@@ -9,11 +9,13 @@ import io.wisoft.ignoa_api.trade.payment.dto.PaymentPrepareRequest;
 import io.wisoft.ignoa_api.trade.payment.dto.PaymentResult;
 import io.wisoft.ignoa_api.trade.repository.TradeRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -78,5 +80,14 @@ public class TradeService {
 
             default -> false;
         };
+    }
+
+    @Transactional
+    public void cancelExpiredTrades(LocalDateTime now) {
+        int canceled = tradeRepository.cancelExpiredIfPending(now);
+
+        if (canceled > 0) {
+            log.info("결제 기한 만료 거래 취소 완료: canceled={}", canceled);
+        }
     }
 }
