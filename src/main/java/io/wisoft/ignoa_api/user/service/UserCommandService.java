@@ -18,6 +18,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 
 @Service
 @RequiredArgsConstructor
@@ -91,7 +93,7 @@ public class UserCommandService {
     public void withdraw(Long userId) {
         User user = userQueryService.findById(userId);
 
-        if (itemRepository.existsBySellerIdAndStatus(userId, ItemStatus.ACTIVE)) {
+        if (itemRepository.existsBySellerIdAndStatusIn(userId, List.of(ItemStatus.ACTIVE, ItemStatus.BUY_NOW_PENDING))) {
             throw new BusinessException(ErrorCode.HAS_ACTIVE_AUCTION);
         }
 

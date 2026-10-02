@@ -64,8 +64,6 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
             """)
     Optional<Item> findByIdWithSeller(@Param("itemId") Long itemId);
 
-    boolean existsBySellerIdAndStatus(Long userId, ItemStatus status);
-
     // 경매 마감 - 만료된 상품 조회
     @Query("""
             SELECT i.id
@@ -166,4 +164,6 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
                 AND i.status = 'BUY_NOW_PENDING'
             """)
     int cancelBuyNowIfPending(@Param("id") Long id);
+
+    boolean existsBySellerIdAndStatusIn(Long userId, List<ItemStatus> active);
 }
