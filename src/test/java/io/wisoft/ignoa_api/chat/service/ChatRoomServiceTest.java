@@ -8,7 +8,7 @@ import io.wisoft.ignoa_api.global.exception.ErrorCode;
 import io.wisoft.ignoa_api.item.dto.request.ItemBuyNowRequest;
 import io.wisoft.ignoa_api.trade.payment.dto.PaymentResult;
 import io.wisoft.ignoa_api.trade.repository.TradeRepository;
-import io.wisoft.ignoa_api.trade.service.TradeService;
+import io.wisoft.ignoa_api.trade.service.TradePaymentService;
 import io.wisoft.ignoa_api.item.entity.Item;
 import io.wisoft.ignoa_api.item.repository.ItemRepository;
 import io.wisoft.ignoa_api.item.service.ItemCommandService;
@@ -54,7 +54,7 @@ class ChatRoomServiceTest extends IntegrationTestSupport {
     JdbcTemplate jdbcTemplate;
 
     @Autowired
-    TradeService tradeService;
+    TradePaymentService tradePaymentService;
 
     @Autowired
     TradeRepository tradeRepository;
@@ -142,8 +142,8 @@ class ChatRoomServiceTest extends IntegrationTestSupport {
         // When: 즉시구매 결제가 완료되면 채팅방을 만든다
         Long tradeId = itemCommandService.buyNowItem(
                 item.getId(), buyer.getId(), new ItemBuyNowRequest(item.getBuyNowPrice())).tradeId();
-        tradeService.startConfirm(tradeId, buyer.getId(), "IGN-chat");
-        tradeService.applyPaymentResult(tradeId, new PaymentResult(
+        tradePaymentService.startConfirm(tradeId, buyer.getId(), "IGN-chat");
+        tradePaymentService.applyPaymentResult(tradeId, new PaymentResult(
                 tradeId, "IGN-chat", "DONE", item.getBuyNowPrice(), LocalDateTime.now(), null, null));
 
         // Then

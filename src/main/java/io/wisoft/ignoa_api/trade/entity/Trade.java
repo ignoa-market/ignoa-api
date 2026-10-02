@@ -75,4 +75,8 @@ public class Trade extends BaseEntity {
     public boolean isBuyer(Long userId) {
         return buyer.getId().equals(userId);
     }
+
+    public boolean isBuyNow() {
+        return this.type == TradeType.BUY_NOW;
+    }
 }

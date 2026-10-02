@@ -17,18 +17,18 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class TradeFacade {
 
-    private final TradeService tradeService;
+    private final TradePaymentService tradePaymentService;
     private final PaymentClient paymentClient;
 
     public TradePrepareResponse prepare(Long tradeId, Long buyerId) {
-        PaymentPrepareRequest request = tradeService.validatePrepare(tradeId, buyerId);
+        PaymentPrepareRequest request = tradePaymentService.validatePrepare(tradeId, buyerId);
         PaymentPrepareResponse response = paymentClient.prepare(request);
 
         return TradePrepareResponse.from(response);
     }
 
     public TradeConfirmResponse confirm(Long tradeId, Long buyerId, TradeConfirmRequest request) {
-        tradeService.startConfirm(tradeId, buyerId, request.orderId());
+        tradePaymentService.startConfirm(tradeId, buyerId, request.orderId());
         PaymentResult result;
 
         try {
@@ -39,12 +39,12 @@ public class TradeFacade {
         } catch (BusinessException e) {
             // CONFIRMING을 PAYMENT_PENDING으로 되돌리는 작업
             if (e.getErrorCode() == ErrorCode.PAYMENT_CONFIRM_REJECTED) {
-                tradeService.cancelConfirm(tradeId, request.orderId());
+                tradePaymentService.cancelConfirm(tradeId, request.orderId());
             }
             throw e;
         }
 
-        tradeService.applyPaymentResult(tradeId, result);
+        tradePaymentService.applyPaymentResult(tradeId, result);
         return TradeConfirmResponse.from(result);
     }
 }

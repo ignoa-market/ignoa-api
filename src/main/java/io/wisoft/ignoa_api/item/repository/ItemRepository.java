@@ -140,7 +140,7 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
                 AND i.buyNowPrice = :buyNowPrice
                 AND i.endAt > :now
             """)
-    int lockForBuyNowIfActive(@Param("id") Long id, @Param("buyNowPrice") Long buyNowPrice,
+    int reserveBuyNowIfActive(@Param("id") Long id, @Param("buyNowPrice") Long buyNowPrice,
                               @Param("now") LocalDateTime now);
 
     // 즉시구매 결제 완료: BUY_NOW_PENDING → BUY_NOW_CLOSED (구매자를 최고 입찰자로 기록)
@@ -150,10 +150,10 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
             SET i.status = 'BUY_NOW_CLOSED',
                 i.highestBidder = :buyer,
                 i.version = i.version + 1
-            WHERE i.id = :id    
+            WHERE i.id = :id
                 AND i.status = 'BUY_NOW_PENDING'
             """)
-    int closeBuyNowIfPending(@Param("id") Long id, @Param("buyer") User buyer);
+    int completeBuyNowIfPending(@Param("id") Long id, @Param("buyer") User buyer);
 
     @Modifying
     @Query("""

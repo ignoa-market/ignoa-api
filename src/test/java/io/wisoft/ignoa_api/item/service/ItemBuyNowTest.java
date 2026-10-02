@@ -16,7 +16,7 @@ import io.wisoft.ignoa_api.trade.entity.enums.TradeStatus;
 import io.wisoft.ignoa_api.trade.entity.enums.TradeType;
 import io.wisoft.ignoa_api.trade.payment.dto.PaymentResult;
 import io.wisoft.ignoa_api.trade.repository.TradeRepository;
-import io.wisoft.ignoa_api.trade.service.TradeService;
+import io.wisoft.ignoa_api.trade.service.TradePaymentService;
 import io.wisoft.ignoa_api.user.entity.User;
 import io.wisoft.ignoa_api.user.repository.UserRepository;
 import org.junit.jupiter.api.AfterEach;
@@ -47,7 +47,7 @@ class ItemBuyNowTest extends IntegrationTestSupport {
     private ItemCommandService itemCommandService;
 
     @Autowired
-    private TradeService tradeService;
+    private TradePaymentService tradePaymentService;
 
     @Autowired
     private BidService bidService;
@@ -96,11 +96,11 @@ class ItemBuyNowTest extends IntegrationTestSupport {
         Long secondTradeId = buyNow(item, second).tradeId();
 
         // When
-        tradeService.startConfirm(firstTradeId, first.getId(), "IGN-first");
+        tradePaymentService.startConfirm(firstTradeId, first.getId(), "IGN-first");
 
         // Then
         assertThat(statusOf(item)).isEqualTo(ItemStatus.BUY_NOW_PENDING);
-        assertThatThrownBy(() -> tradeService.startConfirm(secondTradeId, second.getId(), "IGN-second"))
+        assertThatThrownBy(() -> tradePaymentService.startConfirm(secondTradeId, second.getId(), "IGN-second"))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.BUY_NOW_CONFLICT);
@@ -114,12 +114,12 @@ class ItemBuyNowTest extends IntegrationTestSupport {
         User buyer = userRepository.save(newUser("buyer@test.com", "buyer"));
         Item item = itemRepository.save(newItem(seller));
         Long tradeId = buyNow(item, buyer).tradeId();
-        tradeService.startConfirm(tradeId, buyer.getId(), "IGN-done");
+        tradePaymentService.startConfirm(tradeId, buyer.getId(), "IGN-done");
         PaymentResult done = result(tradeId, "IGN-done", "DONE");
 
         // When: 승인 응답과 콜백이 모두 도착
-        boolean firstApplied = tradeService.applyPaymentResult(tradeId, done);
-        boolean secondApplied = tradeService.applyPaymentResult(tradeId, done);
+        boolean firstApplied = tradePaymentService.applyPaymentResult(tradeId, done);
+        boolean secondApplied = tradePaymentService.applyPaymentResult(tradeId, done);
 
         // Then
         assertThat(firstApplied).isTrue();
@@ -143,11 +143,11 @@ class ItemBuyNowTest extends IntegrationTestSupport {
         Item item = itemRepository.save(newItem(seller));
         Long firstTradeId = buyNow(item, first).tradeId();
         Long secondTradeId = buyNow(item, second).tradeId();
-        tradeService.startConfirm(firstTradeId, first.getId(), "IGN-first");
-        tradeService.applyPaymentResult(firstTradeId, result(firstTradeId, "IGN-first", "DONE"));
+        tradePaymentService.startConfirm(firstTradeId, first.getId(), "IGN-first");
+        tradePaymentService.applyPaymentResult(firstTradeId, result(firstTradeId, "IGN-first", "DONE"));
 
         // When & Then
-        assertThatThrownBy(() -> tradeService.validatePrepare(secondTradeId, second.getId()))
+        assertThatThrownBy(() -> tradePaymentService.validatePrepare(secondTradeId, second.getId()))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.BUY_NOW_CONFLICT);
@@ -160,10 +160,10 @@ class ItemBuyNowTest extends IntegrationTestSupport {
         User buyer = userRepository.save(newUser("buyer@test.com", "buyer"));
         Item item = itemRepository.save(newItem(seller));
         Long tradeId = buyNow(item, buyer).tradeId();
-        tradeService.startConfirm(tradeId, buyer.getId(), "IGN-failed");
+        tradePaymentService.startConfirm(tradeId, buyer.getId(), "IGN-failed");
 
         // When
-        tradeService.applyPaymentResult(tradeId, result(tradeId, "IGN-failed", "FAILED"));
+        tradePaymentService.applyPaymentResult(tradeId, result(tradeId, "IGN-failed", "FAILED"));
 
         // Then
         assertThat(tradeStatusOf(tradeId)).isEqualTo(TradeStatus.CANCELED);
@@ -179,7 +179,7 @@ class ItemBuyNowTest extends IntegrationTestSupport {
         User bidder = userRepository.save(newUser("bidder@test.com", "bidder"));
         Item item = itemRepository.save(newItem(seller));
         Long tradeId = buyNow(item, buyer).tradeId();
-        tradeService.startConfirm(tradeId, buyer.getId(), "IGN-pending");
+        tradePaymentService.startConfirm(tradeId, buyer.getId(), "IGN-pending");
 
         // When
         bidService.placeBid(item.getId(), bidder.getId(), new BidCreateRequest(2_000L));
