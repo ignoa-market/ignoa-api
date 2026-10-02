@@ -2,6 +2,8 @@ package io.wisoft.ignoa_api.trade.service;
 
 import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
+import io.wisoft.ignoa_api.item.entity.Item;
+import io.wisoft.ignoa_api.item.service.ItemReader;
 import io.wisoft.ignoa_api.trade.entity.Trade;
 import io.wisoft.ignoa_api.trade.entity.enums.TradeStatus;
 import io.wisoft.ignoa_api.trade.entity.enums.TradeType;
@@ -13,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 
 @Slf4j
@@ -21,7 +24,11 @@ import java.time.LocalDateTime;
 @Transactional(readOnly = true)
 public class TradeService {
 
+    private static final Duration AUCTION_PAYMENT_DEADLINE = Duration.ofHours(24);
+
     private final TradeReader tradeReader;
+    private final ItemReader itemReader;
+
     private final TradeRepository tradeRepository;
 
     public PaymentPrepareRequest validatePrepare(Long tradeId, Long buyerId) {
@@ -89,5 +96,20 @@ public class TradeService {
         if (canceled > 0) {
             log.info("결제 기한 만료 거래 취소 완료: canceled={}", canceled);
         }
+    }
+
+    @Transactional
+    public void createAuctionTrade(Long itemId) {
+        Item item = itemReader.getById(itemId);
+
+        Trade trade = Trade.create(
+                item,
+                item.getHighestBidder(),
+                TradeType.AUCTION,
+                item.getCurrentPrice(),
+                LocalDateTime.now().plus(AUCTION_PAYMENT_DEADLINE)
+        );
+
+        tradeRepository.save(trade);
     }
 }
