@@ -69,4 +69,12 @@ public interface TradeRepository extends JpaRepository<Trade, Long> {
             LIMIT 1
             """)
     Optional<Trade> findRecentTradeOfBuyer(@Param("itemId") Long itemId, @Param("buyerId") Long buyerId);
+
+    @Query("""
+            SELECT COUNT(t) > 0
+            FROM Trade t
+            WHERE (t.buyer.id = :userId OR t.seller.id = :userId)
+                AND t.status IN ('PAYMENT_PENDING', 'CONFIRMING')
+            """)
+    boolean existsUnfinished(@Param("userId") Long userId);
 }

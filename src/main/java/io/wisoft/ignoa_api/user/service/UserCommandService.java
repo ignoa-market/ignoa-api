@@ -8,6 +8,7 @@ import io.wisoft.ignoa_api.global.outbox.entity.OutboxEventType;
 import io.wisoft.ignoa_api.global.outbox.service.OutboxAppender;
 import io.wisoft.ignoa_api.item.entity.enums.ItemStatus;
 import io.wisoft.ignoa_api.item.repository.ItemRepository;
+import io.wisoft.ignoa_api.trade.repository.TradeRepository;
 import io.wisoft.ignoa_api.user.dto.request.UpdateUserRequest;
 import io.wisoft.ignoa_api.user.dto.response.MyProfile;
 import io.wisoft.ignoa_api.user.entity.ProfileImageSource;
@@ -34,6 +35,7 @@ public class UserCommandService {
     private final ItemRepository itemRepository;
     private final BidRepository bidRepository;
     private final WishRepository wishRepository;
+    private final TradeRepository tradeRepository;
 
     public User replaceProfileImage(Long userId, String newObjectKey) {
         User user = userQueryService.findById(userId);
@@ -99,6 +101,10 @@ public class UserCommandService {
 
         if (bidRepository.existsByBidderIdAndItemActive(userId)) {
             throw new BusinessException(ErrorCode.HAS_ACTIVE_BID);
+        }
+
+        if (tradeRepository.existsUnfinished(userId)) {
+            throw new BusinessException(ErrorCode.HAS_UNFINISHED_TRADE);
         }
 
         user.withdraw();

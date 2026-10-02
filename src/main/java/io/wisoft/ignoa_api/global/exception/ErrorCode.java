@@ -50,6 +50,7 @@ public enum ErrorCode {
     HAS_ACTIVE_BID(HttpStatus.CONFLICT, "진행 중인 경매에 입찰 중이어서 탈퇴할 수 없습니다."),
     ACCOUNT_PENDING_DELETION(HttpStatus.FORBIDDEN, "탈퇴 처리 중인 계정입니다."),
     ACCOUNT_NOT_RECOVERABLE(HttpStatus.BAD_REQUEST, "복구 가능한 계정이 아닙니다."),
+    HAS_UNFINISHED_TRADE(HttpStatus.CONFLICT, "진행 중인 거래가 있어 탈퇴할 수 없습니다."),
 
     // Item
     ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "상품을 찾을 수 없습니다."),
