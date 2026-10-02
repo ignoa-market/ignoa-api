@@ -99,10 +99,7 @@ public class ItemFacade {
     }
 
     public BuyNowResponse buyNowItem(Long itemId, Long buyerId, ItemBuyNowRequest request) {
-        return distributedLock.executeWithRequiredLock(
-                ItemLockKey.of(itemId),
-                LockOperation.BUY_NOW,
-                () -> itemCommandService.buyNowItem(itemId, buyerId, request));
+        return itemCommandService.buyNowItem(itemId, buyerId, request);
     }
 
     // 전달된 파일을 스토리지에 업로드하고 업로드 결과를 수집한다.

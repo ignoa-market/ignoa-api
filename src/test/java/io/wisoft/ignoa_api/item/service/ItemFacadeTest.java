@@ -2,13 +2,10 @@ package io.wisoft.ignoa_api.item.service;
 
 import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
-import io.wisoft.ignoa_api.global.infra.lock.LockOperation;
 import io.wisoft.ignoa_api.global.infra.lock.RedissonDistributedLock;
 import io.wisoft.ignoa_api.global.infra.storage.StorageService;
-import io.wisoft.ignoa_api.item.dto.request.ItemBuyNowRequest;
 import io.wisoft.ignoa_api.item.dto.request.ItemCreateRequest;
 import io.wisoft.ignoa_api.item.entity.enums.ItemCondition;
-import io.wisoft.ignoa_api.item.support.ItemLockKey;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -19,11 +16,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -42,28 +37,6 @@ class ItemFacadeTest {
 
     @InjectMocks
     ItemFacade itemFacade;
-
-    @Test
-    void 락_획득이_타임아웃되면_fast_fail되어_예외를_전파한다() {
-        // Given
-        long itemId = 1L;
-        long buyerId = 2L;
-        ItemBuyNowRequest request = new ItemBuyNowRequest(10_000L);
-
-        given(redissonDistributedLock.executeWithRequiredLock(
-                eq(ItemLockKey.of(itemId)), eq(LockOperation.BUY_NOW), any(Supplier.class)))
-                .willThrow(new BusinessException(ErrorCode.LOCK_ACQUISITION_FAILED));
-
-        // When
-        BusinessException exception = catchThrowableOfType(
-                BusinessException.class,
-                () -> itemFacade.buyNowItem(itemId, buyerId, request)
-        );
-
-        // Then
-        assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.LOCK_ACQUISITION_FAILED);
-        verify(itemCommandService, never()).buyNowItem(itemId, buyerId, request);
-    }
 
     @Test
     void 동영상_2개로_등록하면_업로드하지_않고_거절한다() {
