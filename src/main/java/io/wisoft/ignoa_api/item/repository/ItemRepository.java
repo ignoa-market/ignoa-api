@@ -165,5 +165,5 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
             """)
     int cancelBuyNowIfPending(@Param("id") Long id);
 
-    boolean existsBySellerIdAndStatusIn(Long userId, List<ItemStatus> active);
+    boolean existsBySellerIdAndStatusIn(Long userId, List<ItemStatus> statuses);
 }
