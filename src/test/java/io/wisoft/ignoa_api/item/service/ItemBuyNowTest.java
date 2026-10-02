@@ -135,6 +135,25 @@ class ItemBuyNowTest extends IntegrationTestSupport {
     }
 
     @Test
+    void 다른_구매자가_먼저_결제한_상품은_결제_준비_단계에서_막는다() {
+        // Given
+        User seller = userRepository.save(newUser("seller@test.com", "seller"));
+        User first = userRepository.save(newUser("first@test.com", "first"));
+        User second = userRepository.save(newUser("second@test.com", "second"));
+        Item item = itemRepository.save(newItem(seller));
+        Long firstTradeId = buyNow(item, first).tradeId();
+        Long secondTradeId = buyNow(item, second).tradeId();
+        tradeService.startConfirm(firstTradeId, first.getId(), "IGN-first");
+        tradeService.applyPaymentResult(firstTradeId, result(firstTradeId, "IGN-first", "DONE"));
+
+        // When & Then
+        assertThatThrownBy(() -> tradeService.validatePrepare(secondTradeId, second.getId()))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.BUY_NOW_CONFLICT);
+    }
+
+    @Test
     void 결제가_실패하면_상품을_다시_판매중으로_되돌린다() {
         // Given
         User seller = userRepository.save(newUser("seller@test.com", "seller"));

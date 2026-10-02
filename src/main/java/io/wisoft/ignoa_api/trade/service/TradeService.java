@@ -55,6 +55,10 @@ public class TradeService {
             throw new BusinessException(ErrorCode.TRADE_PAYMENT_EXPIRED);
         }
 
+        if (trade.getType() == TradeType.BUY_NOW && !trade.getItem().isActive()) {
+            throw new BusinessException(ErrorCode.BUY_NOW_CONFLICT);
+        }
+
         return new PaymentPrepareRequest(tradeId, trade.getAmount(), trade.getItem().getTitle());
     }
 
