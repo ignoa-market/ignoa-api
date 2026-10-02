@@ -93,7 +93,7 @@ public class ItemController {
             @Valid @RequestBody ItemBuyNowRequest request
     ) {
         BuyNowResponse data = itemFacade.buyNowItem(itemId, buyerId, request);
-        ApiResponse<BuyNowResponse> response = ApiResponse.of(data, "상품을 즉시 구매하였습니다.");
-        return ResponseEntity.ok(response);
+        ApiResponse<BuyNowResponse> response = ApiResponse.of(data, "즉시구매 거래를 생성했습니다.");
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 }

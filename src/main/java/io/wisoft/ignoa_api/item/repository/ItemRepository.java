@@ -85,27 +85,12 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
                 i.version = i.version + 1
             WHERE i.id = :id
                 AND i.currentPrice < :bidPrice
-                AND i.status = 'ACTIVE'
+                AND i.status IN ('ACTIVE', 'BUY_NOW_PENDING')
                 AND i.endAt > :now
                 AND i.buyNowPrice > :bidPrice
             """)
     int raiseCurrentPriceIfHigher(@Param("id") Long id, @Param("bidPrice") Long bidPrice,
                                   @Param("highestBidder") User highestBidder, @Param("now") LocalDateTime now);
-
-    // 즉시구매 조건부 UPDATE
-    @Modifying(clearAutomatically = true)
-    @Query("""
-            UPDATE Item i
-            SET i.status = 'BUY_NOW_CLOSED',
-                i.highestBidder = :buyer,
-                i.version = i.version + 1
-            WHERE i.id = :id
-                AND i.status = 'ACTIVE'
-                AND i.buyNowPrice = :buyNowPrice
-                AND i.endAt > :now
-            """)
-    int buyNowIfActive(@Param("id") Long id, @Param("buyer") User buyer,
-                       @Param("buyNowPrice") Long buyNowPrice, @Param("now") LocalDateTime now);
 
     // 경매 마감 조건부 UPDATE
     @Modifying
@@ -136,13 +121,49 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
     // 마감 연장 조건부 UPDATE
     @Modifying(clearAutomatically = true)
     @Query(value = """
-          UPDATE items
-          SET end_at = DATE_ADD(end_at, INTERVAL 1 DAY),
-              extension_count = extension_count + 1
-          WHERE id = :id
-            AND status = 'ACTIVE'
-            AND end_at > :now
-            AND extension_count < 3
-          """, nativeQuery = true)
+            UPDATE items
+            SET end_at = DATE_ADD(end_at, INTERVAL 1 DAY),
+                extension_count = extension_count + 1
+            WHERE id = :id
+              AND status = 'ACTIVE'
+              AND end_at > :now
+              AND extension_count < 3
+            """, nativeQuery = true)
     int extendEndAtIfActive(@Param("id") Long id, @Param("now") LocalDateTime now);
+
+    // 즉시 구매 결제 승인 시작 - ACTIVE → BUY_NOW_PENDING (결제 중 잠금)
+    @Modifying
+    @Query("""
+            UPDATE Item i
+            SET i.status = 'BUY_NOW_PENDING',
+                i.version = i.version + 1
+            WHERE i.id = :id
+                AND i.status = 'ACTIVE'
+                AND i.buyNowPrice = :buyNowPrice
+                AND i.endAt > :now
+            """)
+    int lockForBuyNowIfActive(@Param("id") Long id, @Param("buyNowPrice") Long buyNowPrice,
+                              @Param("now") LocalDateTime now);
+
+    // 즉시구매 결제 완료: BUY_NOW_PENDING → BUY_NOW_CLOSED (구매자를 최고 입찰자로 기록)
+    @Modifying
+    @Query("""
+            UPDATE Item i
+            SET i.status = 'BUY_NOW_CLOSED',
+                i.highestBidder = :buyer,
+                i.version = i.version + 1
+            WHERE i.id = :id    
+                AND i.status = 'BUY_NOW_PENDING'
+            """)
+    int closeBuyNowIfPending(@Param("id") Long id, @Param("buyer") User buyer);
+
+    @Modifying
+    @Query("""
+            UPDATE Item i
+            SET i.status = 'ACTIVE',
+                i.version = i.version + 1
+            WHERE i.id = :id
+                AND i.status = 'BUY_NOW_PENDING'
+            """)
+    int cancelBuyNowIfPending(@Param("id") Long id);
 }

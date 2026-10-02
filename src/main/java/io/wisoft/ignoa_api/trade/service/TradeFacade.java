@@ -28,7 +28,6 @@ public class TradeFacade {
     }
 
     public TradeConfirmResponse confirm(Long tradeId, Long buyerId, TradeConfirmRequest request) {
-        // Validate 하고 PAYMENT_PENDING 상태를 CONFIRMING로 바꾸는 작업
         tradeService.startConfirm(tradeId, buyerId, request.orderId());
         PaymentResult result;
 

@@ -1,11 +1,11 @@
 package io.wisoft.ignoa_api.item.dto.response;
 
-import io.wisoft.ignoa_api.item.entity.enums.ItemStatus;
+import java.time.LocalDateTime;
 
 public record BuyNowResponse(
+        Long tradeId,
         Long itemId,
-        Long buyerId,
         Long price,
-        ItemStatus status
+        LocalDateTime paymentDeadline
 ) {
 }

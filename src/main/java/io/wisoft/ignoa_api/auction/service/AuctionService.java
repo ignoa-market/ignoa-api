@@ -8,6 +8,7 @@ import io.wisoft.ignoa_api.global.exception.ErrorCode;
 import io.wisoft.ignoa_api.item.entity.Item;
 import io.wisoft.ignoa_api.item.repository.ItemRepository;
 import io.wisoft.ignoa_api.item.service.ItemReader;
+import io.wisoft.ignoa_api.trade.entity.Trade;
 import io.wisoft.ignoa_api.trade.service.TradeService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -48,8 +49,8 @@ public class AuctionService {
         }
 
         chatRoomService.createChatRoom(itemId);
-        tradeService.createAuctionTrade(itemId);
-        log.debug("경매 마감 완료: itemId={}, result=낙찰, chatRoomCreated=true", itemId);
+        Trade trade = tradeService.createAuctionTrade(itemId);
+        log.debug("경매 마감 완료: itemId={}, result=낙찰, chatRoomCreated=true, tradeId={}", itemId, trade.getId());
     }
 
     @Transactional

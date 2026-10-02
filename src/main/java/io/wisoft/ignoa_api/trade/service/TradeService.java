@@ -1,8 +1,11 @@
 package io.wisoft.ignoa_api.trade.service;
 
+import io.wisoft.ignoa_api.bid.repository.BidRepository;
+import io.wisoft.ignoa_api.chat.service.ChatRoomService;
 import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
 import io.wisoft.ignoa_api.item.entity.Item;
+import io.wisoft.ignoa_api.item.repository.ItemRepository;
 import io.wisoft.ignoa_api.item.service.ItemReader;
 import io.wisoft.ignoa_api.trade.dto.response.MyTradeResponse;
 import io.wisoft.ignoa_api.trade.entity.Trade;
@@ -11,6 +14,7 @@ import io.wisoft.ignoa_api.trade.entity.enums.TradeType;
 import io.wisoft.ignoa_api.trade.payment.dto.PaymentPrepareRequest;
 import io.wisoft.ignoa_api.trade.payment.dto.PaymentResult;
 import io.wisoft.ignoa_api.trade.repository.TradeRepository;
+import io.wisoft.ignoa_api.user.entity.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -26,11 +30,15 @@ import java.time.LocalDateTime;
 public class TradeService {
 
     private static final Duration AUCTION_PAYMENT_DEADLINE = Duration.ofHours(24);
+    private static final Duration BUY_NOW_PAYMENT_DEADLINE = Duration.ofMinutes(30);
 
     private final TradeReader tradeReader;
     private final ItemReader itemReader;
 
     private final TradeRepository tradeRepository;
+    private final ItemRepository itemRepository;
+    private final ChatRoomService chatRoomService;
+    private final BidRepository bidRepository;
 
     public PaymentPrepareRequest validatePrepare(Long tradeId, Long buyerId) {
         Trade trade = tradeReader.getById(tradeId);
@@ -58,36 +66,81 @@ public class TradeService {
             throw new BusinessException(ErrorCode.TRADE_ACCESS_DENIED);
         }
 
-        if (tradeRepository.startConfirmIfPending(tradeId, orderId, LocalDateTime.now()) == 0) {
+        LocalDateTime now = LocalDateTime.now();
+
+        if (tradeRepository.startConfirmIfPending(tradeId, orderId, now) == 0) {
             throw new BusinessException(ErrorCode.TRADE_NOT_PAYABLE);
+        }
+
+        if (trade.getType() == TradeType.BUY_NOW) {
+            startBuyNow(trade, now);
+        }
+    }
+
+    // 즉시구매 결제 중 다른 즉시구매·경매 마감을 막는다. 실패하면 위의 trade 변경도 함께 롤백된다
+    private void startBuyNow(Trade trade, LocalDateTime now) {
+        int locked = itemRepository.lockForBuyNowIfActive(trade.getItem().getId(), trade.getAmount(), now);
+
+        if (locked == 0) {
+            throw new BusinessException(ErrorCode.BUY_NOW_CONFLICT);
+        }
+    }
+
+    // 결제 서버가 Toss 호출 전에 거절 -> 다시 결제할 수 있게 되돌림
+    @Transactional
+    public void cancelConfirm(Long tradeId, String orderId) {
+        Trade trade = tradeReader.getById(tradeId);
+
+        if (tradeRepository.failConfirmIfConfirming(tradeId, orderId, TradeStatus.PAYMENT_PENDING) == 1
+                && trade.getType() == TradeType.BUY_NOW) {
+            cancelBuyNow(trade);
         }
     }
 
     @Transactional
-    public void cancelConfirm(Long tradeId, String orderId) {
-        // 결제 서버가 Toss 호출 전에 거절 -> 다시 결제할 수 있게 되돌림
-        tradeRepository.failConfirmIfConfirming(
-                tradeId, orderId, TradeStatus.PAYMENT_PENDING
-        );
-    }
-
-    @Transactional
     public boolean applyPaymentResult(Long tradeId, PaymentResult result) {
+        Trade trade = tradeReader.getById(tradeId);
+
         return switch (result.status()) {
-            case "DONE" -> tradeRepository.markPaidIfConfirming(tradeId, result.orderId(), result.approvedAt()) == 1;
+            case "DONE" -> {
+                boolean paid = tradeRepository.markPaidIfConfirming(tradeId, result.orderId(), result.approvedAt()) == 1;
+
+                if (paid && trade.getType() == TradeType.BUY_NOW) {
+                    completeBuyNow(trade);
+                }
+
+                yield paid;
+            }
 
             case "FAILED" -> {
-                Trade trade = tradeReader.getById(tradeId);
-
                 TradeStatus nextStatus = trade.getType() == TradeType.AUCTION
                         ? TradeStatus.PAYMENT_PENDING
                         : TradeStatus.CANCELED;
 
-                yield tradeRepository.failConfirmIfConfirming(tradeId, result.orderId(), nextStatus) == 1;
+                boolean failed = tradeRepository.failConfirmIfConfirming(tradeId, result.orderId(), nextStatus) == 1;
+
+                if (failed && trade.getType() == TradeType.BUY_NOW) {
+                    cancelBuyNow(trade);
+                }
+
+                yield failed;
             }
 
             default -> false;
         };
+    }
+
+    // 즉시구매 결제 완료: 상품 마감 → 나머지 입찰 패찰 → 채팅방 생성
+    private void completeBuyNow(Trade trade) {
+        Long itemId = trade.getItem().getId();
+
+        itemRepository.closeBuyNowIfPending(itemId, trade.getBuyer());
+        bidRepository.markLosingBids(itemId);
+        chatRoomService.createChatRoom(itemId);
+    }
+
+    private void cancelBuyNow(Trade trade) {
+        itemRepository.cancelBuyNowIfPending(trade.getItem().getId());
     }
 
     @Transactional
@@ -100,7 +153,7 @@ public class TradeService {
     }
 
     @Transactional
-    public void createAuctionTrade(Long itemId) {
+    public Trade createAuctionTrade(Long itemId) {
         Item item = itemReader.getById(itemId);
 
         Trade trade = Trade.create(
@@ -111,7 +164,7 @@ public class TradeService {
                 LocalDateTime.now().plus(AUCTION_PAYMENT_DEADLINE)
         );
 
-        tradeRepository.save(trade);
+        return tradeRepository.save(trade);
     }
 
     public MyTradeResponse getMyTrade(Long itemId, Long userId) {
@@ -119,5 +172,18 @@ public class TradeService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.TRADE_NOT_FOUND));
 
         return MyTradeResponse.from(trade);
+    }
+
+    @Transactional
+    public Trade createBuyNowTrade(Item item, User buyer) {
+        Trade trade = Trade.create(
+                item,
+                buyer,
+                TradeType.BUY_NOW,
+                item.getBuyNowPrice(),
+                LocalDateTime.now().plus(BUY_NOW_PAYMENT_DEADLINE)
+        );
+
+        return tradeRepository.save(trade);
     }
 }
