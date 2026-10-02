@@ -10,11 +10,13 @@ import io.wisoft.ignoa_api.trade.payment.dto.PaymentPrepareRequest;
 import io.wisoft.ignoa_api.trade.payment.dto.PaymentResult;
 import io.wisoft.ignoa_api.trade.repository.TradeRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -66,16 +68,25 @@ public class TradePaymentService {
         if (trade.isBuyNow()) {
             itemBuyNowService.reserve(trade.getItem().getId(), trade.getAmount(), now);
         }
+
+        log.info("결제 승인 시작: tradeId={}, orderId={}, type={}, amount={}",
+                tradeId, orderId, trade.getType(), trade.getAmount());
     }
 
     @Transactional
     public void cancelConfirm(Long tradeId, String orderId) {
         Trade trade = tradeReader.getById(tradeId);
 
-        if (tradeRepository.failConfirmIfConfirming(tradeId, orderId, TradeStatus.PAYMENT_PENDING) == 1
-                && trade.isBuyNow()) {
+        if (tradeRepository.failConfirmIfConfirming(tradeId, orderId, TradeStatus.PAYMENT_PENDING) == 0) {
+            log.debug("결제 승인 시작 되돌리기 생략: tradeId={}, orderId={}, reason=승인 중 아님", tradeId, orderId);
+            return;
+        }
+
+        if (trade.isBuyNow()) {
             itemBuyNowService.cancel(trade.getItem().getId());
         }
+
+        log.info("결제 승인 시작 되돌림: tradeId={}, orderId={}, reason=결제 서버 거절", tradeId, orderId);
     }
 
     @Transactional
@@ -86,8 +97,17 @@ public class TradePaymentService {
             case "DONE" -> {
                 boolean paid = tradeRepository.markPaidIfConfirming(tradeId, result.orderId(), result.approvedAt()) == 1;
 
-                if (paid && trade.isBuyNow()) {
-                    itemBuyNowService.complete(trade.getItem().getId(), trade.getBuyer());
+                if (paid) {
+                    if (trade.isBuyNow()) {
+                        itemBuyNowService.complete(trade.getItem().getId(), trade.getBuyer());
+                    }
+                    log.info("결제 완료 반영: tradeId={}, orderId={}, type={}, amount={}",
+                            tradeId, result.orderId(), trade.getType(), result.amount());
+                } else if (trade.getStatus() != TradeStatus.PAID) {
+                    log.error("결제 완료 미반영: tradeId={}, orderId={}, tradeStatus={}, confirmingOrderId={}, action=수동 확인",
+                            tradeId, result.orderId(), trade.getStatus(), trade.getConfirmingOrderId());
+                } else {
+                    log.debug("결제 완료 중복 수신 무시: tradeId={}, orderId={}", tradeId, result.orderId());
                 }
 
                 yield paid;
@@ -100,14 +120,26 @@ public class TradePaymentService {
 
                 boolean failed = tradeRepository.failConfirmIfConfirming(tradeId, result.orderId(), nextStatus) == 1;
 
-                if (failed && trade.isBuyNow()) {
-                    itemBuyNowService.cancel(trade.getItem().getId());
+                if (failed) {
+                    if (trade.isBuyNow()) {
+                        itemBuyNowService.cancel(trade.getItem().getId());
+                    }
+                    log.info("결제 실패 반영: tradeId={}, orderId={}, type={}, nextStatus={}, failureCode={}, failureMessage={}",
+                            tradeId, result.orderId(), trade.getType(), nextStatus,
+                            result.failureCode(), result.failureMessage());
+                } else {
+                    log.debug("결제 실패 결과 무시: tradeId={}, orderId={}, tradeStatus={}, reason=승인 중인 시도가 아님",
+                            tradeId, result.orderId(), trade.getStatus());
                 }
 
                 yield failed;
             }
 
-            default -> false;
+            default -> {
+                log.debug("결제 결과 미확정, 콜백 대기: tradeId={}, orderId={}, status={}",
+                        tradeId, result.orderId(), result.status());
+                yield false;
+            }
         };
     }
 }
