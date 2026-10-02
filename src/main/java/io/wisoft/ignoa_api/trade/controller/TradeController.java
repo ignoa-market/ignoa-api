@@ -2,9 +2,11 @@ package io.wisoft.ignoa_api.trade.controller;
 
 import io.wisoft.ignoa_api.global.common.ApiResponse;
 import io.wisoft.ignoa_api.trade.dto.request.TradeConfirmRequest;
+import io.wisoft.ignoa_api.trade.dto.response.MyTradeResponse;
 import io.wisoft.ignoa_api.trade.dto.response.TradeConfirmResponse;
 import io.wisoft.ignoa_api.trade.dto.response.TradePrepareResponse;
 import io.wisoft.ignoa_api.trade.service.TradeFacade;
+import io.wisoft.ignoa_api.trade.service.TradeService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -14,12 +16,13 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/trades/{tradeId}/payments")
+@RequestMapping("/api")
 public class TradeController {
 
     private final TradeFacade tradeFacade;
+    private final TradeService tradeService;
 
-    @PostMapping
+    @PostMapping("/trades/{tradeId}/payments")
     public ResponseEntity<ApiResponse<TradePrepareResponse>> prepare(
             @PathVariable Long tradeId,
             @AuthenticationPrincipal Long userId
@@ -29,7 +32,7 @@ public class TradeController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @PostMapping("/confirm")
+    @PostMapping("/trades/{tradeId}/payments/confirm")
     public ResponseEntity<ApiResponse<TradeConfirmResponse>> confirm(
             @PathVariable Long tradeId,
             @AuthenticationPrincipal Long userId,
@@ -37,6 +40,16 @@ public class TradeController {
     ) {
         TradeConfirmResponse data = tradeFacade.confirm(tradeId, userId, request);
         ApiResponse<TradeConfirmResponse> response = ApiResponse.of(data, "결제 승인 요청을 처리했습니다.");
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/items/{itemId}/trades/me")
+    public ResponseEntity<ApiResponse<MyTradeResponse>> getMyTrade(
+            @PathVariable Long itemId,
+            @AuthenticationPrincipal Long userId
+    ) {
+        MyTradeResponse data = tradeService.getMyTrade(itemId, userId);
+        ApiResponse<MyTradeResponse> response = ApiResponse.of(data, "거래를 조회했습니다.");
         return ResponseEntity.ok(response);
     }
 }

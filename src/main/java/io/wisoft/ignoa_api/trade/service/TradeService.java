@@ -4,6 +4,7 @@ import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
 import io.wisoft.ignoa_api.item.entity.Item;
 import io.wisoft.ignoa_api.item.service.ItemReader;
+import io.wisoft.ignoa_api.trade.dto.response.MyTradeResponse;
 import io.wisoft.ignoa_api.trade.entity.Trade;
 import io.wisoft.ignoa_api.trade.entity.enums.TradeStatus;
 import io.wisoft.ignoa_api.trade.entity.enums.TradeType;
@@ -111,5 +112,12 @@ public class TradeService {
         );
 
         tradeRepository.save(trade);
+    }
+
+    public MyTradeResponse getMyTrade(Long itemId, Long userId) {
+        Trade trade = tradeRepository.findRecentTradeOfBuyer(itemId, userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.TRADE_NOT_FOUND));
+
+        return MyTradeResponse.from(trade);
     }
 }

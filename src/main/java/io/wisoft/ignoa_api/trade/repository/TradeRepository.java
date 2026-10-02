@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 public interface TradeRepository extends JpaRepository<Trade, Long> {
 
@@ -58,4 +59,14 @@ public interface TradeRepository extends JpaRepository<Trade, Long> {
                 AND t.paymentDeadline <= :now
             """)
     int cancelExpiredIfPending(@Param("now") LocalDateTime now);
+
+    @Query("""
+            SELECT t
+            FROM Trade t
+            WHERE t.item.id = :itemId
+                AND t.buyer.id = :buyerId
+            ORDER BY t.id DESC
+            LIMIT 1
+            """)
+    Optional<Trade> findRecentTradeOfBuyer(@Param("itemId") Long itemId, @Param("buyerId") Long buyerId);
 }
