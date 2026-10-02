@@ -82,6 +82,7 @@ public enum ErrorCode {
 
     // Payment
     PAYMENT_SERVER_ERROR(HttpStatus.SERVICE_UNAVAILABLE, "결제를 시작할 수 없습니다. 잠시 후 다시 시도해주세요."),
+    PAYMENT_CONFIRM_REJECTED(HttpStatus.BAD_REQUEST, "결제 정보가 올바르지 않습니다. 다시 결제해주세요."),
 
     // Trade
     TRADE_NOT_FOUND(HttpStatus.NOT_FOUND, "거래를 찾을 수 없습니다."),
