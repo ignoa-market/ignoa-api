@@ -4,5 +4,5 @@ public enum TradeStatus {
     PAYMENT_PENDING,
     CONFIRMING,
     PAID,
-    CANCELLED
+    CANCELED
 }

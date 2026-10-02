@@ -37,7 +37,7 @@ public interface TradeRepository extends JpaRepository<Trade, Long> {
     int markPaidIfConfirming(@Param("id") Long id, @Param("orderId") String orderId,
                              @Param("paidAt") LocalDateTime paidAt);
 
-    // 결제 실패: CONFIRMING → PAYMENT_PENDING(낙찰·거절) 또는 CANCELLED(즉시구매)
+    // 결제 실패: CONFIRMING → PAYMENT_PENDING(낙찰·거절) 또는 CANCELED(즉시구매)
     @Modifying
     @Query("""
             UPDATE Trade t

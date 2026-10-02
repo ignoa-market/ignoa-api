@@ -71,7 +71,7 @@ public class TradeService {
 
                 TradeStatus nextStatus = trade.getType() == TradeType.AUCTION
                         ? TradeStatus.PAYMENT_PENDING
-                        : TradeStatus.CANCELLED;
+                        : TradeStatus.CANCELED;
 
                 yield tradeRepository.failConfirmIfConfirming(tradeId, result.orderId(), nextStatus) == 1;
             }
