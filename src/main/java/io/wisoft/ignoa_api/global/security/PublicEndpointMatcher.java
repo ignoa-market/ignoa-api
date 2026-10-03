@@ -33,7 +33,9 @@ public class PublicEndpointMatcher implements RequestMatcher {
                 paths.matcher(HttpMethod.GET, "/api/items/{itemId}/bids"),
 
                 paths.matcher("/ws"),
-                paths.matcher(HttpMethod.GET, "/actuator/**")
+                paths.matcher(HttpMethod.GET, "/actuator/**"),
+
+                paths.matcher(HttpMethod.POST, "/internal/**")
         );
     }
 

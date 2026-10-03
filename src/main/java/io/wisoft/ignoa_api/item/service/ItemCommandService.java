@@ -1,7 +1,6 @@
 package io.wisoft.ignoa_api.item.service;
 
 import io.wisoft.ignoa_api.bid.repository.BidRepository;
-import io.wisoft.ignoa_api.chat.service.ChatRoomService;
 import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
 import io.wisoft.ignoa_api.item.dto.request.ItemBuyNowRequest;
@@ -12,20 +11,22 @@ import io.wisoft.ignoa_api.item.dto.response.ItemDetail;
 import io.wisoft.ignoa_api.item.dto.response.ItemIdResponse;
 import io.wisoft.ignoa_api.item.entity.Item;
 import io.wisoft.ignoa_api.item.entity.ItemMedia;
-import io.wisoft.ignoa_api.item.entity.enums.ItemStatus;
 import io.wisoft.ignoa_api.item.repository.ItemRepository;
 import io.wisoft.ignoa_api.item.service.dto.UploadedMedia;
+import io.wisoft.ignoa_api.trade.entity.Trade;
+import io.wisoft.ignoa_api.trade.service.TradeService;
 import io.wisoft.ignoa_api.user.entity.User;
 import io.wisoft.ignoa_api.user.service.UserQueryService;
 import io.wisoft.ignoa_api.wish.repository.WishRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -34,7 +35,7 @@ public class ItemCommandService {
     private final ItemMediaService itemMediaService;
     private final ItemQueryService itemQueryService;
     private final UserQueryService userQueryService;
-    private final ChatRoomService chatRoomService;
+    private final TradeService tradeService;
 
     private final ItemReader itemReader;
 
@@ -115,27 +116,27 @@ public class ItemCommandService {
 
     public BuyNowResponse buyNowItem(Long itemId, Long buyerId, ItemBuyNowRequest request) {
         Item item = itemReader.getById(itemId);
-        User user = userQueryService.findById(buyerId);
 
         if (item.isSeller(buyerId)) {
             throw new BusinessException(ErrorCode.SELF_BUY_NOT_ALLOWED);
         }
 
-        int updatedRows = itemRepository.buyNowIfActive(
-                itemId,
-                user,
-                request.buyNowPrice(),
-                LocalDateTime.now()
-        );
-
-        if (updatedRows == 0) {
+        if (!item.isActive() || !item.getBuyNowPrice().equals(request.buyNowPrice())) {
             throw new BusinessException(ErrorCode.BUY_NOW_CONFLICT);
         }
 
-        bidRepository.markLosingBids(itemId);
-        chatRoomService.createChatRoom(itemId);
+        User buyer = userQueryService.findById(buyerId);
+        Trade trade = tradeService.createBuyNowTrade(item, buyer);
 
-        return new BuyNowResponse(itemId, buyerId, request.buyNowPrice(), ItemStatus.BUY_NOW_CLOSED);
+        log.debug("즉시구매 거래 생성 완료: itemId={}, buyerId={}, tradeId={}, amount={}",
+                itemId, buyerId, trade.getId(), trade.getAmount());
+
+        return new BuyNowResponse(
+                trade.getId(),
+                itemId,
+                trade.getAmount(),
+                trade.getPaymentDeadline()
+        );
     }
 
     private void validateBuyNowPrice(Item item, Long itemId, Long buyNowPrice) {

@@ -11,6 +11,7 @@ import io.wisoft.ignoa_api.chat.repository.ChatRoomRepository;
 import io.wisoft.ignoa_api.item.entity.Item;
 import io.wisoft.ignoa_api.item.entity.enums.ItemStatus;
 import io.wisoft.ignoa_api.item.repository.ItemRepository;
+import io.wisoft.ignoa_api.trade.repository.TradeRepository;
 import io.wisoft.ignoa_api.support.IntegrationTestSupport;
 import io.wisoft.ignoa_api.user.entity.User;
 import io.wisoft.ignoa_api.user.repository.UserRepository;
@@ -57,6 +58,9 @@ class AuctionCloseJobIntegrationTest extends IntegrationTestSupport {
     ItemRepository itemRepository;
 
     @Autowired
+    TradeRepository tradeRepository;
+
+    @Autowired
     UserRepository userRepository;
 
     @Autowired
@@ -64,6 +68,7 @@ class AuctionCloseJobIntegrationTest extends IntegrationTestSupport {
 
     @AfterEach
     void tearDown() {
+        tradeRepository.deleteAllInBatch();
         chatRoomRepository.deleteAllInBatch();
         bidRepository.deleteAllInBatch();
         itemRepository.deleteAllInBatch();

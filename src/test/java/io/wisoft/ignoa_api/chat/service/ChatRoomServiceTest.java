@@ -6,6 +6,9 @@ import io.wisoft.ignoa_api.chat.repository.ChatRoomRepository;
 import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
 import io.wisoft.ignoa_api.item.dto.request.ItemBuyNowRequest;
+import io.wisoft.ignoa_api.trade.payment.dto.PaymentResult;
+import io.wisoft.ignoa_api.trade.repository.TradeRepository;
+import io.wisoft.ignoa_api.trade.service.TradePaymentService;
 import io.wisoft.ignoa_api.item.entity.Item;
 import io.wisoft.ignoa_api.item.repository.ItemRepository;
 import io.wisoft.ignoa_api.item.service.ItemCommandService;
@@ -51,10 +54,17 @@ class ChatRoomServiceTest extends IntegrationTestSupport {
     JdbcTemplate jdbcTemplate;
 
     @Autowired
+    TradePaymentService tradePaymentService;
+
+    @Autowired
+    TradeRepository tradeRepository;
+
+    @Autowired
     TransactionTemplate transactionTemplate;
 
     @AfterEach
     void tearDown() {
+        tradeRepository.deleteAllInBatch();
         // chat_rooms.last_message_id와 chat_messages.chat_room_id가 서로를 참조하므로 연결을 먼저 끊는다
         jdbcTemplate.update("UPDATE chat_rooms SET last_message_id = NULL");
         chatMessageRepository.deleteAllInBatch();
@@ -129,8 +139,12 @@ class ChatRoomServiceTest extends IntegrationTestSupport {
         Item item = itemRepository.save(newItem(seller));
         Long chatRoomId = chatRoomService.openChatRoom(buyer.getId(), item.getId()).chatRoomId();
 
-        // When
-        itemCommandService.buyNowItem(item.getId(), buyer.getId(), new ItemBuyNowRequest(item.getBuyNowPrice()));
+        // When: 즉시구매 결제가 완료되면 채팅방을 만든다
+        Long tradeId = itemCommandService.buyNowItem(
+                item.getId(), buyer.getId(), new ItemBuyNowRequest(item.getBuyNowPrice())).tradeId();
+        tradePaymentService.startConfirm(tradeId, buyer.getId(), "IGN-chat");
+        tradePaymentService.applyPaymentResult(tradeId, new PaymentResult(
+                tradeId, "IGN-chat", "DONE", item.getBuyNowPrice(), LocalDateTime.now(), null, null));
 
         // Then
         assertThat(chatRoomRepository.findAll())

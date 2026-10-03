@@ -3,7 +3,6 @@ package io.wisoft.ignoa_api.global.infra.lock;
 public enum LockOperation {
 
     BID("bid", 250L),
-    BUY_NOW("buy_now", 500L),
     EXTEND("extend", 500L),
     UPDATE("update", 1_000L),
     DELETE("delete", 1_000L),
