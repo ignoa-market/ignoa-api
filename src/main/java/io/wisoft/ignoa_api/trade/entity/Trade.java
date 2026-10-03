@@ -62,6 +62,8 @@ public class Trade extends BaseEntity {
     @Column(length = 64)
     private String confirmingOrderId;
 
+    private LocalDateTime confirmStartedAt;
+
     @Column(nullable = false)
     private LocalDateTime paymentDeadline;
 
@@ -69,7 +71,7 @@ public class Trade extends BaseEntity {
 
     public static Trade create(Item item, User buyer, TradeType type, Long amount, LocalDateTime paymentDeadline) {
         return new Trade(null, item, buyer, item.getSeller(), amount, type,
-                TradeStatus.PAYMENT_PENDING, null, paymentDeadline, null);
+                TradeStatus.PAYMENT_PENDING, null, null, paymentDeadline, null);
     }
 
     public boolean isBuyer(Long userId) {

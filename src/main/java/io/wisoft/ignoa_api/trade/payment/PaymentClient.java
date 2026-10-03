@@ -59,4 +59,14 @@ public class PaymentClient {
             return PaymentResult.unknown(request);
         }
     }
+
+    public PaymentResult getPayment(String orderId) {
+        PaymentServerResponse<PaymentResult> response = paymentRestClient.get()
+                .uri("/internal/payments/{orderId}", orderId)
+                .retrieve()
+                .body(new ParameterizedTypeReference<>() {
+                });
+
+        return response.data();
+    }
 }

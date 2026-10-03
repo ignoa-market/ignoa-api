@@ -85,6 +85,6 @@ public class TradePaymentService {
             itemBuyNowService.cancel(trade.getItem().getId());
         }
 
-        log.info("결제 승인 시작 되돌림: tradeId={}, orderId={}, reason=결제 서버 거절", tradeId, orderId);
+        log.info("결제 승인 시작 되돌림: tradeId={}, orderId={}", tradeId, orderId);
     }
 }

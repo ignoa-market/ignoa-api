@@ -2,12 +2,14 @@ package io.wisoft.ignoa_api.trade.repository;
 
 import io.wisoft.ignoa_api.trade.entity.Trade;
 import io.wisoft.ignoa_api.trade.entity.enums.TradeStatus;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 public interface TradeRepository extends JpaRepository<Trade, Long> {
@@ -17,7 +19,8 @@ public interface TradeRepository extends JpaRepository<Trade, Long> {
     @Query("""
             UPDATE Trade t
             SET t.status = 'CONFIRMING',
-                t.confirmingOrderId = :orderId
+                t.confirmingOrderId = :orderId,
+                t.confirmStartedAt = :now
             WHERE t.id = :id
                 AND t.status = 'PAYMENT_PENDING'
                 AND t.paymentDeadline > :now
@@ -77,4 +80,13 @@ public interface TradeRepository extends JpaRepository<Trade, Long> {
                 AND t.status IN ('PAYMENT_PENDING', 'CONFIRMING')
             """)
     boolean existsUnfinished(@Param("userId") Long userId);
+
+    @Query("""
+            SELECT t
+            FROM Trade t
+            WHERE t.status = 'CONFIRMING'
+                AND t.confirmStartedAt < :cutoff
+            ORDER BY t.confirmStartedAt
+            """)
+    List<Trade> findStuckConfirming(@Param("cutoff") LocalDateTime cutoff, Pageable pageable);
 }
