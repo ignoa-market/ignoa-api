@@ -23,7 +23,8 @@ public class ItemBuyNowService {
 
     public void reserve(Long itemId, Long buyNowPrice, LocalDateTime now) {
         if (itemRepository.reserveBuyNowIfActive(itemId, buyNowPrice, now) == 0) {
-            log.debug("즉시구매 예약 실패: itemId={}, reason=판매 중 아님 또는 즉시구매가 변경", itemId);
+            log.debug("즉시구매 예약 실패: itemId={}, buyNowPrice={}, reason=다른 구매자가 먼저 결제 중이거나 판매 종료·즉시구매가 변경",
+                    itemId, buyNowPrice);
             throw new BusinessException(ErrorCode.BUY_NOW_CONFLICT);
         }
     }
@@ -42,7 +43,7 @@ public class ItemBuyNowService {
 
     public void cancel(Long itemId) {
         if (itemRepository.cancelBuyNowIfPending(itemId) == 0) {
-            log.warn("즉시구매 예약 해제 생략: itemId={}, reason=결제 중 상태 아님", itemId);
+            log.warn("즉시구매 예약 해제 생략: itemId={}, reason=이미 해제됐거나 마감된 상품", itemId);
             return;
         }
 

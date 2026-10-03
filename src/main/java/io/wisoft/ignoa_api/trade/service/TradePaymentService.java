@@ -76,7 +76,8 @@ public class TradePaymentService {
         Trade trade = tradeReader.getById(tradeId);
 
         if (tradeRepository.failConfirmIfConfirming(tradeId, orderId, TradeStatus.PAYMENT_PENDING) == 0) {
-            log.debug("결제 승인 시작 되돌리기 생략: tradeId={}, orderId={}, reason=승인 중 아님", tradeId, orderId);
+            log.debug("결제 승인 되돌림 생략: tradeId={}, orderId={}, status={}, currentOrderId={}, reason=이미 처리됐거나 이전 시도",
+                    tradeId, orderId, trade.getStatus(), trade.getConfirmingOrderId());
             return;
         }
 

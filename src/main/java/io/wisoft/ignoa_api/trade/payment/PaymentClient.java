@@ -30,7 +30,7 @@ public class PaymentClient {
             return response.data();
 
         } catch (RestClientException e) {
-            log.error("결제 서버 요청 실패: operation=PREPARE, tradeId={}", request.tradeId(), e);
+            log.warn("결제 준비 실패: tradeId={}, reason=결제 서버 응답 실패, 구매자 재시도 가능", request.tradeId(), e);
             throw new BusinessException(ErrorCode.PAYMENT_SERVER_ERROR);
         }
     }
@@ -47,13 +47,13 @@ public class PaymentClient {
             return response.data();
 
         } catch (HttpClientErrorException e) {
-            log.debug("결제 승인 거절: tradeId={}, orderId={}, status={}",
+            log.debug("결제 승인 거절: tradeId={}, orderId={}, status={}, reason=결제 서버가 Toss 호출 전에 거절",
                     request.tradeId(), request.orderId(), e.getStatusCode());
 
             throw new BusinessException(ErrorCode.PAYMENT_CONFIRM_REJECTED);
 
         } catch (RestClientException e) {
-            log.warn("결제 승인 결과 미확인: tradeId={}, orderId={}",
+            log.warn("결제 승인 결과 미확인: tradeId={}, orderId={}, reason=결제 서버 응답 없음, 콜백으로 확정 예정",
                     request.tradeId(), request.orderId(), e);
 
             return PaymentResult.unknown(request);

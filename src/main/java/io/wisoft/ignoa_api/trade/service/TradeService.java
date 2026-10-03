@@ -41,7 +41,10 @@ public class TradeService {
                 LocalDateTime.now().plus(AUCTION_PAYMENT_DEADLINE)
         );
 
-        return tradeRepository.save(trade);
+        Trade saved = tradeRepository.save(trade);
+        log.info("거래 생성: tradeId={}, itemId={}, buyerId={}, type={}, amount={}, paymentDeadline={}",
+                saved.getId(), itemId, saved.getBuyer().getId(), saved.getType(), saved.getAmount(), saved.getPaymentDeadline());
+        return saved;
     }
 
     @Transactional
@@ -54,7 +57,10 @@ public class TradeService {
                 LocalDateTime.now().plus(BUY_NOW_PAYMENT_DEADLINE)
         );
 
-        return tradeRepository.save(trade);
+        Trade saved = tradeRepository.save(trade);
+        log.info("거래 생성: tradeId={}, itemId={}, buyerId={}, type={}, amount={}, paymentDeadline={}",
+                saved.getId(), item.getId(), saved.getBuyer().getId(), saved.getType(), saved.getAmount(), saved.getPaymentDeadline());
+        return saved;
     }
 
     @Transactional
