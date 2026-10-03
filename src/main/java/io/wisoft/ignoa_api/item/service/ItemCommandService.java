@@ -19,14 +19,12 @@ import io.wisoft.ignoa_api.user.entity.User;
 import io.wisoft.ignoa_api.user.service.UserQueryService;
 import io.wisoft.ignoa_api.wish.repository.WishRepository;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
 import java.util.List;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -128,9 +126,6 @@ public class ItemCommandService {
         User buyer = userQueryService.findById(buyerId);
         Trade trade = tradeService.createBuyNowTrade(item, buyer);
 
-        log.debug("즉시구매 거래 생성 완료: itemId={}, buyerId={}, tradeId={}, amount={}",
-                itemId, buyerId, trade.getId(), trade.getAmount());
-
         return new BuyNowResponse(
                 trade.getId(),
                 itemId,
@@ -140,13 +135,11 @@ public class ItemCommandService {
     }
 
     private void validateBuyNowPrice(Item item, Long itemId, Long buyNowPrice) {
-        // 즉시구매가 변경 시, 입찰 이력이 있으면 변경 불가
         if (item.isBuyNowPriceChanged(buyNowPrice)
                 && bidRepository.existsByItemId(itemId)) {
             throw new BusinessException(ErrorCode.BUY_NOW_PRICE_CHANGED_NOT_ALLOWED);
         }
 
-        // 즉시구매가는 현재 입찰가보다 높아야 함
         if (!item.isValidBuyNowPrice(buyNowPrice)) {
             throw new BusinessException(ErrorCode.INVALID_BUY_NOW_PRICE);
         }

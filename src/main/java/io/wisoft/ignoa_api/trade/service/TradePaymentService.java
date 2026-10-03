@@ -5,9 +5,7 @@ import io.wisoft.ignoa_api.global.exception.ErrorCode;
 import io.wisoft.ignoa_api.item.service.ItemBuyNowService;
 import io.wisoft.ignoa_api.trade.entity.Trade;
 import io.wisoft.ignoa_api.trade.entity.enums.TradeStatus;
-import io.wisoft.ignoa_api.trade.entity.enums.TradeType;
 import io.wisoft.ignoa_api.trade.payment.dto.PaymentPrepareRequest;
-import io.wisoft.ignoa_api.trade.payment.dto.PaymentResult;
 import io.wisoft.ignoa_api.trade.repository.TradeRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -78,7 +76,8 @@ public class TradePaymentService {
         Trade trade = tradeReader.getById(tradeId);
 
         if (tradeRepository.failConfirmIfConfirming(tradeId, orderId, TradeStatus.PAYMENT_PENDING) == 0) {
-            log.debug("결제 승인 시작 되돌리기 생략: tradeId={}, orderId={}, reason=승인 중 아님", tradeId, orderId);
+            log.debug("결제 승인 되돌림 생략: tradeId={}, orderId={}, status={}, currentOrderId={}, reason=이미 처리됐거나 이전 시도",
+                    tradeId, orderId, trade.getStatus(), trade.getConfirmingOrderId());
             return;
         }
 
@@ -86,60 +85,6 @@ public class TradePaymentService {
             itemBuyNowService.cancel(trade.getItem().getId());
         }
 
-        log.info("결제 승인 시작 되돌림: tradeId={}, orderId={}, reason=결제 서버 거절", tradeId, orderId);
-    }
-
-    @Transactional
-    public boolean applyPaymentResult(Long tradeId, PaymentResult result) {
-        Trade trade = tradeReader.getById(tradeId);
-
-        return switch (result.status()) {
-            case "DONE" -> {
-                boolean paid = tradeRepository.markPaidIfConfirming(tradeId, result.orderId(), result.approvedAt()) == 1;
-
-                if (paid) {
-                    if (trade.isBuyNow()) {
-                        itemBuyNowService.complete(trade.getItem().getId(), trade.getBuyer());
-                    }
-                    log.info("결제 완료 반영: tradeId={}, orderId={}, type={}, amount={}",
-                            tradeId, result.orderId(), trade.getType(), result.amount());
-                } else if (trade.getStatus() != TradeStatus.PAID) {
-                    log.error("결제 완료 미반영: tradeId={}, orderId={}, tradeStatus={}, confirmingOrderId={}, action=수동 확인",
-                            tradeId, result.orderId(), trade.getStatus(), trade.getConfirmingOrderId());
-                } else {
-                    log.debug("결제 완료 중복 수신 무시: tradeId={}, orderId={}", tradeId, result.orderId());
-                }
-
-                yield paid;
-            }
-
-            case "FAILED" -> {
-                TradeStatus nextStatus = trade.getType() == TradeType.AUCTION
-                        ? TradeStatus.PAYMENT_PENDING
-                        : TradeStatus.CANCELED;
-
-                boolean failed = tradeRepository.failConfirmIfConfirming(tradeId, result.orderId(), nextStatus) == 1;
-
-                if (failed) {
-                    if (trade.isBuyNow()) {
-                        itemBuyNowService.cancel(trade.getItem().getId());
-                    }
-                    log.info("결제 실패 반영: tradeId={}, orderId={}, type={}, nextStatus={}, failureCode={}, failureMessage={}",
-                            tradeId, result.orderId(), trade.getType(), nextStatus,
-                            result.failureCode(), result.failureMessage());
-                } else {
-                    log.debug("결제 실패 결과 무시: tradeId={}, orderId={}, tradeStatus={}, reason=승인 중인 시도가 아님",
-                            tradeId, result.orderId(), trade.getStatus());
-                }
-
-                yield failed;
-            }
-
-            default -> {
-                log.debug("결제 결과 미확정, 콜백 대기: tradeId={}, orderId={}, status={}",
-                        tradeId, result.orderId(), result.status());
-                yield false;
-            }
-        };
+        log.info("결제 승인 시작 되돌림: tradeId={}, orderId={}", tradeId, orderId);
     }
 }

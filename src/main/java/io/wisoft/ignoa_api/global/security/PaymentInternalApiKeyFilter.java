@@ -42,8 +42,9 @@ public class PaymentInternalApiKeyFilter extends OncePerRequestFilter {
         String requestKey = request.getHeader(PaymentProperties.INTERNAL_API_KEY_HEADER);
 
         if (requestKey == null || !MessageDigest.isEqual(apiKey, requestKey.getBytes(StandardCharsets.UTF_8))) {
-            log.warn("결제 서버 내부 API 키 검증 실패: method={}, uri={}, remoteAddress={}",
-                    request.getMethod(), request.getRequestURI(), request.getRemoteAddr());
+            log.warn("결제 서버 내부 API 키 검증 실패: method={}, uri={}, remoteAddress={}, reason={}",
+                    request.getMethod(), request.getRequestURI(), request.getRemoteAddr(),
+                    requestKey == null ? "키 누락" : "키 불일치");
 
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             return;
