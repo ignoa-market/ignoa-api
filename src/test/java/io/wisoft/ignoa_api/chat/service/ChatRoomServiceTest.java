@@ -8,6 +8,7 @@ import io.wisoft.ignoa_api.global.exception.ErrorCode;
 import io.wisoft.ignoa_api.item.dto.request.ItemBuyNowRequest;
 import io.wisoft.ignoa_api.trade.payment.dto.PaymentResult;
 import io.wisoft.ignoa_api.trade.repository.TradeRepository;
+import io.wisoft.ignoa_api.trade.service.PaymentResultApplier;
 import io.wisoft.ignoa_api.trade.service.TradePaymentService;
 import io.wisoft.ignoa_api.item.entity.Item;
 import io.wisoft.ignoa_api.item.repository.ItemRepository;
@@ -55,6 +56,9 @@ class ChatRoomServiceTest extends IntegrationTestSupport {
 
     @Autowired
     TradePaymentService tradePaymentService;
+
+    @Autowired
+    PaymentResultApplier paymentResultApplier;
 
     @Autowired
     TradeRepository tradeRepository;
@@ -143,7 +147,7 @@ class ChatRoomServiceTest extends IntegrationTestSupport {
         Long tradeId = itemCommandService.buyNowItem(
                 item.getId(), buyer.getId(), new ItemBuyNowRequest(item.getBuyNowPrice())).tradeId();
         tradePaymentService.startConfirm(tradeId, buyer.getId(), "IGN-chat");
-        tradePaymentService.applyPaymentResult(tradeId, new PaymentResult(
+        paymentResultApplier.apply(tradeId, new PaymentResult(
                 tradeId, "IGN-chat", "DONE", item.getBuyNowPrice(), LocalDateTime.now(), null, null));
 
         // Then

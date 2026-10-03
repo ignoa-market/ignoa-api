@@ -17,6 +17,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class TradeFacade {
 
+    private final PaymentResultApplier paymentResultApplier;
     private final TradePaymentService tradePaymentService;
     private final PaymentClient paymentClient;
 
@@ -37,14 +38,13 @@ public class TradeFacade {
             );
 
         } catch (BusinessException e) {
-            // CONFIRMING을 PAYMENT_PENDING으로 되돌리는 작업
             if (e.getErrorCode() == ErrorCode.PAYMENT_CONFIRM_REJECTED) {
                 tradePaymentService.cancelConfirm(tradeId, request.orderId());
             }
             throw e;
         }
 
-        tradePaymentService.applyPaymentResult(tradeId, result);
+        paymentResultApplier.apply(tradeId, result);
         return TradeConfirmResponse.from(result);
     }
 }

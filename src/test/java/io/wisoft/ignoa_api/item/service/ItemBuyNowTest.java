@@ -16,6 +16,7 @@ import io.wisoft.ignoa_api.trade.entity.enums.TradeStatus;
 import io.wisoft.ignoa_api.trade.entity.enums.TradeType;
 import io.wisoft.ignoa_api.trade.payment.dto.PaymentResult;
 import io.wisoft.ignoa_api.trade.repository.TradeRepository;
+import io.wisoft.ignoa_api.trade.service.PaymentResultApplier;
 import io.wisoft.ignoa_api.trade.service.TradePaymentService;
 import io.wisoft.ignoa_api.user.entity.User;
 import io.wisoft.ignoa_api.user.repository.UserRepository;
@@ -48,6 +49,9 @@ class ItemBuyNowTest extends IntegrationTestSupport {
 
     @Autowired
     private TradePaymentService tradePaymentService;
+
+    @Autowired
+    private PaymentResultApplier paymentResultApplier;
 
     @Autowired
     private BidService bidService;
@@ -118,8 +122,8 @@ class ItemBuyNowTest extends IntegrationTestSupport {
         PaymentResult done = result(tradeId, "IGN-done", "DONE");
 
         // When: 승인 응답과 콜백이 모두 도착
-        boolean firstApplied = tradePaymentService.applyPaymentResult(tradeId, done);
-        boolean secondApplied = tradePaymentService.applyPaymentResult(tradeId, done);
+        boolean firstApplied = paymentResultApplier.apply(tradeId, done);
+        boolean secondApplied = paymentResultApplier.apply(tradeId, done);
 
         // Then
         assertThat(firstApplied).isTrue();
@@ -144,7 +148,7 @@ class ItemBuyNowTest extends IntegrationTestSupport {
         Long firstTradeId = buyNow(item, first).tradeId();
         Long secondTradeId = buyNow(item, second).tradeId();
         tradePaymentService.startConfirm(firstTradeId, first.getId(), "IGN-first");
-        tradePaymentService.applyPaymentResult(firstTradeId, result(firstTradeId, "IGN-first", "DONE"));
+        paymentResultApplier.apply(firstTradeId, result(firstTradeId, "IGN-first", "DONE"));
 
         // When & Then
         assertThatThrownBy(() -> tradePaymentService.validatePrepare(secondTradeId, second.getId()))
@@ -163,7 +167,7 @@ class ItemBuyNowTest extends IntegrationTestSupport {
         tradePaymentService.startConfirm(tradeId, buyer.getId(), "IGN-failed");
 
         // When
-        tradePaymentService.applyPaymentResult(tradeId, result(tradeId, "IGN-failed", "FAILED"));
+        paymentResultApplier.apply(tradeId, result(tradeId, "IGN-failed", "FAILED"));
 
         // Then
         assertThat(tradeStatusOf(tradeId)).isEqualTo(TradeStatus.CANCELED);
