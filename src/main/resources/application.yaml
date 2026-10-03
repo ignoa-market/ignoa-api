@@ -82,3 +82,8 @@ cloud:
       region: ${S3_REGION}
     cloudfront:
       media-base-url: https://ignoa.woomin.dev
+
+### 결제 서버 (ignoa-payment) ###
+payment:
+  base-url: ${PAYMENT_BASE_URL}
+  internal-api-key: ${INTERNAL_API_KEY}

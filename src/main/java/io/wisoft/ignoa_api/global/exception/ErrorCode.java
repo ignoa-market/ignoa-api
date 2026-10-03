@@ -50,6 +50,7 @@ public enum ErrorCode {
     HAS_ACTIVE_BID(HttpStatus.CONFLICT, "진행 중인 경매에 입찰 중이어서 탈퇴할 수 없습니다."),
     ACCOUNT_PENDING_DELETION(HttpStatus.FORBIDDEN, "탈퇴 처리 중인 계정입니다."),
     ACCOUNT_NOT_RECOVERABLE(HttpStatus.BAD_REQUEST, "복구 가능한 계정이 아닙니다."),
+    HAS_UNFINISHED_TRADE(HttpStatus.CONFLICT, "진행 중인 거래가 있어 탈퇴할 수 없습니다."),
 
     // Item
     ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "상품을 찾을 수 없습니다."),
@@ -78,7 +79,17 @@ public enum ErrorCode {
     // Chat
     CHAT_ROOM_NOT_FOUND(HttpStatus.NOT_FOUND, "채팅방을 찾을 수 없습니다."),
     CHAT_ROOM_ACCESS_DENIED(HttpStatus.FORBIDDEN, "채팅방 참여자만 이용할 수 있습니다."),
-    SELF_CHAT_NOT_ALLOWED(HttpStatus.FORBIDDEN, "본인 상품에는 채팅할 수 없습니다.");
+    SELF_CHAT_NOT_ALLOWED(HttpStatus.FORBIDDEN, "본인 상품에는 채팅할 수 없습니다."),
+
+    // Payment
+    PAYMENT_SERVER_ERROR(HttpStatus.SERVICE_UNAVAILABLE, "결제를 시작할 수 없습니다. 잠시 후 다시 시도해주세요."),
+    PAYMENT_CONFIRM_REJECTED(HttpStatus.BAD_REQUEST, "결제 정보가 올바르지 않습니다. 다시 결제해주세요."),
+
+    // Trade
+    TRADE_NOT_FOUND(HttpStatus.NOT_FOUND, "거래를 찾을 수 없습니다."),
+    TRADE_ACCESS_DENIED(HttpStatus.FORBIDDEN, "본인의 거래만 결제할 수 있습니다."),
+    TRADE_NOT_PAYABLE(HttpStatus.CONFLICT, "결제할 수 없는 거래 상태입니다."),
+    TRADE_PAYMENT_EXPIRED(HttpStatus.CONFLICT, "결제 기한이 지났습니다.");
 
     private final HttpStatus httpStatus;
     private final String message;

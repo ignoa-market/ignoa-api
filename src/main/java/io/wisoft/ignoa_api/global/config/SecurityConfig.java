@@ -2,6 +2,7 @@ package io.wisoft.ignoa_api.global.config;
 
 import io.wisoft.ignoa_api.auth.jwt.JwtAuthenticationFilter;
 import io.wisoft.ignoa_api.global.security.CloudFrontOriginFilter;
+import io.wisoft.ignoa_api.global.security.PaymentInternalApiKeyFilter;
 import io.wisoft.ignoa_api.global.security.PublicEndpointMatcher;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -29,15 +30,15 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CloudFrontOriginFilter cloudFrontOriginFilter;
+    private final PaymentInternalApiKeyFilter paymentInternalApiKeyFilter;
+
     private final PublicEndpointMatcher publicEndpointMatcher;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
-                .sessionManagement(
-                        session
-                                -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(publicEndpointMatcher)
                         .permitAll()
@@ -49,6 +50,7 @@ public class SecurityConfig {
                                 response.sendError(HttpServletResponse.SC_FORBIDDEN)))
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(cloudFrontOriginFilter, JwtAuthenticationFilter.class)
+                .addFilterBefore(paymentInternalApiKeyFilter, JwtAuthenticationFilter.class)
                 .cors(cors -> cors.configurationSource(configurationSource()))
                 .build();
     }
@@ -92,6 +94,17 @@ public class SecurityConfig {
     ) {
         FilterRegistrationBean<CloudFrontOriginFilter> registration =
                 new FilterRegistrationBean<>(filter);
+
+        registration.setEnabled(false);
+        return registration;
+    }
+
+    @Bean
+    public FilterRegistrationBean<PaymentInternalApiKeyFilter> paymentInternalApiKeyFilterRegistration(
+            PaymentInternalApiKeyFilter filter
+    ) {
+        FilterRegistrationBean<PaymentInternalApiKeyFilter> registration
+                = new FilterRegistrationBean<>(filter);
 
         registration.setEnabled(false);
         return registration;
