@@ -3,7 +3,6 @@ package io.wisoft.ignoa_api.auth.jwt;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.wisoft.ignoa_api.auth.service.TokenBlacklistService;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
 import io.wisoft.ignoa_api.global.infra.redis.RedisInfrastructureException;
@@ -51,9 +50,6 @@ class JwtAuthenticationFilterTest {
     @Spy
     ObjectMapper objectMapper = new ObjectMapper();
 
-    @Spy
-    SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
-
     @InjectMocks
     JwtAuthenticationFilter filter;
 
@@ -77,8 +73,6 @@ class JwtAuthenticationFilterTest {
         assertThat(response.getContentAsString())
                 .contains(ErrorCode.AUTH_INFRASTRUCTURE_ERROR.name());
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
-        assertThat(meterRegistry.get("redis.auth.requests")
-                .tags("entrypoint", "http", "outcome", "blocked").counter().count()).isEqualTo(1.0);
     }
 
     @Test
@@ -141,8 +135,6 @@ class JwtAuthenticationFilterTest {
         assertThat(filterChain.getRequest()).isNotNull();
         assertThat(response.getStatus()).isEqualTo(HttpStatus.OK.value());
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
-        assertThat(meterRegistry.get("redis.auth.requests")
-                .tags("entrypoint", "http", "outcome", "anonymous").counter().count()).isEqualTo(1.0);
     }
 
     @Test

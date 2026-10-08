@@ -1,7 +1,6 @@
 package io.wisoft.ignoa_api.auth.jwt;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.micrometer.core.instrument.MeterRegistry;
 import io.jsonwebtoken.JwtException;
 import io.wisoft.ignoa_api.auth.service.TokenBlacklistService;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
@@ -39,7 +38,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final TokenBlacklistService tokenBlacklistService;
     private final ObjectMapper objectMapper;
     private final PublicEndpointMatcher publicEndpointMatcher;
-    private final MeterRegistry meterRegistry;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
@@ -53,7 +51,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                      | RedisSystemException
                      | RedisInfrastructureException e) {
                 if (publicEndpointMatcher.matches(request)) {
-                    meterRegistry.counter("redis.auth.requests", "entrypoint", "http", "outcome", "anonymous").increment();
                     log.debug(
                             "Redis 인프라 장애 - 공개 요청을 익명 처리: method={}, uri={}, reason={}",
                             request.getMethod(),
@@ -66,7 +63,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     return;
                 }
 
-                meterRegistry.counter("redis.auth.requests", "entrypoint", "http", "outcome", "blocked").increment();
                 log.debug(
                         "Redis 인프라 장애 - 인증 차단: uri={}, reason={}",
                         request.getRequestURI(),

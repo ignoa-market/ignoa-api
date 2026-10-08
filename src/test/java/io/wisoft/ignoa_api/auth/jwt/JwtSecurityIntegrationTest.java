@@ -1,7 +1,5 @@
 package io.wisoft.ignoa_api.auth.jwt;
 
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.jsonwebtoken.Claims;
 import io.wisoft.ignoa_api.auth.service.TokenBlacklistService;
 import io.wisoft.ignoa_api.global.config.SecurityConfig;
@@ -12,8 +10,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Bean;
 import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.test.context.ActiveProfiles;
@@ -36,18 +32,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         JwtAuthenticationFilter.class,
         CloudFrontOriginFilter.class,
         PublicEndpointMatcher.class,
-        JwtSecurityIntegrationTest.MetricsTestConfig.class,
         JwtSecurityIntegrationTest.TestController.class
 })
 class JwtSecurityIntegrationTest {
-
-    @TestConfiguration
-    static class MetricsTestConfig {
-        @Bean
-        MeterRegistry meterRegistry() {
-            return new SimpleMeterRegistry();
-        }
-    }
 
     @Autowired
     MockMvc mockMvc;
