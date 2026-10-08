@@ -1,6 +1,7 @@
 package io.wisoft.ignoa_api.global.security;
 
 import io.jsonwebtoken.JwtException;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.wisoft.ignoa_api.auth.jwt.JwtTokenProvider;
 import io.wisoft.ignoa_api.auth.service.TokenBlacklistService;
 import io.wisoft.ignoa_api.global.infra.redis.RedisInfrastructureException;
@@ -30,6 +31,7 @@ public class StompAuthInterceptor implements ChannelInterceptor {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final TokenBlacklistService tokenBlacklistService;
+    private final MeterRegistry meterRegistry;
 
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
@@ -83,7 +85,8 @@ public class StompAuthInterceptor implements ChannelInterceptor {
         } catch (RedisConnectionFailureException
                  | RedisSystemException
                  | RedisInfrastructureException e) {
-            log.warn("Redis 인프라 장애 - STOMP 연결 차단: reason={}", e.getClass().getSimpleName());
+            meterRegistry.counter("redis.auth.requests", "entrypoint", "stomp", "outcome", "blocked").increment();
+            log.debug("Redis 인프라 장애 - STOMP 연결 차단: reason={}", e.getClass().getSimpleName());
             throw new MessageDeliveryException("일시적인 오류로 연결할 수 없습니다. 잠시 후 다시 시도해주세요.");
         }
     }

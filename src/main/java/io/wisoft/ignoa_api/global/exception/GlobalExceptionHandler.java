@@ -32,7 +32,15 @@ public class GlobalExceptionHandler {
     ) {
         ErrorCode errorCode = e.getErrorCode();
 
-        if (errorCode.getHttpStatus().is5xxServerError()) {
+        if (errorCode == ErrorCode.LOCK_INFRASTRUCTURE_ERROR
+                || errorCode == ErrorCode.AUTH_INFRASTRUCTURE_ERROR) {
+            log.debug(
+                    "인프라 장애 요청 차단: code={}, method={}, uri={}",
+                    errorCode.name(),
+                    request.getMethod(),
+                    request.getRequestURI()
+            );
+        } else if (errorCode.getHttpStatus().is5xxServerError()) {
             log.error(
                     "비즈니스 처리 실패: code={}, method={}, uri={}",
                     errorCode.name(),
@@ -146,11 +154,11 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler({RedisConnectionFailureException.class, RedisSystemException.class, RedisInfrastructureException.class})
     public ResponseEntity<ErrorResponse> handleRedisFailure(RuntimeException e, HttpServletRequest request) {
-        log.error(
-                "Redis 인프라 장애: method={}, uri={}",
+        log.debug(
+                "Redis 인프라 장애 요청 차단: method={}, uri={}, reason={}",
                 request.getMethod(),
                 request.getRequestURI(),
-                e
+                e.getClass().getSimpleName()
         );
         return ResponseEntity
                 .status(ErrorCode.AUTH_INFRASTRUCTURE_ERROR.getHttpStatus())

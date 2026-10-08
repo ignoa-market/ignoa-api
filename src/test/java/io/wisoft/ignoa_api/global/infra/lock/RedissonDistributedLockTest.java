@@ -1,5 +1,9 @@
 package io.wisoft.ignoa_api.global.infra.lock;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import io.wisoft.ignoa_api.global.exception.BusinessException;
@@ -12,6 +16,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.redisson.client.RedisException;
+import org.slf4j.LoggerFactory;
 
 
 import java.util.concurrent.TimeUnit;
@@ -208,5 +213,45 @@ class RedissonDistributedLockTest {
 
         assertThat(closed).isFalse();
         verify(lock, never()).unlock();
+    }
+
+    @Test
+    void Redis_장애_시_락_획득_지표는_남기고_요청별_WARN은_남기지_않는다() throws InterruptedException {
+        given(lock.tryLock(anyLong(), any(TimeUnit.class)))
+                .willThrow(new RedisException("Redis 장애"));
+
+        try (LogCapture logs = new LogCapture()) {
+            distributedLock.executeWithOptionalLockResult(
+                    "item:lock:1", LockOperation.AUTO_CLOSE, () -> false);
+
+            assertThat(logs.events()).singleElement()
+                    .extracting(ILoggingEvent::getLevel).isEqualTo(Level.DEBUG);
+            assertThat(meterRegistry.get("lock.acquire.wait")
+                    .tags("key", "item:lock", "operation", "auto_close", "outcome", "infra_error")
+                    .timer().count()).isEqualTo(1);
+        }
+    }
+
+    private static final class LogCapture implements AutoCloseable {
+        private final Logger logger = (Logger) LoggerFactory.getLogger(RedissonDistributedLock.class);
+        private final Level previousLevel = logger.getLevel();
+        private final ListAppender<ILoggingEvent> appender = new ListAppender<>();
+
+        private LogCapture() {
+            appender.start();
+            logger.addAppender(appender);
+            logger.setLevel(Level.DEBUG);
+        }
+
+        private java.util.List<ILoggingEvent> events() {
+            return appender.list;
+        }
+
+        @Override
+        public void close() {
+            logger.detachAppender(appender);
+            logger.setLevel(previousLevel);
+            appender.stop();
+        }
     }
 }

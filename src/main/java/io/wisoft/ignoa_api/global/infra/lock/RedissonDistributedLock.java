@@ -28,7 +28,7 @@ public class RedissonDistributedLock {
             return execute(key, operation, task);
 
         } catch (LockInfrastructureException e) {
-            log.warn("분산 락 Fail-Closed: key={}, operation={}, reason=Redis 인프라 장애", key, operation, e);
+            log.debug("분산 락 Fail-Closed: key={}, operation={}, reason=Redis 인프라 장애", key, operation);
             throw new BusinessException(ErrorCode.LOCK_INFRASTRUCTURE_ERROR, e);
         }
     }
@@ -42,7 +42,7 @@ public class RedissonDistributedLock {
             return execute(key, operation, task);
 
         } catch (LockInfrastructureException e) {
-            log.warn("분산 락 Fail-Open: key={}, operation={}, reason=Redis 인프라 장애", key, operation, e);
+            log.debug("분산 락 Fail-Open: key={}, operation={}, reason=Redis 인프라 장애", key, operation);
             return task.get();
         }
     }
@@ -67,8 +67,12 @@ public class RedissonDistributedLock {
                 }
 
             } catch (RedisException e) {
-                log.warn("분산 락 해제 실패 - 작업은 정상 완료됨. key={}, operation={}",
-                        key, operation, e);
+                log.warn(
+                        "분산 락 해제 실패 - 작업은 정상 완료됨. key={}, operation={}",
+                        key,
+                        operation,
+                        e
+                );
             }
         }
     }
