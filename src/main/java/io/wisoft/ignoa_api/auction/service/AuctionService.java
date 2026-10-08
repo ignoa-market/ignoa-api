@@ -50,7 +50,7 @@ public class AuctionService {
 
         chatRoomService.createChatRoom(itemId);
         Trade trade = tradeService.createAuctionTrade(itemId);
-        log.debug("경매 마감 완료: itemId={}, result=낙찰, chatRoomCreated=true, tradeId={}", itemId, trade.getId());
+        log.debug("경매 마감 완료: itemId={}, result=낙찰, tradeId={}", itemId, trade.getId());
     }
 
     @Transactional

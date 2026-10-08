@@ -19,7 +19,7 @@ public class TradeExpireScheduler {
     @Scheduled(fixedDelay = 60_000L)
     @SchedulerLock(name = "tradeExpireScheduler")
     public void cancelExpiredTrades() {
-        log.debug("결제 기한 만료 거래 취소 스케줄러 실행");
+        log.debug("결제 기한 만료 거래 취소 스케줄러 시작");
         tradeService.cancelExpiredTrades(LocalDateTime.now());
     }
 }
