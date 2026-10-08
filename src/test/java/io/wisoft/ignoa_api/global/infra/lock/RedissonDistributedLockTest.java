@@ -183,4 +183,30 @@ class RedissonDistributedLockTest {
         assertThat(executionCount.get()).isEqualTo(1);
         verify(lock, never()).unlock();
     }
+
+    @Test
+    void 선택적_락은_정상_획득_후_task의_결과를_반환한다() throws InterruptedException {
+        given(lock.tryLock(anyLong(), any(TimeUnit.class))).willReturn(true);
+        given(lock.isHeldByCurrentThread()).willReturn(true);
+
+        boolean closed = distributedLock.executeWithOptionalLockResult(
+                "item:lock:1", LockOperation.AUTO_CLOSE, () -> true
+        );
+
+        assertThat(closed).isTrue();
+        verify(lock).unlock();
+    }
+
+    @Test
+    void 선택적_락은_Redis_장애_시_락_없이_실행한_task의_결과를_반환한다() throws InterruptedException {
+        given(lock.tryLock(anyLong(), any(TimeUnit.class)))
+                .willThrow(new RedisException("Redis 장애"));
+
+        boolean closed = distributedLock.executeWithOptionalLockResult(
+                "item:lock:1", LockOperation.AUTO_CLOSE, () -> false
+        );
+
+        assertThat(closed).isFalse();
+        verify(lock, never()).unlock();
+    }
 }

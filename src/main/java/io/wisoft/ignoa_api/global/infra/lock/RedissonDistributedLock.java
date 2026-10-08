@@ -34,12 +34,16 @@ public class RedissonDistributedLock {
     }
 
     public void executeWithOptionalLock(String key, LockOperation operation, Runnable task) {
+        executeWithOptionalLockResult(key, operation, toSupplier(task));
+    }
+
+    public <T> T executeWithOptionalLockResult(String key, LockOperation operation, Supplier<T> task) {
         try {
-            execute(key, operation, toSupplier(task));
+            return execute(key, operation, task);
 
         } catch (LockInfrastructureException e) {
             log.warn("분산 락 Fail-Open: key={}, operation={}, reason=Redis 인프라 장애", key, operation, e);
-            task.run();
+            return task.get();
         }
     }
 
