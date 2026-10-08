@@ -28,18 +28,22 @@ public class RedissonDistributedLock {
             return execute(key, operation, task);
 
         } catch (LockInfrastructureException e) {
-            log.warn("분산 락 Fail-Closed: key={}, operation={}, reason=Redis 인프라 장애", key, operation, e);
+            log.debug("분산 락 Fail-Closed: key={}, operation={}, reason=Redis 인프라 장애", key, operation);
             throw new BusinessException(ErrorCode.LOCK_INFRASTRUCTURE_ERROR, e);
         }
     }
 
     public void executeWithOptionalLock(String key, LockOperation operation, Runnable task) {
+        executeWithOptionalLockResult(key, operation, toSupplier(task));
+    }
+
+    public <T> T executeWithOptionalLockResult(String key, LockOperation operation, Supplier<T> task) {
         try {
-            execute(key, operation, toSupplier(task));
+            return execute(key, operation, task);
 
         } catch (LockInfrastructureException e) {
-            log.warn("분산 락 Fail-Open: key={}, operation={}, reason=Redis 인프라 장애", key, operation, e);
-            task.run();
+            log.debug("분산 락 Fail-Open: key={}, operation={}, reason=Redis 인프라 장애", key, operation);
+            return task.get();
         }
     }
 
@@ -63,8 +67,12 @@ public class RedissonDistributedLock {
                 }
 
             } catch (RedisException e) {
-                log.warn("분산 락 해제 실패 - 작업은 정상 완료됨. key={}, operation={}",
-                        key, operation, e);
+                log.warn(
+                        "분산 락 해제 실패 - 작업은 정상 완료됨. key={}, operation={}",
+                        key,
+                        operation,
+                        e
+                );
             }
         }
     }

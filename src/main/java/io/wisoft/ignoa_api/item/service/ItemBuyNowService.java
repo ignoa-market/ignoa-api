@@ -23,30 +23,43 @@ public class ItemBuyNowService {
 
     public void reserve(Long itemId, Long buyNowPrice, LocalDateTime now) {
         if (itemRepository.reserveBuyNowIfActive(itemId, buyNowPrice, now) == 0) {
-            log.debug("즉시구매 예약 실패: itemId={}, buyNowPrice={}, reason=다른 구매자가 먼저 결제 중이거나 판매 종료·즉시구매가 변경",
-                    itemId, buyNowPrice);
+            log.debug(
+                    "즉시구매 예약 거절: itemId={}, buyNowPrice={}, reason=예약 조건 불충족",
+                    itemId,
+                    buyNowPrice
+            );
             throw new BusinessException(ErrorCode.BUY_NOW_CONFLICT);
         }
     }
 
     public void complete(Long itemId, User buyer) {
         if (itemRepository.completeBuyNowIfPending(itemId, buyer) == 0) {
-            // 결제는 완료됐는데 상품이 결제 중 상태가 아니다. 상품이 계속 판매될 수 있다
-            log.error("즉시구매 상품 마감 실패: itemId={}, buyerId={}, action=상품 상태 수동 확인", itemId, buyer.getId());
+            // 예약 단계에서 다른 구매자의 진입을 막았으므로, 결제 완료 후 상품 마감 실패는 상태 확인이 필요하다.
+            log.error(
+                    "즉시구매 상품 마감 실패: itemId={}, buyerId={}, action=상품 상태 수동 확인",
+                    itemId,
+                    buyer.getId()
+            );
             return;
         }
 
         int lostBids = bidRepository.markLosingBids(itemId);
         chatRoomService.createChatRoom(itemId);
-        log.info("즉시구매 상품 마감 완료: itemId={}, buyerId={}, lostBids={}", itemId, buyer.getId(), lostBids);
+
+        log.debug(
+                "즉시구매 상품 마감 완료: itemId={}, buyerId={}, lostBids={}",
+                itemId,
+                buyer.getId(),
+                lostBids
+        );
     }
 
     public void cancel(Long itemId) {
         if (itemRepository.cancelBuyNowIfPending(itemId) == 0) {
-            log.warn("즉시구매 예약 해제 생략: itemId={}, reason=이미 해제됐거나 마감된 상품", itemId);
+            log.debug("즉시구매 예약 해제 생략: itemId={}, reason=결제 대기 상태 아님", itemId);
             return;
         }
 
-        log.info("즉시구매 예약 해제: itemId={}", itemId);
+        log.debug("즉시구매 예약 해제: itemId={}", itemId);
     }
 }

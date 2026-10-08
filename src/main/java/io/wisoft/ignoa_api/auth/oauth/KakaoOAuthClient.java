@@ -30,7 +30,7 @@ public class KakaoOAuthClient {
                     if (res.getStatusCode().is5xxServerError()) {
                         log.error("카카오 OAuth 요청 실패: operation=TOKEN_EXCHANGE, status={}", res.getStatusCode());
                     } else {
-                        log.warn("카카오 OAuth 요청 거부: operation=TOKEN_EXCHANGE, status={}", res.getStatusCode());
+                        log.debug("카카오 OAuth 요청 거부: operation=TOKEN_EXCHANGE, status={}", res.getStatusCode());
                     }
                     throw new BusinessException(ErrorCode.KAKAO_AUTH_FAILED);
                 })
@@ -48,7 +48,7 @@ public class KakaoOAuthClient {
                     if (res.getStatusCode().is5xxServerError()) {
                         log.error("카카오 OAuth 요청 실패: operation=USER_INFO, status={}", res.getStatusCode());
                     } else {
-                        log.warn("카카오 OAuth 요청 거부: operation=USER_INFO, status={}", res.getStatusCode());
+                        log.debug("카카오 OAuth 요청 거부: operation=USER_INFO, status={}", res.getStatusCode());
                     }
                     throw new BusinessException(ErrorCode.KAKAO_AUTH_FAILED);
                 })

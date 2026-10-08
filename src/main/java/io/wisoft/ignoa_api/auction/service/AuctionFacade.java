@@ -14,8 +14,8 @@ public class AuctionFacade {
     private final AuctionService auctionService;
     private final RedissonDistributedLock distributedLock;
 
-    public void closeAuction(Long itemId) {
-        distributedLock.executeWithOptionalLock(
+    public boolean closeAuction(Long itemId) {
+        return distributedLock.executeWithOptionalLockResult(
                 ItemLockKey.of(itemId),
                 LockOperation.AUTO_CLOSE,
                 () -> auctionService.closeAuction(itemId)

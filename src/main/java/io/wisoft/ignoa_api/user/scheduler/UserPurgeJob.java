@@ -46,17 +46,21 @@ public class UserPurgeJob {
                     userCommandService.purgeUser(user);
                     successCount++;
                     log.debug("탈퇴 회원 개인정보 파기 완료: userId={}", user.getId());
+
                 } catch (Exception e) {
                     failCount++;
                     log.error("탈퇴 회원 개인정보 파기 실패: userId={}", user.getId(), e);
                 }
             }
         }
-        log.info(
-                "탈퇴 회원 개인정보 파기 작업 완료: target={}, completed={}, failed={}",
-                totalTargetCount,
-                successCount,
-                failCount
-        );
+
+        if (totalTargetCount > 0) {
+            log.info(
+                    "탈퇴 회원 개인정보 파기 작업 완료: target={}, completed={}, failed={}",
+                    totalTargetCount,
+                    successCount,
+                    failCount
+            );
+        }
     }
 }

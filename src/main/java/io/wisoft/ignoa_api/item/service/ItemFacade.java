@@ -49,7 +49,7 @@ public class ItemFacade {
             return itemCommandService.createItem(sellerId, request, uploadedMedias);
 
         } catch (RuntimeException e) {
-            compensateAll(sellerId.toString(), uploadedMedias);
+            compensateAll(sellerId.toString(), "sellerId", uploadedMedias);
             throw e;
         }
     }
@@ -82,11 +82,11 @@ public class ItemFacade {
             );
         } catch (ObjectOptimisticLockingFailureException e) {
             log.debug("상품 수정 충돌: itemId={}, reason=낙관적 락 충돌", itemId);
-            compensateAll(itemId.toString(), uploadedMedias);
+            compensateAll(itemId.toString(), "itemId", uploadedMedias);
             throw new BusinessException(ErrorCode.ITEM_CONFLICT);
 
         } catch (RuntimeException e) {
-            compensateAll(itemId.toString(), uploadedMedias);
+            compensateAll(itemId.toString(), "itemId", uploadedMedias);
             throw e;
         }
     }
@@ -121,14 +121,14 @@ public class ItemFacade {
         }
     }
 
-    private void compensateAll(String aggregateId, List<UploadedMedia> uploadedMedias) {
+    private void compensateAll(String aggregateId, String identifierName, List<UploadedMedia> uploadedMedias) {
         for (UploadedMedia uploadedMedia : uploadedMedias) {
-            compensate(aggregateId, uploadedMedia);
+            compensate(aggregateId, identifierName, uploadedMedia);
         }
     }
 
     // DB 작업 실패 시, S3에 업로드된 미디어의 삭제를 보상 Outbox에 등록
-    private void compensate(String aggregateId, UploadedMedia uploadedMedia) {
+    private void compensate(String aggregateId, String identifierName, UploadedMedia uploadedMedia) {
         try {
             outboxAppender.saveForCompensation(
                     aggregateId,
@@ -137,10 +137,13 @@ public class ItemFacade {
                     OutboxEventType.DELETE_ITEM_MEDIA);
 
         } catch (RuntimeException compensationError) {
-            log.error("보상 Outbox 적재 실패: aggregateType=ITEM, aggregateId={}, objectKey={}, action=고아 파일 수동 정리",
+            log.error(
+                    "보상 Outbox 적재 실패: aggregateType=ITEM, {}={}, objectKey={}, action=업로드 파일 수동 확인",
+                    identifierName,
                     aggregateId,
                     uploadedMedia.objectKey(),
-                    compensationError);
+                    compensationError
+            );
         }
     }
 }

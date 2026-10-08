@@ -27,30 +27,34 @@ public class AuctionService {
     private final BidService bidService;
     private final ChatRoomService chatRoomService;
     private final TradeService tradeService;
-
     private final ItemReader itemReader;
-
     private final ItemRepository itemRepository;
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void closeAuction(Long itemId) {
+    public boolean closeAuction(Long itemId) {
         int updatedRows = itemRepository.closeIfActive(itemId, LocalDateTime.now());
 
         if (updatedRows == 0) {
             log.debug("경매 마감 생략: itemId={}, reason=마감 조건 불충족", itemId);
-            return;
+            return false;
         }
 
         boolean hasWinner = bidService.markBidResults(itemId);
 
         if (!hasWinner) {
             log.debug("경매 마감 완료: itemId={}, result=유찰", itemId);
-            return;
+            return true;
         }
 
         chatRoomService.createChatRoom(itemId);
         Trade trade = tradeService.createAuctionTrade(itemId);
-        log.debug("경매 마감 완료: itemId={}, result=낙찰, chatRoomCreated=true, tradeId={}", itemId, trade.getId());
+
+        log.debug(
+                "경매 마감 완료: itemId={}, result=낙찰, tradeId={}",
+                itemId,
+                trade.getId()
+        );
+        return true;
     }
 
     @Transactional

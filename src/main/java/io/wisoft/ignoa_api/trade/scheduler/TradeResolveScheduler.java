@@ -16,7 +16,7 @@ public class TradeResolveScheduler {
     @Scheduled(fixedDelay = 300_000L)
     @SchedulerLock(name = "tradeResolveScheduler")
     public void run() {
-        log.debug("승인 정체 거래 복구 스케줄러 실행");
+        log.debug("결제 결과 미확정 거래 재확인 스케줄러 시작");
         tradeResolveJob.resolve();
     }
 }

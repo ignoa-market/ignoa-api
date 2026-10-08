@@ -67,8 +67,13 @@ public class TradePaymentService {
             itemBuyNowService.reserve(trade.getItem().getId(), trade.getAmount(), now);
         }
 
-        log.info("결제 승인 시작: tradeId={}, orderId={}, type={}, amount={}",
-                tradeId, orderId, trade.getType(), trade.getAmount());
+        log.debug(
+                "결제 승인 시작: tradeId={}, orderId={}, type={}, amount={}",
+                tradeId,
+                orderId,
+                trade.getType(),
+                trade.getAmount()
+        );
     }
 
     @Transactional
@@ -76,8 +81,12 @@ public class TradePaymentService {
         Trade trade = tradeReader.getById(tradeId);
 
         if (tradeRepository.failConfirmIfConfirming(tradeId, orderId, TradeStatus.PAYMENT_PENDING) == 0) {
-            log.debug("결제 승인 되돌림 생략: tradeId={}, orderId={}, status={}, currentOrderId={}, reason=이미 처리됐거나 이전 시도",
-                    tradeId, orderId, trade.getStatus(), trade.getConfirmingOrderId());
+            log.debug(
+                    "결제 승인 상태 복원 생략: tradeId={}, orderId={}, currentOrderId={}, reason=승인 진행 상태 아님 또는 주문 ID 불일치",
+                    tradeId,
+                    orderId,
+                    trade.getConfirmingOrderId()
+            );
             return;
         }
 
@@ -85,6 +94,6 @@ public class TradePaymentService {
             itemBuyNowService.cancel(trade.getItem().getId());
         }
 
-        log.info("결제 승인 시작 되돌림: tradeId={}, orderId={}", tradeId, orderId);
+        log.debug("결제 승인 상태 복원: tradeId={}, orderId={}", tradeId, orderId);
     }
 }

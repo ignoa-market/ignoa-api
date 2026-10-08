@@ -83,7 +83,7 @@ public class StompAuthInterceptor implements ChannelInterceptor {
         } catch (RedisConnectionFailureException
                  | RedisSystemException
                  | RedisInfrastructureException e) {
-            log.warn("Redis 인프라 장애 - STOMP 연결 차단: reason={}", e.getClass().getSimpleName());
+            log.debug("Redis 인프라 장애 - STOMP 연결 차단: reason={}", e.getClass().getSimpleName());
             throw new MessageDeliveryException("일시적인 오류로 연결할 수 없습니다. 잠시 후 다시 시도해주세요.");
         }
     }

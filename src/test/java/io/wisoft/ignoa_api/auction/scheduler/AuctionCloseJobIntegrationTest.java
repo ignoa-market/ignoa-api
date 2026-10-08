@@ -30,6 +30,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -149,6 +150,7 @@ class AuctionCloseJobIntegrationTest extends IntegrationTestSupport {
         CountDownLatch startLatch = new CountDownLatch(1);
         CountDownLatch doneLatch = new CountDownLatch(threadCount);
         Queue<Throwable> unexpectedErrors = new ConcurrentLinkedQueue<>();
+        AtomicInteger closedCount = new AtomicInteger();
 
         // When
         try (ExecutorService executor = Executors.newFixedThreadPool(threadCount)) {
@@ -156,7 +158,9 @@ class AuctionCloseJobIntegrationTest extends IntegrationTestSupport {
                 executor.submit(() -> {
                     try {
                         startLatch.await();
-                        auctionService.closeAuction(item.getId());
+                        if (auctionService.closeAuction(item.getId())) {
+                            closedCount.incrementAndGet();
+                        }
                     } catch (Throwable throwable) {
                         unexpectedErrors.add(throwable);
                     } finally {
@@ -175,6 +179,7 @@ class AuctionCloseJobIntegrationTest extends IntegrationTestSupport {
                 .collect(Collectors.toMap(Bid::getPrice, Bid::getStatus));
 
         assertThat(unexpectedErrors).isEmpty();
+        assertThat(closedCount.get()).isEqualTo(1);
         assertThat(closedItem.getStatus()).isEqualTo(ItemStatus.BID_CLOSED);
         assertThat(statusByPrice)
                 .hasSize(2)
