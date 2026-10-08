@@ -56,10 +56,11 @@ AGENTS.md
 .claude
 .codex
 .agents
+.superpowers
 
 # Docs
-docs/
+docs
 
-# K6
+# Scripts
 /k6/
-
+/scripts
