@@ -42,8 +42,16 @@ public class TradeService {
         );
 
         Trade saved = tradeRepository.save(trade);
-        log.info("거래 생성: tradeId={}, itemId={}, buyerId={}, type={}, amount={}, paymentDeadline={}",
-                saved.getId(), itemId, saved.getBuyer().getId(), saved.getType(), saved.getAmount(), saved.getPaymentDeadline());
+
+        log.debug(
+                "거래 생성: tradeId={}, itemId={}, buyerId={}, type={}, amount={}, paymentDeadline={}",
+                saved.getId(),
+                itemId,
+                saved.getBuyer().getId(),
+                saved.getType(),
+                saved.getAmount(),
+                saved.getPaymentDeadline()
+        );
         return saved;
     }
 
@@ -58,8 +66,16 @@ public class TradeService {
         );
 
         Trade saved = tradeRepository.save(trade);
-        log.info("거래 생성: tradeId={}, itemId={}, buyerId={}, type={}, amount={}, paymentDeadline={}",
-                saved.getId(), item.getId(), saved.getBuyer().getId(), saved.getType(), saved.getAmount(), saved.getPaymentDeadline());
+
+        log.debug(
+                "거래 생성: tradeId={}, itemId={}, buyerId={}, type={}, amount={}, paymentDeadline={}",
+                saved.getId(),
+                item.getId(),
+                saved.getBuyer().getId(),
+                saved.getType(),
+                saved.getAmount(),
+                saved.getPaymentDeadline()
+        );
         return saved;
     }
 

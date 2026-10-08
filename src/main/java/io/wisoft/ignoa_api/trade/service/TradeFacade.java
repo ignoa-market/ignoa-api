@@ -12,10 +12,8 @@ import io.wisoft.ignoa_api.trade.payment.dto.PaymentPrepareRequest;
 import io.wisoft.ignoa_api.trade.payment.dto.PaymentPrepareResponse;
 import io.wisoft.ignoa_api.trade.payment.dto.PaymentResult;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-@Slf4j
 @Component
 @RequiredArgsConstructor
 public class TradeFacade {
@@ -41,6 +39,7 @@ public class TradeFacade {
             );
 
         } catch (BusinessException e) {
+            // 결제 서버가 승인 요청을 거절한 경우, 거래 승인 진행 상태를 복원
             if (e.getErrorCode() == ErrorCode.PAYMENT_CONFIRM_REJECTED) {
                 tradePaymentService.cancelConfirm(tradeId, request.orderId());
             }
@@ -55,8 +54,6 @@ public class TradeFacade {
         PaymentResult result = paymentClient.getPayment(trade.getConfirmingOrderId());
 
         if ("READY".equals(result.status())) {
-            log.debug("멈춘 거래 되돌림: tradeId={}, orderId={}, reason=승인 요청 미도착",
-                    trade.getId(), trade.getConfirmingOrderId());
             tradePaymentService.cancelConfirm(trade.getId(), trade.getConfirmingOrderId());
             return;
         }

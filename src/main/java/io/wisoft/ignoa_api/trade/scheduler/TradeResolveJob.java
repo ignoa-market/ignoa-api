@@ -69,7 +69,7 @@ public class TradeResolveJob {
 
         } catch (Exception e) {
             log.debug(
-                    "결제 결과 미확정 거래 재확인 실패: tradeId={}, orderId={}, reason={}, action=다음 주기 재시도",
+                    "결제 결과 미확정 거래 재확인 실패: tradeId={}, orderId={}, errorType={}, action=다음 주기 재시도",
                     trade.getId(),
                     trade.getConfirmingOrderId(),
                     e.getClass().getSimpleName()
