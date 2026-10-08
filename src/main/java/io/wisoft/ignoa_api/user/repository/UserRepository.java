@@ -20,19 +20,17 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     Optional<User> findByProviderAndOauthId(String provider, String oauthId);
 
+    // 지정한 탈퇴일 범위에서 마지막 처리 ID 이후의 회원을 순서대로 조회
     @Query("""
-                    SELECT u 
-                    FROM User u
-                    WHERE u.deletedAt >= :startDateTime
-                      AND u.deletedAt < :endDateTime
-                      AND u.id > :lastId
-                    ORDER BY u.id ASC    
+            SELECT u
+            FROM User u
+            WHERE u.deletedAt >= :startDateTime
+                AND u.deletedAt < :endDateTime
+                AND u.id > :lastId
+            ORDER BY u.id ASC
             """)
-    List<User> findPurgeTargets(@Param("startDateTime") LocalDateTime startDateTime,
-                                @Param("endDateTime") LocalDateTime endDateTime,
-                                @Param("lastId") Long lastId,
-                                Pageable pageable);
+    List<User> findPurgeTargets(@Param("startDateTime") LocalDateTime startDateTime, @Param("endDateTime") LocalDateTime endDateTime,
+                                @Param("lastId") Long lastId, Pageable pageable);
 
     boolean existsByEmailAndProvider(String email, String local);
 }
-

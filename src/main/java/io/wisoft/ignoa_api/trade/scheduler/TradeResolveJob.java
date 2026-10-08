@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Component
@@ -24,23 +25,57 @@ public class TradeResolveJob {
     private final TradeRepository tradeRepository;
 
     public void resolve() {
+        long startedAt = System.nanoTime();
         LocalDateTime cutoff = LocalDateTime.now().minus(STUCK_THRESHOLD);
 
         List<Trade> stuckTrades = tradeRepository.findStuckConfirming(
                 cutoff, PageRequest.of(0, BATCH_SIZE)
         );
 
+        if (stuckTrades.isEmpty()) {
+            return;
+        }
+
+        int failedCount = 0;
+
         for (Trade trade : stuckTrades) {
-            resolveOne(trade);
+            if (!resolveOne(trade)) {
+                failedCount++;
+            }
+        }
+
+        long durationMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedAt);
+
+        if (failedCount > 0) {
+            log.warn(
+                    "결제 결과 미확정 거래 재확인 결과: target={}, failed={}, durationMs={}",
+                    stuckTrades.size(),
+                    failedCount,
+                    durationMs
+            );
+        } else {
+            log.info(
+                    "결제 결과 미확정 거래 재확인 결과: target={}, failed=0, durationMs={}",
+                    stuckTrades.size(),
+                    durationMs
+            );
         }
     }
 
-    private void resolveOne(Trade trade) {
+    private boolean resolveOne(Trade trade) {
         try {
             tradeFacade.resolveStuck(trade);
+            return true;
+
         } catch (Exception e) {
-            log.warn("멈춘 거래 복구 실패: tradeId={}, orderId={}, reason=다음 주기에 재시도",
-                    trade.getId(), trade.getConfirmingOrderId(), e);
+            log.debug(
+                    "결제 결과 미확정 거래 재확인 실패: tradeId={}, orderId={}, errorType={}, action=다음 주기 재시도",
+                    trade.getId(),
+                    trade.getConfirmingOrderId(),
+                    e.getClass().getSimpleName()
+            );
+
+            return false;
         }
     }
 }

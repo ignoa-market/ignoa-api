@@ -11,6 +11,7 @@ public class AuctionCloseMetrics {
     private final MeterRegistry meterRegistry;
     private final Timer jobDuration;
     private final Counter completedItems;
+    private final Counter skippedItems;
     private final Counter failedItems;
 
     public AuctionCloseMetrics(MeterRegistry meterRegistry) {
@@ -25,6 +26,11 @@ public class AuctionCloseMetrics {
                 .tag("outcome", "completed")
                 .register(meterRegistry);
 
+        this.skippedItems = Counter.builder("auction.close.items")
+                .description("경매 자동 마감 상품 처리 건수")
+                .tag("outcome", "skipped")
+                .register(meterRegistry);
+
         this.failedItems = Counter.builder("auction.close.items")
                 .description("경매 자동 마감 상품 처리 건수")
                 .tag("outcome", "failed")
@@ -35,8 +41,9 @@ public class AuctionCloseMetrics {
         return Timer.start(meterRegistry);
     }
 
-    public long record(Timer.Sample sample, int completedCount, int failedCount) {
+    public long record(Timer.Sample sample, int completedCount, int skippedCount, int failedCount) {
         completedItems.increment(completedCount);
+        skippedItems.increment(skippedCount);
         failedItems.increment(failedCount);
 
         return sample.stop(jobDuration);

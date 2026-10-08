@@ -51,7 +51,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                      | RedisSystemException
                      | RedisInfrastructureException e) {
                 if (publicEndpointMatcher.matches(request)) {
-                    log.warn(
+                    log.debug(
                             "Redis 인프라 장애 - 공개 요청을 익명 처리: method={}, uri={}, reason={}",
                             request.getMethod(),
                             request.getRequestURI(),
@@ -63,7 +63,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     return;
                 }
 
-                log.error("Redis 인프라 장애 - 인증 차단: uri={}, reason={}",
+                log.debug(
+                        "Redis 인프라 장애 - 인증 차단: uri={}, reason={}",
                         request.getRequestURI(),
                         e.getClass().getSimpleName()
                 );
