@@ -8,6 +8,7 @@ import org.redisson.config.SingleServerConfig;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.util.StringUtils;
 
 import java.time.Duration;
 
@@ -16,6 +17,9 @@ public class RedissonConfig {
 
     private final String host;
     private final int port;
+    private final String password;
+    private final boolean ssl;
+
     private final Duration connectTimeout;
     private final Duration responseTimeout;
     private final int retryAttempts;
@@ -24,6 +28,9 @@ public class RedissonConfig {
     public RedissonConfig(
             @Value("${spring.data.redis.host}") String host,
             @Value("${spring.data.redis.port}") int port,
+            @Value("${spring.data.redis.password:}") String password,
+            @Value("${spring.data.redis.ssl.enabled:false}") boolean ssl,
+
             @Value("${ignoa.redis.redisson.connect-timeout}") Duration connectTimeout,
             @Value("${ignoa.redis.redisson.response-timeout}") Duration responseTimeout,
             @Value("${ignoa.redis.redisson.retry-attempts}") int retryAttempts,
@@ -31,6 +38,8 @@ public class RedissonConfig {
     ) {
         this.host = host;
         this.port = port;
+        this.password = password;
+        this.ssl = ssl;
         this.connectTimeout = connectTimeout;
         this.responseTimeout = responseTimeout;
         this.retryAttempts = retryAttempts;
@@ -46,12 +55,18 @@ public class RedissonConfig {
     }
 
     SingleServerConfig configure(Config config) {
-        return config.useSingleServer()
-                .setAddress("redis://" + host + ":" + port)
+        SingleServerConfig serverConfig = config.useSingleServer()
+                .setAddress((ssl ? "rediss://" : "redis://") + host + ":" + port)
                 .setConnectTimeout(toMillis(connectTimeout))
                 .setTimeout(toMillis(responseTimeout))
                 .setRetryAttempts(retryAttempts)
                 .setRetryDelay(new ConstantDelay(retryDelay));
+
+        if (StringUtils.hasText(password)) {
+            config.setPassword(password);
+        }
+
+        return serverConfig;
     }
 
     private int toMillis(Duration duration) {

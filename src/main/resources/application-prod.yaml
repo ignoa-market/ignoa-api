@@ -12,8 +12,11 @@ spring:
 
   data:
     redis:
-      host: redis
+      host: ${REDIS_HOST}
+      password: ${REDIS_PASSWORD}
       port: 6379
+      ssl:
+        enabled: ${REDIS_SSL:true}
 
 ### CloudFront 오리진 검증 ###
 ignoa:
