@@ -37,6 +37,9 @@ services:
       REDIS_HOST: redis
       REDIS_PASSWORD: ""
       REDIS_SSL: "false"
+      IGNOA_CLOUDFRONTORIGIN_ENABLED: "false"
+      CLOUDFRONT_ORIGIN_VERIFY_SECRET: ""
+      SENTRY_DSN: ""
     ports:
       - "38080:38080"
     healthcheck:
