@@ -88,8 +88,10 @@ jobs:
               "docker compose pull",
               "docker compose up -d",
               "if [ \"$ALLOY_CHANGED\" = 1 ]; then docker compose restart alloy; fi",
-              "for i in $(seq 1 36); do curl -fsS localhost:38080/actuator/health 2>/dev/null | grep -q UP && echo HEALTHY && exit 0; sleep 5; done",
-              "echo UNHEALTHY; docker compose ps; docker compose logs --tail=80 app; exit 1"
+              "HEALTHY=0; for i in $(seq 1 36); do if curl -fsS localhost:38080/actuator/health 2>/dev/null | grep -q UP; then HEALTHY=1; break; fi; sleep 5; done",
+              "if [ \"$HEALTHY\" != 1 ]; then echo UNHEALTHY; docker compose ps; docker compose logs --tail=80 app; exit 1; fi",
+              "echo HEALTHY",
+              "docker images ghcr.io/ignoa-market/ignoa-api --format \"{{.CreatedAt}}\t{{.Tag}}\" | sort -r | cut -f2 | grep -v -x -e \"$IMAGE_TAG\" -e \"<none>\" | tail -n +2 | xargs -r -I{} docker rmi ghcr.io/ignoa-market/ignoa-api:{} || echo \"이전 이미지 정리 실패\""
             ]
           }' > params.json
 
