@@ -34,6 +34,12 @@ services:
       SPRING_PROFILES_ACTIVE: prod
       TZ: Asia/Seoul
       MYSQL_HOST: mysql
+      REDIS_HOST: redis
+      REDIS_PASSWORD: ""
+      REDIS_SSL: "false"
+      IGNOA_CLOUDFRONTORIGIN_ENABLED: "false"
+      CLOUDFRONT_ORIGIN_VERIFY_SECRET: ""
+      SENTRY_DSN: ""
     ports:
       - "38080:38080"
     healthcheck:
