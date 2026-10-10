@@ -20,7 +20,7 @@ groups:
                     uid: eg0q0rxkuivwgc
                 editorMode: code
                 expr: |-
-                    sum by (job) (up{job=~"ignoa-api|ignoa-payment"})
+                    sum by (job) (last_over_time(up{job=~"ignoa-api|ignoa-payment"}[2m]))
                       or label_replace(vector(0), "job", "ignoa-api", "", "")
                       or label_replace(vector(0), "job", "ignoa-payment", "", "")
                 instant: true
