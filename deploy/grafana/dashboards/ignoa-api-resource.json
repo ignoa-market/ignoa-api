@@ -89,7 +89,24 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "percentunit"
+          "unit": "percentunit",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 0.7
+              },
+              {
+                "color": "red",
+                "value": 0.85
+              }
+            ]
+          }
         },
         "overrides": []
       },
@@ -134,7 +151,20 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "short"
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
         },
         "overrides": []
       },
@@ -164,8 +194,8 @@
     },
     {
       "type": "stat",
-      "title": "락 Redis 오류 (구간 합계)",
-      "description": "Redis 장애로 락 획득에 실패한 횟수. 마감은 이때 fail-open",
+      "title": "Tomcat 스레드 사용률 (현재)",
+      "description": "요청 처리 스레드 중 사용 중인 비율. 50%를 넘기 시작하면 확인",
       "id": 5,
       "datasource": {
         "type": "prometheus",
@@ -179,7 +209,24 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "short"
+          "unit": "percentunit",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 0.5
+              },
+              {
+                "color": "red",
+                "value": 0.8
+              }
+            ]
+          }
         },
         "overrides": []
       },
@@ -202,7 +249,7 @@
             "uid": "eg0q0rxkuivwgc"
           },
           "refId": "A",
-          "expr": "sum(increase(lock_acquire_wait_seconds_count{application=\"ignoa-api\", outcome=\"infra_error\"}[$__range])) or vector(0)",
+          "expr": "tomcat_threads_busy_threads{application=\"ignoa-api\"} / tomcat_threads_config_max_threads{application=\"ignoa-api\"}",
           "instant": true
         }
       ]
