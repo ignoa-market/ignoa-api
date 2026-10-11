@@ -74,6 +74,15 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
             """)
     List<ExpiredItem> findExpiredActiveItems(@Param("now") LocalDateTime now, Pageable pageable);
 
+    // 경매 마감 - 마감되지 않은 만료 상품 수 (밀린 경매 지표)
+    @Query("""
+            SELECT COUNT(i)
+            FROM Item i
+            WHERE i.status = 'ACTIVE'
+                AND i.endAt <= :now
+            """)
+    long countOverdue(@Param("now") LocalDateTime now);
+
     // 입찰 조건부 UPDATE
     @Modifying
     @Query("""
