@@ -45,7 +45,7 @@ class RedissonDistributedLockTest {
     @BeforeEach
     void setUp() {
         meterRegistry = new SimpleMeterRegistry();
-        distributedLock = new RedissonDistributedLock(redissonClient, meterRegistry);
+        distributedLock = new RedissonDistributedLock(redissonClient, new LockMetrics(meterRegistry));
         given(redissonClient.getLock(anyString())).willReturn(lock);
     }
 
@@ -66,6 +66,9 @@ class RedissonDistributedLockTest {
         // Then
         assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.LOCK_ACQUISITION_FAILED);
         verify(lock, never()).unlock();
+        assertThat(meterRegistry.get("lock.acquire.wait")
+                .tags("key", "item:lock", "operation", "bid", "outcome", "timeout")
+                .timer().count()).isEqualTo(1);
     }
 
     @Test

@@ -1,7 +1,5 @@
 package io.wisoft.ignoa_api.global.infra.lock;
 
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.Timer.Sample;
 import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
@@ -21,7 +19,7 @@ import java.util.function.Supplier;
 public class RedissonDistributedLock {
 
     private final RedissonClient redissonClient;
-    private final MeterRegistry meterRegistry;
+    private final LockMetrics lockMetrics;
 
     public <T> T executeWithLock(String key, LockOperation operation, Supplier<T> task) {
         try {
@@ -49,14 +47,14 @@ public class RedissonDistributedLock {
         acquireLock(lock, key, operation);
 
         try {
-            return recordHoldTime(key, operation, task);
+            return lockMetrics.recordHoldTime(operation, task);
         } finally {
             release(lock, key, operation);
         }
     }
 
     private void acquireLock(RLock lock, String key, LockOperation operation) {
-        Sample sample = Timer.start(meterRegistry);
+        Sample sample = lockMetrics.start();
         LockAcquireOutcome outcome = LockAcquireOutcome.ERROR;
 
         try {
@@ -79,7 +77,7 @@ public class RedissonDistributedLock {
             throw new LockInfrastructureException("Redis 인프라 장애 - 분산 락 획득 실패, key = " + key, e);
 
         } finally {
-            recordAcquireWaitTime(sample, key, operation, outcome);
+            lockMetrics.recordAcquireWait(sample, operation, outcome);
         }
     }
 
@@ -92,29 +90,5 @@ public class RedissonDistributedLock {
         } catch (RedisException e) {
             log.warn("분산 락 해제 실패 - 작업은 정상 완료됨. key={}, operation={}", key, operation, e);
         }
-    }
-
-    private void recordAcquireWaitTime(Sample sample, String key, LockOperation operation, LockAcquireOutcome outcome) {
-        Timer acquireWaitTimer = Timer.builder("lock.acquire.wait")
-                .tags("key", keyPrefix(key))
-                .tag("operation", operation.getMetricTag())
-                .tags("outcome", outcome.getMetricTag())
-                .register(meterRegistry);
-
-        sample.stop(acquireWaitTimer);
-    }
-
-    private <T> T recordHoldTime(String key, LockOperation operation, Supplier<T> task) {
-        Timer holdTimer = Timer.builder("lock.hold.time")
-                .tag("key", keyPrefix(key))
-                .tag("operation", operation.getMetricTag())
-                .register(meterRegistry);
-
-        return holdTimer.record(task);
-    }
-
-    private String keyPrefix(String key) {
-        int i = key.lastIndexOf(':');
-        return i > 0 ? key.substring(0, i) : key;
     }
 }
