@@ -1,5 +1,10 @@
 package io.wisoft.ignoa_api.global.infra.lock;
 
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+
+@Getter
+@RequiredArgsConstructor
 public enum LockAcquireOutcome {
 
     ACQUIRED("acquired"),
@@ -9,12 +14,4 @@ public enum LockAcquireOutcome {
     ERROR("error");
 
     private final String metricTag;
-
-    LockAcquireOutcome(String metricTag) {
-        this.metricTag = metricTag;
-    }
-
-    public String metricTag() {
-        return metricTag;
-    }
 }

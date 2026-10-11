@@ -16,7 +16,7 @@ public class BidFacade {
     private final BidService bidService;
 
     public BidResponse placeBid(Long itemId, Long bidderId, BidCreateRequest request) {
-        return distributedLock.executeWithRequiredLock(
+        return distributedLock.executeWithLock(
                 ItemLockKey.of(itemId),
                 LockOperation.BID,
                 () -> bidService.placeBid(itemId, bidderId, request)

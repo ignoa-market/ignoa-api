@@ -23,7 +23,7 @@ public class RedissonDistributedLock {
     private final RedissonClient redissonClient;
     private final MeterRegistry meterRegistry;
 
-    public <T> T executeWithRequiredLock(String key, LockOperation operation, Supplier<T> task) {
+    public <T> T executeWithLock(String key, LockOperation operation, Supplier<T> task) {
         try {
             return execute(key, operation, task);
 
@@ -33,11 +33,7 @@ public class RedissonDistributedLock {
         }
     }
 
-    public void executeWithOptionalLock(String key, LockOperation operation, Runnable task) {
-        executeWithOptionalLockResult(key, operation, toSupplier(task));
-    }
-
-    public <T> T executeWithOptionalLockResult(String key, LockOperation operation, Supplier<T> task) {
+    public <T> T executeWithLockOrFailOpen(String key, LockOperation operation, Supplier<T> task) {
         try {
             return execute(key, operation, task);
 
@@ -47,51 +43,31 @@ public class RedissonDistributedLock {
         }
     }
 
-    // 실제 락 획득 로직, Task를 실행하고 락을 해제한다.
+    // 락 획득 → 작업 실행 → 락 해제
     private <T> T execute(String key, LockOperation operation, Supplier<T> task) {
         RLock lock = redissonClient.getLock(key);
-
-        boolean acquired = acquireLock(lock, key, operation);
-
-        if (!acquired) {
-            throw new BusinessException(ErrorCode.LOCK_ACQUISITION_FAILED);
-        }
+        acquireLock(lock, key, operation);
 
         try {
             return recordHoldTime(key, operation, task);
-
         } finally {
-            try {
-                if (lock.isHeldByCurrentThread()) {
-                    lock.unlock();
-                }
-
-            } catch (RedisException e) {
-                log.warn(
-                        "분산 락 해제 실패 - 작업은 정상 완료됨. key={}, operation={}",
-                        key,
-                        operation,
-                        e
-                );
-            }
+            release(lock, key, operation);
         }
     }
 
-    private boolean acquireLock(RLock lock, String key, LockOperation operation) {
+    private void acquireLock(RLock lock, String key, LockOperation operation) {
         Sample sample = Timer.start(meterRegistry);
         LockAcquireOutcome outcome = LockAcquireOutcome.ERROR;
 
         try {
-            boolean acquired = lock.tryLock(
-                    operation.waitMillis(),
-                    TimeUnit.MILLISECONDS
-            );
+            boolean acquired = lock.tryLock(operation.getWaitMillis(), TimeUnit.MILLISECONDS);
 
-            outcome = acquired
-                    ? LockAcquireOutcome.ACQUIRED
-                    : LockAcquireOutcome.TIMEOUT;
+            if (!acquired) {
+                outcome = LockAcquireOutcome.TIMEOUT;
+                throw new BusinessException(ErrorCode.LOCK_ACQUISITION_FAILED);
+            }
 
-            return acquired;
+            outcome = LockAcquireOutcome.ACQUIRED;
 
         } catch (InterruptedException e) {
             outcome = LockAcquireOutcome.INTERRUPTED;
@@ -107,11 +83,22 @@ public class RedissonDistributedLock {
         }
     }
 
+    private static void release(RLock lock, String key, LockOperation operation) {
+        try {
+            if (lock.isHeldByCurrentThread()) {
+                lock.unlock();
+            }
+
+        } catch (RedisException e) {
+            log.warn("분산 락 해제 실패 - 작업은 정상 완료됨. key={}, operation={}", key, operation, e);
+        }
+    }
+
     private void recordAcquireWaitTime(Sample sample, String key, LockOperation operation, LockAcquireOutcome outcome) {
         Timer acquireWaitTimer = Timer.builder("lock.acquire.wait")
                 .tags("key", keyPrefix(key))
-                .tag("operation", operation.metricTag())
-                .tags("outcome", outcome.metricTag())
+                .tag("operation", operation.getMetricTag())
+                .tags("outcome", outcome.getMetricTag())
                 .register(meterRegistry);
 
         sample.stop(acquireWaitTimer);
@@ -120,17 +107,10 @@ public class RedissonDistributedLock {
     private <T> T recordHoldTime(String key, LockOperation operation, Supplier<T> task) {
         Timer holdTimer = Timer.builder("lock.hold.time")
                 .tag("key", keyPrefix(key))
-                .tag("operation", operation.metricTag())
+                .tag("operation", operation.getMetricTag())
                 .register(meterRegistry);
 
         return holdTimer.record(task);
-    }
-
-    private static Supplier<Object> toSupplier(Runnable task) {
-        return () -> {
-            task.run();
-            return null;
-        };
     }
 
     private String keyPrefix(String key) {

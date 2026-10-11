@@ -60,7 +60,7 @@ class RedissonDistributedLockTest {
         // When
         BusinessException exception = catchThrowableOfType(
                 BusinessException.class,
-                () -> distributedLock.executeWithRequiredLock(key, LockOperation.BID, () -> "결과")
+                () -> distributedLock.executeWithLock(key, LockOperation.BID, () -> "결과")
         );
 
         // Then
@@ -79,7 +79,7 @@ class RedissonDistributedLockTest {
         // When
         BusinessException exception = catchThrowableOfType(
                 BusinessException.class,
-                () -> distributedLock.executeWithRequiredLock(key, LockOperation.BID, () -> "결과")
+                () -> distributedLock.executeWithLock(key, LockOperation.BID, () -> "결과")
         );
 
         // Then
@@ -96,7 +96,7 @@ class RedissonDistributedLockTest {
         given(lock.isHeldByCurrentThread()).willReturn(true);
 
         // When
-        String result = distributedLock.executeWithRequiredLock(key, LockOperation.BID, () -> "입찰 완료");
+        String result = distributedLock.executeWithLock(key, LockOperation.BID, () -> "입찰 완료");
 
         // Then
         assertThat(result).isEqualTo("입찰 완료");
@@ -128,7 +128,7 @@ class RedissonDistributedLockTest {
         given(lock.isHeldByCurrentThread()).willThrow(new RedisException("Redis 장애"));
 
         // When
-        String result = distributedLock.executeWithRequiredLock(key, LockOperation.BID, () -> "입찰 완료");
+        String result = distributedLock.executeWithLock(key, LockOperation.BID, () -> "입찰 완료");
 
         // Then
         assertThat(result).isEqualTo("입찰 완료");
@@ -145,7 +145,7 @@ class RedissonDistributedLockTest {
         willThrow(new RedisException("Redis 장애")).given(lock).unlock();
 
         // When
-        String result = distributedLock.executeWithRequiredLock(key, LockOperation.BID, () -> "입찰 완료");
+        String result = distributedLock.executeWithLock(key, LockOperation.BID, () -> "입찰 완료");
 
         // Then
         assertThat(result).isEqualTo("입찰 완료");
@@ -163,7 +163,7 @@ class RedissonDistributedLockTest {
         willThrow(new RedisException("Redis 장애")).given(lock).unlock();
 
         // When
-        distributedLock.executeWithRequiredLock(key, LockOperation.BID, () -> {
+        distributedLock.executeWithLock(key, LockOperation.BID, () -> {
             executionCount.incrementAndGet();
             return "입찰 완료";
         });
@@ -173,28 +173,11 @@ class RedissonDistributedLockTest {
     }
 
     @Test
-    void 자동_마감은_락_획득_중_인프라_장애가_발생해도_락_없이_task를_실행한다() throws InterruptedException {
-        // Given
-        String key = "item:lock:1";
-        AtomicInteger executionCount = new AtomicInteger();
-
-        given(lock.tryLock(anyLong(), any(TimeUnit.class)))
-                .willThrow(new RedisException("Redis 장애"));
-
-        // When
-        distributedLock.executeWithOptionalLock(key, LockOperation.AUTO_CLOSE, executionCount::incrementAndGet);
-
-        // Then
-        assertThat(executionCount.get()).isEqualTo(1);
-        verify(lock, never()).unlock();
-    }
-
-    @Test
-    void 선택적_락은_정상_획득_후_task의_결과를_반환한다() throws InterruptedException {
+    void Fail_Open_락은_정상_획득_후_task의_결과를_반환한다() throws InterruptedException {
         given(lock.tryLock(anyLong(), any(TimeUnit.class))).willReturn(true);
         given(lock.isHeldByCurrentThread()).willReturn(true);
 
-        boolean closed = distributedLock.executeWithOptionalLockResult(
+        boolean closed = distributedLock.executeWithLockOrFailOpen(
                 "item:lock:1", LockOperation.AUTO_CLOSE, () -> true
         );
 
@@ -203,11 +186,11 @@ class RedissonDistributedLockTest {
     }
 
     @Test
-    void 선택적_락은_Redis_장애_시_락_없이_실행한_task의_결과를_반환한다() throws InterruptedException {
+    void Fail_Open_락은_Redis_장애_시_락_없이_실행한_task의_결과를_반환한다() throws InterruptedException {
         given(lock.tryLock(anyLong(), any(TimeUnit.class)))
                 .willThrow(new RedisException("Redis 장애"));
 
-        boolean closed = distributedLock.executeWithOptionalLockResult(
+        boolean closed = distributedLock.executeWithLockOrFailOpen(
                 "item:lock:1", LockOperation.AUTO_CLOSE, () -> false
         );
 
@@ -221,7 +204,7 @@ class RedissonDistributedLockTest {
                 .willThrow(new RedisException("Redis 장애"));
 
         try (LogCapture logs = new LogCapture()) {
-            distributedLock.executeWithOptionalLockResult(
+            distributedLock.executeWithLockOrFailOpen(
                     "item:lock:1", LockOperation.AUTO_CLOSE, () -> false);
 
             assertThat(logs.events()).singleElement()
