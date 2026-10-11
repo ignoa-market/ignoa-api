@@ -1,5 +1,6 @@
 package io.wisoft.ignoa_api.auction.scheduler;
 
+import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.wisoft.ignoa_api.auction.metric.AuctionCloseMetrics;
 import io.wisoft.ignoa_api.auction.service.AuctionFacade;
@@ -10,6 +11,7 @@ import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -68,6 +70,35 @@ class AuctionCloseJobTest {
                 .isEqualTo(1.0);
         assertThat(registry.get("auction.close.items").tag("outcome", "failed").counter().count())
                 .isEqualTo(1.0);
+    }
+
+    @Test
+    void 마감_지연은_실제로_마감한_경매만_종료_시각_기준으로_기록한다() {
+        ItemRepository itemRepository = mock(ItemRepository.class);
+        AuctionFacade auctionFacade = mock(AuctionFacade.class);
+        SimpleMeterRegistry registry = new SimpleMeterRegistry();
+        AuctionCloseJob job = new AuctionCloseJob(
+                auctionFacade,
+                itemRepository,
+                new AuctionCloseMetrics(registry),
+                Runnable::run
+        );
+        LocalDateTime endAt = LocalDateTime.now().minusSeconds(10);
+
+        when(itemRepository.findExpiredActiveItems(any(LocalDateTime.class), any(Pageable.class)))
+                .thenReturn(List.of(
+                        new ExpiredItem(1L, endAt),
+                        new ExpiredItem(2L, endAt),
+                        new ExpiredItem(3L, endAt)
+                ));
+        when(auctionFacade.closeAuction(1L)).thenReturn(true);
+        when(auctionFacade.closeAuction(3L)).thenThrow(new IllegalStateException("마감 실패"));
+
+        job.closeExpiredAuctions();
+
+        Timer closeLag = registry.get("auction.close.lag").timer();
+        assertThat(closeLag.count()).isEqualTo(1);
+        assertThat(closeLag.totalTime(TimeUnit.SECONDS)).isBetween(10.0, 11.0);
     }
 
     private static ExpiredItem expiredItem(Long id) {

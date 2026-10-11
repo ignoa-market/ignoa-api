@@ -52,7 +52,7 @@ public class AuctionCloseJob {
     private void closeInParallel(List<ExpiredItem> expiredItems, CloseCounts counts) {
         List<CompletableFuture<Void>> futures = expiredItems.stream()
                 .map(item -> CompletableFuture.runAsync(
-                        () -> closeAuction(item.id(), counts.completed, counts.skipped, counts.failed),
+                        () -> closeAuction(item, counts),
                         auctionCloseExecutor
                 ))
                 .toList();
@@ -60,14 +60,18 @@ public class AuctionCloseJob {
         CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).join();
     }
 
-    private void closeAuction(Long itemId, AtomicInteger completedCount, AtomicInteger skippedCount, AtomicInteger failedCount) {
+    private void closeAuction(ExpiredItem item, CloseCounts counts) {
         try {
-            if (auctionFacade.closeAuction(itemId)) completedCount.incrementAndGet();
-            else skippedCount.incrementAndGet();
+            if (auctionFacade.closeAuction(item.id())) {
+                counts.completed.incrementAndGet();
+                auctionCloseMetrics.recordLag(item.endAt(), LocalDateTime.now());
+            } else {
+                counts.skipped.incrementAndGet();
+            }
 
         } catch (Exception e) {
-            failedCount.incrementAndGet();
-            log.error("만료 경매 마감 처리 실패: itemId={}", itemId, e);
+            counts.failed.incrementAndGet();
+            log.error("만료 경매 마감 처리 실패: itemId={}", item.id(), e);
         }
     }
 
@@ -76,7 +80,7 @@ public class AuctionCloseJob {
         int skipped = counts.skipped.get();
         int failed = counts.failed.get();
 
-        long durationNanos = auctionCloseMetrics.record(sample, completed, skipped, failed);
+        long durationNanos = auctionCloseMetrics.recordJob(sample, completed, skipped, failed);
 
         if (targetCount > 0) {
             log.info(
