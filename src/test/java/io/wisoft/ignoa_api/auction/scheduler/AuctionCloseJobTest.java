@@ -3,6 +3,7 @@ package io.wisoft.ignoa_api.auction.scheduler;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.wisoft.ignoa_api.auction.metric.AuctionCloseMetrics;
 import io.wisoft.ignoa_api.auction.service.AuctionFacade;
+import io.wisoft.ignoa_api.item.repository.ExpiredItem;
 import io.wisoft.ignoa_api.item.repository.ItemRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.Pageable;
@@ -29,8 +30,8 @@ class AuctionCloseJobTest {
                 Runnable::run
         );
 
-        when(itemRepository.findExpiredActiveItemIds(any(LocalDateTime.class), any(Pageable.class)))
-                .thenReturn(List.of(1L));
+        when(itemRepository.findExpiredActiveItems(any(LocalDateTime.class), any(Pageable.class)))
+                .thenReturn(List.of(expiredItem(1L)));
 
         job.closeExpiredAuctions();
 
@@ -54,8 +55,8 @@ class AuctionCloseJobTest {
                 Runnable::run
         );
 
-        when(itemRepository.findExpiredActiveItemIds(any(LocalDateTime.class), any(Pageable.class)))
-                .thenReturn(List.of(1L, 2L, 3L));
+        when(itemRepository.findExpiredActiveItems(any(LocalDateTime.class), any(Pageable.class)))
+                .thenReturn(List.of(expiredItem(1L), expiredItem(2L), expiredItem(3L)));
         when(auctionFacade.closeAuction(1L)).thenReturn(true);
         when(auctionFacade.closeAuction(3L)).thenThrow(new IllegalStateException("마감 실패"));
 
@@ -67,5 +68,9 @@ class AuctionCloseJobTest {
                 .isEqualTo(1.0);
         assertThat(registry.get("auction.close.items").tag("outcome", "failed").counter().count())
                 .isEqualTo(1.0);
+    }
+
+    private static ExpiredItem expiredItem(Long id) {
+        return new ExpiredItem(id, LocalDateTime.now());
     }
 }
