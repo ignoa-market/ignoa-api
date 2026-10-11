@@ -109,7 +109,7 @@ class ItemFacadeTest {
     void 수정_보상_Outbox_적재_실패_로그에는_itemId를_남긴다() {
         given(storageService.upload(any(MultipartFile.class), any()))
                 .willReturn(new StorageUploadResult("items/test.jpg", "image/jpeg"));
-        given(redissonDistributedLock.executeWithRequiredLock(anyString(), any(), any()))
+        given(redissonDistributedLock.executeWithLock(anyString(), any(), any()))
                 .willThrow(new IllegalStateException("상품 수정 실패"));
         doThrow(new IllegalStateException("Outbox 저장 실패"))
                 .when(outboxAppender).saveForCompensation(anyString(), anyString(), anyString(), any());

@@ -1,0 +1,671 @@
+{
+  "uid": "ignoa-overview",
+  "title": "ignoa / 개요",
+  "tags": [
+    "ignoa",
+    "overview"
+  ],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "refresh": "1m",
+  "editable": true,
+  "panels": [
+    {
+      "type": "row",
+      "title": "상태",
+      "id": 1,
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "panels": []
+    },
+    {
+      "type": "stat",
+      "title": "api",
+      "description": "Alloy가 /actuator/prometheus를 가져오는 데 성공하면 UP. '수집 안 됨'이면 EC2나 Alloy 자체가 멈춘 것일 수 있음",
+      "id": 2,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "eg0q0rxkuivwgc"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "noValue": "수집 안 됨",
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "1": {
+                  "text": "UP",
+                  "color": "green"
+                },
+                "0": {
+                  "text": "DOWN",
+                  "color": "red"
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "eg0q0rxkuivwgc"
+          },
+          "refId": "A",
+          "expr": "up{job=\"ignoa-api\"}",
+          "instant": true
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "api 가동 시간",
+      "description": "값이 작으면 최근에 재시작(배포 또는 장애)",
+      "id": 3,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "eg0q0rxkuivwgc"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "none",
+        "graphMode": "none",
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "eg0q0rxkuivwgc"
+          },
+          "refId": "A",
+          "expr": "process_uptime_seconds{job=\"ignoa-api\"}",
+          "instant": true
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "payment",
+      "description": "Alloy가 /actuator/prometheus를 가져오는 데 성공하면 UP. '수집 안 됨'이면 EC2나 Alloy 자체가 멈춘 것일 수 있음",
+      "id": 4,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "eg0q0rxkuivwgc"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "noValue": "수집 안 됨",
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "1": {
+                  "text": "UP",
+                  "color": "green"
+                },
+                "0": {
+                  "text": "DOWN",
+                  "color": "red"
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "eg0q0rxkuivwgc"
+          },
+          "refId": "A",
+          "expr": "up{job=\"ignoa-payment\"}",
+          "instant": true
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "payment 가동 시간",
+      "description": "값이 작으면 최근에 재시작(배포 또는 장애)",
+      "id": 5,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "eg0q0rxkuivwgc"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "none",
+        "graphMode": "none",
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "eg0q0rxkuivwgc"
+          },
+          "refId": "A",
+          "expr": "process_uptime_seconds{job=\"ignoa-payment\"}",
+          "instant": true
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "api",
+      "id": 6,
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 5
+      },
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "title": "초당 요청 수",
+      "description": "/actuator 요청(헬스체크·지표 수집)은 제외",
+      "id": 7,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "eg0q0rxkuivwgc"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 6
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "min": 0,
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 10,
+            "showPoints": "never",
+            "spanNulls": true
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "eg0q0rxkuivwgc"
+          },
+          "refId": "A",
+          "expr": "sum(rate(http_server_requests_seconds_count{job=\"ignoa-api\", uri!~\"/actuator.*\"}[$__rate_interval]))",
+          "legendFormat": "전체",
+          "range": true
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "eg0q0rxkuivwgc"
+          },
+          "refId": "B",
+          "expr": "sum(rate(http_server_requests_seconds_count{job=\"ignoa-api\", uri!~\"/actuator.*\", status=~\"5..\"}[$__rate_interval])) or vector(0)",
+          "legendFormat": "5xx",
+          "range": true
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "5xx 비율",
+      "description": "요청이 없는 구간은 비어 보임",
+      "id": 8,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "eg0q0rxkuivwgc"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 6
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 10,
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "max": 1
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "eg0q0rxkuivwgc"
+          },
+          "refId": "A",
+          "expr": "(sum(rate(http_server_requests_seconds_count{job=\"ignoa-api\", uri!~\"/actuator.*\", status=~\"5..\"}[$__rate_interval])) or vector(0)) / sum(rate(http_server_requests_seconds_count{job=\"ignoa-api\", uri!~\"/actuator.*\"}[$__rate_interval]))",
+          "legendFormat": "5xx 비율",
+          "range": true
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "응답 시간",
+      "description": "p99는 응답 시간 히스토그램 설정이 있어야 계산됨",
+      "id": 9,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "eg0q0rxkuivwgc"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 6
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "min": 0,
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 10,
+            "showPoints": "never",
+            "spanNulls": true
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "eg0q0rxkuivwgc"
+          },
+          "refId": "A",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(http_server_requests_seconds_bucket{job=\"ignoa-api\", uri!~\"/actuator.*\"}[$__rate_interval])))",
+          "legendFormat": "p99",
+          "range": true
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "eg0q0rxkuivwgc"
+          },
+          "refId": "B",
+          "expr": "sum(rate(http_server_requests_seconds_sum{job=\"ignoa-api\", uri!~\"/actuator.*\"}[$__rate_interval])) / sum(rate(http_server_requests_seconds_count{job=\"ignoa-api\", uri!~\"/actuator.*\"}[$__rate_interval]))",
+          "legendFormat": "평균",
+          "range": true
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "payment",
+      "id": 10,
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 14
+      },
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "title": "초당 요청 수",
+      "description": "/actuator 요청(헬스체크·지표 수집)은 제외",
+      "id": 11,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "eg0q0rxkuivwgc"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 15
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "min": 0,
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 10,
+            "showPoints": "never",
+            "spanNulls": true
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "eg0q0rxkuivwgc"
+          },
+          "refId": "A",
+          "expr": "sum(rate(http_server_requests_seconds_count{job=\"ignoa-payment\", uri!~\"/actuator.*\"}[$__rate_interval]))",
+          "legendFormat": "전체",
+          "range": true
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "eg0q0rxkuivwgc"
+          },
+          "refId": "B",
+          "expr": "sum(rate(http_server_requests_seconds_count{job=\"ignoa-payment\", uri!~\"/actuator.*\", status=~\"5..\"}[$__rate_interval])) or vector(0)",
+          "legendFormat": "5xx",
+          "range": true
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "5xx 비율",
+      "description": "요청이 없는 구간은 비어 보임",
+      "id": 12,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "eg0q0rxkuivwgc"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 15
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 10,
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "max": 1
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "eg0q0rxkuivwgc"
+          },
+          "refId": "A",
+          "expr": "(sum(rate(http_server_requests_seconds_count{job=\"ignoa-payment\", uri!~\"/actuator.*\", status=~\"5..\"}[$__rate_interval])) or vector(0)) / sum(rate(http_server_requests_seconds_count{job=\"ignoa-payment\", uri!~\"/actuator.*\"}[$__rate_interval]))",
+          "legendFormat": "5xx 비율",
+          "range": true
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "응답 시간",
+      "description": "p99는 응답 시간 히스토그램 설정이 있어야 계산됨 (payment는 배포 후부터)",
+      "id": 13,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "eg0q0rxkuivwgc"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 15
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "min": 0,
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 10,
+            "showPoints": "never",
+            "spanNulls": true
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "eg0q0rxkuivwgc"
+          },
+          "refId": "A",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(http_server_requests_seconds_bucket{job=\"ignoa-payment\", uri!~\"/actuator.*\"}[$__rate_interval])))",
+          "legendFormat": "p99",
+          "range": true
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "eg0q0rxkuivwgc"
+          },
+          "refId": "B",
+          "expr": "sum(rate(http_server_requests_seconds_sum{job=\"ignoa-payment\", uri!~\"/actuator.*\"}[$__rate_interval])) / sum(rate(http_server_requests_seconds_count{job=\"ignoa-payment\", uri!~\"/actuator.*\"}[$__rate_interval]))",
+          "legendFormat": "평균",
+          "range": true
+        }
+      ]
+    }
+  ],
+  "templating": {
+    "list": []
+  },
+  "annotations": {
+    "list": []
+  },
+  "links": [
+    {
+      "title": "ignoa-api / 자원",
+      "type": "link",
+      "url": "/d/ignoa-api-resource",
+      "keepTime": true,
+      "icon": "dashboard",
+      "targetBlank": false
+    }
+  ]
+}

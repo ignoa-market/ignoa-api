@@ -1,0 +1,151 @@
+apiVersion: 1
+groups:
+    - orgId: 1
+      name: availability
+      folder: ignoa
+      interval: 1m
+      rules:
+        - uid: fg0t40ojs7ldsd
+          title: TargetDown
+          condition: C
+          data:
+            - refId: A
+              relativeTimeRange:
+                from: 600
+                to: 0
+              datasourceUid: eg0q0rxkuivwgc
+              model:
+                datasource:
+                    type: prometheus
+                    uid: eg0q0rxkuivwgc
+                editorMode: code
+                expr: |-
+                    sum by (job) (last_over_time(up{job=~"ignoa-api|ignoa-payment"}[2m]))
+                      or label_replace(vector(0), "job", "ignoa-api", "", "")
+                      or label_replace(vector(0), "job", "ignoa-payment", "", "")
+                instant: true
+                intervalMs: 1000
+                legendFormat: __auto
+                maxDataPoints: 43200
+                range: false
+                refId: A
+            - refId: C
+              queryType: expression
+              datasourceUid: __expr__
+              model:
+                conditions:
+                    - evaluator:
+                        params:
+                            - 1
+                        type: lt
+                      operator:
+                        type: and
+                      query:
+                        params:
+                            - C
+                      reducer:
+                        params: []
+                        type: last
+                      type: query
+                datasource:
+                    type: __expr__
+                    uid: __expr__
+                expression: A
+                intervalMs: 1000
+                maxDataPoints: 43200
+                refId: C
+                type: threshold
+          noDataState: Alerting
+          execErrState: Alerting
+          for: 2m
+          keepFiringFor: 2m
+          annotations:
+            description: |-
+                [영향]
+                : 서버 중단 또는 모니터링 중단 (대시보드·알림으로 상태 확인 불가)
+
+                [확인 순서]
+                1.  앱·Alloy 컨테이너 상태 (docker ps)
+                2.  EC2 상태 검사 (AWS 콘솔)
+                3.  Grafana 개요 대시보드
+            summary: '{{ $labels.job }} - 지표 수집 2분 이상 실패'
+          labels:
+            severity: critical
+          isPaused: false
+          notification_settings:
+            receiver: ignoa-slack
+            group_by:
+                - grafana_folder
+                - alertname
+                - job
+        - uid: dg0ta5by10h6of
+          title: HighErrorRate
+          condition: C
+          data:
+            - refId: A
+              relativeTimeRange:
+                from: 600
+                to: 0
+              datasourceUid: eg0q0rxkuivwgc
+              model:
+                datasource:
+                    type: prometheus
+                    uid: eg0q0rxkuivwgc
+                editorMode: code
+                expr: |-
+                    (
+                      sum by (job) (rate(http_server_requests_seconds_count{job=~"ignoa-api|ignoa-payment", uri!~"/actuator.*", status=~"5.."}[5m]))
+                      /
+                      sum by (job) (rate(http_server_requests_seconds_count{job=~"ignoa-api|ignoa-payment", uri!~"/actuator.*"}[5m]))
+                    )
+                    and on(job)
+                    sum by (job) (increase(http_server_requests_seconds_count{job=~"ignoa-api|ignoa-payment", uri!~"/actuator.*"}[5m])) >= 10
+                hide: false
+                instant: true
+                intervalMs: 1000
+                legendFormat: __auto
+                maxDataPoints: 43200
+                range: false
+                refId: A
+            - refId: C
+              queryType: expression
+              datasourceUid: __expr__
+              model:
+                conditions:
+                    - evaluator:
+                        params:
+                            - 0.05
+                        type: gt
+                      operator:
+                        type: and
+                      query:
+                        params:
+                            - C
+                      reducer:
+                        params: []
+                        type: last
+                      type: query
+                datasource:
+                    type: __expr__
+                    uid: __expr__
+                expression: A
+                intervalMs: 1000
+                maxDataPoints: 43200
+                refId: C
+                type: threshold
+          noDataState: OK
+          execErrState: KeepLast
+          for: 5m
+          keepFiringFor: 2m
+          annotations:
+            description: "[영향]\n: 일부 요청이 서버 오류(5xx)로 실패 중\n\n[확인] \n1. Sentry 최근 에러와 trace_id\n2. Grafana 개요 대시보드의 응답 시간·5xx 추이\n3. Loki에서 같은 시각 ERROR 로그"
+            summary: '{{ $labels.job }} 5xx 비율 {{ humanizePercentage $values.A.Value }} - 5분간 5% 초과'
+          labels:
+            severity: warning
+          isPaused: false
+          notification_settings:
+            receiver: ignoa-slack
+            group_by:
+                - grafana_folder
+                - alertname
+                - job

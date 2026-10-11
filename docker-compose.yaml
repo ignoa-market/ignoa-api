@@ -39,7 +39,13 @@ services:
       REDIS_SSL: "false"
       IGNOA_CLOUDFRONTORIGIN_ENABLED: "false"
       CLOUDFRONT_ORIGIN_VERIFY_SECRET: ""
-      SENTRY_DSN: ""
+      SENTRY_DSN: ${SENTRY_DSN:-}
+      SENTRY_ENVIRONMENT: local
+      JAVA_TOOL_OPTIONS: -javaagent:/app/opentelemetry-javaagent.jar
+      OTEL_SERVICE_NAME: ignoa-api-local
+      OTEL_TRACES_EXPORTER: none
+      OTEL_METRICS_EXPORTER: none
+      OTEL_LOGS_EXPORTER: none
     ports:
       - "38080:38080"
     healthcheck:
