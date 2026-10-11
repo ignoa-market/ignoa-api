@@ -974,7 +974,7 @@
             "uid": "eg0q0rxkuivwgc"
           },
           "refId": "A",
-          "expr": "sum by (operation, outcome) (rate(lock_acquire_wait_seconds_count{application=\"ignoa-api\"}[$__rate_interval]))",
+          "expr": "sum by (operation, outcome) (rate(lock_acquire_wait_seconds_count{application=\"ignoa-api\"}[$__rate_interval])) > 0",
           "legendFormat": "{{operation}} / {{outcome}}",
           "range": true
         }

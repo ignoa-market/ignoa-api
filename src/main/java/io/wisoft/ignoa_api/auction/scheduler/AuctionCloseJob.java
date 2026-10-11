@@ -3,6 +3,7 @@ package io.wisoft.ignoa_api.auction.scheduler;
 import io.micrometer.core.instrument.Timer;
 import io.wisoft.ignoa_api.auction.metric.AuctionCloseMetrics;
 import io.wisoft.ignoa_api.auction.service.AuctionFacade;
+import io.wisoft.ignoa_api.item.repository.ExpiredItem;
 import io.wisoft.ignoa_api.item.repository.ItemRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,71 +31,72 @@ public class AuctionCloseJob {
 
     public void closeExpiredAuctions() {
         Timer.Sample sample = auctionCloseMetrics.start();
-
-        int selectedCount = 0;
-
-        AtomicInteger completedCount = new AtomicInteger();
-        AtomicInteger skippedCount = new AtomicInteger();
-        AtomicInteger failedCount = new AtomicInteger();
+        CloseCounts counts = new CloseCounts();
+        int targetCount = 0;
 
         try {
-            List<Long> expiredItemIds = itemRepository.findExpiredActiveItemIds(
+            List<ExpiredItem> expiredItems = itemRepository.findExpiredActiveItems(
                     LocalDateTime.now(),
                     PageRequest.of(0, BATCH_SIZE)
             );
+            targetCount = expiredItems.size();
 
-            selectedCount = expiredItemIds.size();
-
-            // 조회한 경매를 마감 전용 Worker Pool에 제출해 상품별로 병렬 처리 진행
-            List<CompletableFuture<Void>> futures = expiredItemIds.stream()
-                    .map(itemId -> CompletableFuture.runAsync(
-                            () -> closeAuction(itemId, completedCount, skippedCount, failedCount),
-                            auctionCloseExecutor
-                    ))
-                    .toList();
-
-            // 모든 마감 작업이 끝난 뒤 실행 결과를 집계
-            CompletableFuture.allOf(
-                    futures.toArray(CompletableFuture[]::new)
-            ).join();
+            // Worker Pool(4) - 비동기 병렬
+            closeInParallel(expiredItems, counts);
 
         } finally {
-            long durationNanos = auctionCloseMetrics.record(
-                    sample,
-                    completedCount.get(),
-                    skippedCount.get(),
-                    failedCount.get()
-            );
-
-            if (selectedCount > 0) {
-                log.info(
-                        "경매 자동 마감 작업 완료: target={}, completed={}, skipped={}, failed={}, durationMs={}",
-                        selectedCount,
-                        completedCount.get(),
-                        skippedCount.get(),
-                        failedCount.get(),
-                        TimeUnit.NANOSECONDS.toMillis(durationNanos)
-                );
-            }
+            recordResult(sample, targetCount, counts);
         }
     }
 
-    private void closeAuction(Long itemId, AtomicInteger completedCount, AtomicInteger skippedCount, AtomicInteger failedCount) {
+    private void closeInParallel(List<ExpiredItem> expiredItems, CloseCounts counts) {
+        List<CompletableFuture<Void>> futures = expiredItems.stream()
+                .map(item -> CompletableFuture.runAsync(
+                        () -> closeAuction(item, counts),
+                        auctionCloseExecutor
+                ))
+                .toList();
+
+        CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).join();
+    }
+
+    private void closeAuction(ExpiredItem item, CloseCounts counts) {
         try {
-            if (auctionFacade.closeAuction(itemId)) {
-                completedCount.incrementAndGet();
+            if (auctionFacade.closeAuction(item.id())) {
+                counts.completed.incrementAndGet();
+                auctionCloseMetrics.recordLag(item.endAt(), LocalDateTime.now());
             } else {
-                skippedCount.incrementAndGet();
+                counts.skipped.incrementAndGet();
             }
 
         } catch (Exception e) {
-            failedCount.incrementAndGet();
+            counts.failed.incrementAndGet();
+            log.error("만료 경매 마감 처리 실패: itemId={}", item.id(), e);
+        }
+    }
 
-            log.error(
-                    "만료 경매 마감 처리 실패: itemId={}",
-                    itemId,
-                    e
+    private void recordResult(Timer.Sample sample, int targetCount, CloseCounts counts) {
+        int completed = counts.completed.get();
+        int skipped = counts.skipped.get();
+        int failed = counts.failed.get();
+
+        long durationNanos = auctionCloseMetrics.recordJob(sample, completed, skipped, failed);
+
+        if (targetCount > 0) {
+            log.info(
+                    "경매 자동 마감 작업 완료: target={}, completed={}, skipped={}, failed={}, durationMs={}",
+                    targetCount,
+                    completed,
+                    skipped,
+                    failed,
+                    TimeUnit.NANOSECONDS.toMillis(durationNanos)
             );
         }
+    }
+
+    private static final class CloseCounts {
+        private final AtomicInteger completed = new AtomicInteger();
+        private final AtomicInteger skipped = new AtomicInteger();
+        private final AtomicInteger failed = new AtomicInteger();
     }
 }

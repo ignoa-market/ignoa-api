@@ -75,7 +75,7 @@ public class ItemFacade {
         try {
             uploadFiles(files, uploadedMedias);
 
-            return distributedLock.executeWithRequiredLock(
+            return distributedLock.executeWithLock(
                     ItemLockKey.of(itemId),
                     LockOperation.UPDATE,
                     () -> itemCommandService.updateItem(itemId, userId, request, uploadedMedias)
@@ -92,7 +92,7 @@ public class ItemFacade {
     }
 
     public ItemIdResponse deleteItem(Long itemId, Long userId) {
-        return distributedLock.executeWithRequiredLock(
+        return distributedLock.executeWithLock(
                 ItemLockKey.of(itemId),
                 LockOperation.DELETE,
                 () -> itemCommandService.deleteItem(itemId, userId));

@@ -1,29 +1,20 @@
 package io.wisoft.ignoa_api.global.infra.lock;
 
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+
+@Getter
+@RequiredArgsConstructor
 public enum LockOperation {
 
     BID("bid", 250L),
     EXTEND("extend", 500L),
+    AUTO_CLOSE("auto_close", 500L),
     UPDATE("update", 1_000L),
-    DELETE("delete", 1_000L),
-    AUTO_CLOSE("auto_close", 500L);
+    DELETE("delete", 1_000L);
 
     private final String metricTag;
-
     private final long waitMillis;
-
-    LockOperation(String metricTag, long waitMillis) {
-        this.metricTag = metricTag;
-        this.waitMillis = waitMillis;
-    }
-
-    public String metricTag() {
-        return metricTag;
-    }
-
-    public long waitMillis() {
-        return waitMillis;
-    }
 }
 
 
