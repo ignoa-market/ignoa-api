@@ -39,7 +39,7 @@
             "lineWidth": 1,
             "fillOpacity": 10,
             "showPoints": "never",
-            "spanNulls": true
+            "spanNulls": 300000
           },
           "noValue": "최근 마감 없음"
         },
@@ -158,7 +158,7 @@
             "lineWidth": 1,
             "fillOpacity": 10,
             "showPoints": "never",
-            "spanNulls": true
+            "spanNulls": 300000
           },
           "noValue": "최근 마감 없음"
         },
@@ -275,7 +275,7 @@
             "lineWidth": 1,
             "fillOpacity": 10,
             "showPoints": "never",
-            "spanNulls": true
+            "spanNulls": 300000
           },
           "noValue": "최근 마감 없음"
         },
@@ -339,7 +339,7 @@
             "lineWidth": 1,
             "fillOpacity": 10,
             "showPoints": "never",
-            "spanNulls": true
+            "spanNulls": 300000
           },
           "noValue": "최근 자동 마감 락 없음"
         },
