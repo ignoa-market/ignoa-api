@@ -61,6 +61,8 @@ public class AuctionCloseJob {
     }
 
     private void closeAuction(ExpiredItem item, CloseCounts counts) {
+        Timer.Sample sample = auctionCloseMetrics.start();
+
         try {
             if (auctionFacade.closeAuction(item.id())) {
                 counts.completed.incrementAndGet();
@@ -72,6 +74,8 @@ public class AuctionCloseJob {
         } catch (Exception e) {
             counts.failed.incrementAndGet();
             log.error("만료 경매 마감 처리 실패: itemId={}", item.id(), e);
+        } finally {
+            auctionCloseMetrics.recordItemClose(sample);
         }
     }
 
