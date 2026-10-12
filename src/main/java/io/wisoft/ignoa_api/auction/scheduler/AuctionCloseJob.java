@@ -29,7 +29,7 @@ public class AuctionCloseJob {
     private final AuctionCloseMetrics auctionCloseMetrics;
     private final Executor auctionCloseExecutor;
 
-    public void closeExpiredAuctions() {
+    public boolean closeExpiredAuctions() {
         Timer.Sample sample = auctionCloseMetrics.start();
         CloseCounts counts = new CloseCounts();
         int targetCount = 0;
@@ -47,6 +47,8 @@ public class AuctionCloseJob {
         } finally {
             recordResult(sample, targetCount, counts);
         }
+
+        return targetCount == BATCH_SIZE && counts.failed.get() == 0;
     }
 
     private void closeInParallel(List<ExpiredItem> expiredItems, CloseCounts counts) {

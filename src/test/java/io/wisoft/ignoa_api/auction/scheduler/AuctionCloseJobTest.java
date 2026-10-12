@@ -12,6 +12,7 @@ import org.springframework.data.domain.Pageable;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -123,7 +124,68 @@ class AuctionCloseJobTest {
         assertThat(registry.get("auction.close.item.duration").timer().count()).isEqualTo(3);
     }
 
+    @Test
+    void 묶음_1000건을_실패_없이_처리하면_이어서_처리하도록_true를_반환한다() {
+        ItemRepository itemRepository = mock(ItemRepository.class);
+        AuctionFacade auctionFacade = mock(AuctionFacade.class);
+        AuctionCloseJob job = new AuctionCloseJob(
+                auctionFacade,
+                itemRepository,
+                new AuctionCloseMetrics(new SimpleMeterRegistry()),
+                Runnable::run
+        );
+
+        when(itemRepository.findExpiredActiveItems(any(LocalDateTime.class), any(Pageable.class)))
+                .thenReturn(expiredItems(1_000));
+        when(auctionFacade.closeAuction(any())).thenReturn(true);
+
+        assertThat(job.closeExpiredAuctions()).isTrue();
+    }
+
+    @Test
+    void 묶음이_1000건보다_적으면_남은_경매가_없으므로_false를_반환한다() {
+        ItemRepository itemRepository = mock(ItemRepository.class);
+        AuctionFacade auctionFacade = mock(AuctionFacade.class);
+        AuctionCloseJob job = new AuctionCloseJob(
+                auctionFacade,
+                itemRepository,
+                new AuctionCloseMetrics(new SimpleMeterRegistry()),
+                Runnable::run
+        );
+
+        when(itemRepository.findExpiredActiveItems(any(LocalDateTime.class), any(Pageable.class)))
+                .thenReturn(expiredItems(999));
+        when(auctionFacade.closeAuction(any())).thenReturn(true);
+
+        assertThat(job.closeExpiredAuctions()).isFalse();
+    }
+
+    @Test
+    void 묶음_1000건_중_실패가_있으면_같은_경매를_바로_다시_조회하지_않도록_false를_반환한다() {
+        ItemRepository itemRepository = mock(ItemRepository.class);
+        AuctionFacade auctionFacade = mock(AuctionFacade.class);
+        AuctionCloseJob job = new AuctionCloseJob(
+                auctionFacade,
+                itemRepository,
+                new AuctionCloseMetrics(new SimpleMeterRegistry()),
+                Runnable::run
+        );
+
+        when(itemRepository.findExpiredActiveItems(any(LocalDateTime.class), any(Pageable.class)))
+                .thenReturn(expiredItems(1_000));
+        when(auctionFacade.closeAuction(any())).thenReturn(true);
+        when(auctionFacade.closeAuction(1L)).thenThrow(new IllegalStateException("마감 실패"));
+
+        assertThat(job.closeExpiredAuctions()).isFalse();
+    }
+
     private static ExpiredItem expiredItem(Long id) {
         return new ExpiredItem(id, LocalDateTime.now());
+    }
+
+    private static List<ExpiredItem> expiredItems(int count) {
+        return LongStream.rangeClosed(1, count)
+                .mapToObj(AuctionCloseJobTest::expiredItem)
+                .toList();
     }
 }
