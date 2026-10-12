@@ -1,0 +1,397 @@
+{
+  "uid": "ignoa-api-auction-close",
+  "title": "ignoa-api / 경매 마감",
+  "tags": [
+    "ignoa",
+    "api",
+    "auction-close"
+  ],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "refresh": "1m",
+  "editable": true,
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "마감 확정 시간 p50 / p99 (폴링 대기 포함)",
+      "description": "경매 1건마다, 종료 시각부터 서버에서 마감이 확정(낙찰자·채팅방·결제 대기 거래 생성)되기까지 걸린 시간. 다음 자동 마감까지 기다린 시간(최대 5초)을 포함하고, 사용자 화면 반영은 포함하지 않음. p50은 절반, p99는 99%의 경매가 이 시간 안에 마감됨",
+      "id": 1,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "eg0q0rxkuivwgc"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "min": 0,
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 10,
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "noValue": "최근 마감 없음"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "eg0q0rxkuivwgc"
+          },
+          "refId": "A",
+          "expr": "histogram_quantile(0.5, sum by (le) (rate(auction_close_lag_seconds_bucket{application=\"ignoa-api\"}[$__rate_interval]))) > 0",
+          "range": true,
+          "legendFormat": "p50"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "eg0q0rxkuivwgc"
+          },
+          "refId": "B",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(auction_close_lag_seconds_bucket{application=\"ignoa-api\"}[$__rate_interval]))) > 0",
+          "range": true,
+          "legendFormat": "p99"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "밀린 경매 수",
+      "description": "종료 시각이 지났지만 아직 마감되지 않은 경매 수(1분마다 DB에서 셈). 자동 마감이 멈추거나 따라잡지 못하면 계속 올라감. 1분 안에 처리되는 짧은 적체는 보이지 않을 수 있음",
+      "id": 3,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "eg0q0rxkuivwgc"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 6,
+        "y": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 10,
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "noValue": "수집 안 됨",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "eg0q0rxkuivwgc"
+          },
+          "refId": "A",
+          "expr": "auction_close_backlog{application=\"ignoa-api\"}",
+          "range": true,
+          "legendFormat": "밀린 경매"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "마감 결과 (초당)",
+      "description": "completed: 마감 완료, skipped: 이미 마감됐거나 조건 불충족, failed: 예외로 실패(다음 실행에서 재시도). 몇 분 구간의 평균이라 짧은 시간에 몰린 처리는 실제보다 낮게 보임",
+      "id": 4,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "eg0q0rxkuivwgc"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 12,
+        "y": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 10,
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "noValue": "최근 마감 없음"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "eg0q0rxkuivwgc"
+          },
+          "refId": "A",
+          "expr": "sum by (outcome) (rate(auction_close_items_total{application=\"ignoa-api\"}[$__rate_interval])) > 0",
+          "range": true,
+          "legendFormat": "{{outcome}}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "자동 마감 1회 처리 시간 (최대 1,000건)",
+      "description": "자동 마감 1회가 시작부터 끝까지 걸린 시간. 기다린 시간은 포함하지 않아, 마감 확정 시간의 최대 − 최소와 거의 같음. 처리 건수에 따라 달라지므로 마감 결과와 함께 볼 것",
+      "id": 5,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "eg0q0rxkuivwgc"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 0,
+        "y": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "min": 0,
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 10,
+            "showPoints": "never",
+            "spanNulls": true
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "eg0q0rxkuivwgc"
+          },
+          "refId": "A",
+          "expr": "sum(rate(auction_close_job_duration_seconds_sum{application=\"ignoa-api\"}[$__rate_interval])) / sum(rate(auction_close_job_duration_seconds_count{application=\"ignoa-api\"}[$__rate_interval]))",
+          "range": true,
+          "legendFormat": "평균"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "eg0q0rxkuivwgc"
+          },
+          "refId": "B",
+          "expr": "max(auction_close_job_duration_seconds_max{application=\"ignoa-api\"})",
+          "range": true,
+          "legendFormat": "최대"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "마감 1건 처리 시간 p50 / p99",
+      "description": "경매 1건의 마감 처리(락 대기·마감 트랜잭션·락 해제)에 걸린 시간. 앞 상품을 기다린 시간은 포함하지 않음. 평소 수십 ms, Redis 장애 시 락 대기 때문에 크게 늘어남",
+      "id": 7,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "eg0q0rxkuivwgc"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "min": 0,
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 10,
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "noValue": "최근 마감 없음"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "eg0q0rxkuivwgc"
+          },
+          "refId": "A",
+          "expr": "histogram_quantile(0.5, sum by (le) (rate(auction_close_item_duration_seconds_bucket{application=\"ignoa-api\"}[$__rate_interval]))) > 0",
+          "range": true,
+          "legendFormat": "p50"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "eg0q0rxkuivwgc"
+          },
+          "refId": "B",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(auction_close_item_duration_seconds_bucket{application=\"ignoa-api\"}[$__rate_interval]))) > 0",
+          "range": true,
+          "legendFormat": "p99"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "자동 마감 락 결과 (초당)",
+      "description": "infra_error가 보이면 Redis 장애로 락을 건너뛰고 마감 중(정합성은 DB 조건부 갱신이 지킴). timeout은 다른 요청이 같은 상품 락을 잡고 있던 경우",
+      "id": 6,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "eg0q0rxkuivwgc"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 18,
+        "y": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 10,
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "noValue": "최근 자동 마감 락 없음"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "eg0q0rxkuivwgc"
+          },
+          "refId": "A",
+          "expr": "sum by (outcome) (rate(lock_acquire_wait_seconds_count{application=\"ignoa-api\", operation=\"auto_close\"}[$__rate_interval])) > 0",
+          "range": true,
+          "legendFormat": "{{outcome}}"
+        }
+      ]
+    }
+  ],
+  "templating": {
+    "list": []
+  },
+  "annotations": {
+    "list": []
+  },
+  "links": [
+    {
+      "title": "ignoa / 개요",
+      "type": "link",
+      "url": "/d/ignoa-overview",
+      "keepTime": true,
+      "icon": "dashboard",
+      "targetBlank": false
+    },
+    {
+      "title": "ignoa-api / 자원",
+      "type": "link",
+      "url": "/d/ignoa-api-resource",
+      "keepTime": true,
+      "icon": "dashboard",
+      "targetBlank": false
+    }
+  ]
+}

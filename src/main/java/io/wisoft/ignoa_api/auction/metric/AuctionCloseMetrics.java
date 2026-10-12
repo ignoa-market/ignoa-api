@@ -13,6 +13,7 @@ public class AuctionCloseMetrics {
 
     private final MeterRegistry meterRegistry;
     private final Timer jobDuration;
+    private final Timer itemDuration;
     private final Timer closeLag;
     private final Counter completedItems;
     private final Counter skippedItems;
@@ -22,11 +23,15 @@ public class AuctionCloseMetrics {
         this.meterRegistry = meterRegistry;
 
         this.jobDuration = Timer.builder("auction.close.job.duration")
-                .description("경매 자동 마감 Job 1회 실행 시간 (만료 경매 조회부터 모든 상품 마감까지)")
+                .description("자동 마감 1회 처리 시간 (만료 경매 조회부터 최대 1,000건 마감까지)")
+                .register(meterRegistry);
+
+        this.itemDuration = Timer.builder("auction.close.item.duration")
+                .description("마감 1건 처리 시간 (락 대기·마감 트랜잭션·락 해제 포함, 앞 상품을 기다린 시간 제외)")
                 .register(meterRegistry);
 
         this.closeLag = Timer.builder("auction.close.lag")
-                .description("경매 종료 시각부터 마감 완료까지 걸린 시간 (상품 1건 기준)")
+                .description("마감 확정 시간 (경매 1건, 종료 시각부터 서버에서 마감이 확정되기까지, 폴링 대기 포함)")
                 .register(meterRegistry);
 
         this.completedItems = Counter.builder("auction.close.items")
@@ -59,5 +64,9 @@ public class AuctionCloseMetrics {
 
     public void recordLag(LocalDateTime endAt, LocalDateTime closedAt) {
         closeLag.record(Duration.between(endAt, closedAt));
+    }
+
+    public void recordItemClose(Timer.Sample sample) {
+        sample.stop(itemDuration);
     }
 }

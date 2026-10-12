@@ -101,6 +101,28 @@ class AuctionCloseJobTest {
         assertThat(closeLag.totalTime(TimeUnit.SECONDS)).isBetween(10.0, 11.0);
     }
 
+    @Test
+    void 마감_1건_처리_시간은_완료_생략_실패한_경매마다_기록한다() {
+        ItemRepository itemRepository = mock(ItemRepository.class);
+        AuctionFacade auctionFacade = mock(AuctionFacade.class);
+        SimpleMeterRegistry registry = new SimpleMeterRegistry();
+        AuctionCloseJob job = new AuctionCloseJob(
+                auctionFacade,
+                itemRepository,
+                new AuctionCloseMetrics(registry),
+                Runnable::run
+        );
+
+        when(itemRepository.findExpiredActiveItems(any(LocalDateTime.class), any(Pageable.class)))
+                .thenReturn(List.of(expiredItem(1L), expiredItem(2L), expiredItem(3L)));
+        when(auctionFacade.closeAuction(1L)).thenReturn(true);
+        when(auctionFacade.closeAuction(3L)).thenThrow(new IllegalStateException("마감 실패"));
+
+        job.closeExpiredAuctions();
+
+        assertThat(registry.get("auction.close.item.duration").timer().count()).isEqualTo(3);
+    }
+
     private static ExpiredItem expiredItem(Long id) {
         return new ExpiredItem(id, LocalDateTime.now());
     }

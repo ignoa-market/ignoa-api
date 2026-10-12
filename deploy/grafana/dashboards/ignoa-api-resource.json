@@ -3,6 +3,7 @@
   "title": "ignoa-api / 자원",
   "tags": [
     "ignoa",
+    "api",
     "resource"
   ],
   "timezone": "browser",
@@ -813,7 +814,7 @@
     },
     {
       "type": "row",
-      "title": "분산 락",
+      "title": "분산 락 (작업: $operation)",
       "id": 17,
       "collapsed": false,
       "gridPos": {
@@ -826,8 +827,8 @@
     },
     {
       "type": "timeseries",
-      "title": "락 대기 p99 (획득 성공)",
-      "description": "연산별 대기 상한: 입찰 250ms, 마감·연장 500ms, 수정·삭제 1s",
+      "title": "락 대기 p50 / p99 (획득 성공)",
+      "description": "락을 얻은 요청의 대기 시간. All이면 모든 작업을 합친 분포. 작업별 대기 상한: 입찰 250ms, 마감·연장 500ms, 수정·삭제 1s",
       "id": 18,
       "datasource": {
         "type": "prometheus",
@@ -848,7 +849,8 @@
             "fillOpacity": 10,
             "showPoints": "never",
             "spanNulls": true
-          }
+          },
+          "noValue": "최근 락 획득 없음"
         },
         "overrides": []
       },
@@ -870,16 +872,26 @@
             "uid": "eg0q0rxkuivwgc"
           },
           "refId": "A",
-          "expr": "histogram_quantile(0.99, sum by (le, operation) (rate(lock_acquire_wait_seconds_bucket{application=\"ignoa-api\", outcome=\"acquired\"}[$__rate_interval])))",
-          "legendFormat": "{{operation}}",
+          "expr": "histogram_quantile(0.5, sum by (le) (rate(lock_acquire_wait_seconds_bucket{application=\"ignoa-api\", operation=~\"$operation\", outcome=\"acquired\"}[$__rate_interval]))) > 0",
+          "legendFormat": "p50",
+          "range": true
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "eg0q0rxkuivwgc"
+          },
+          "refId": "B",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(lock_acquire_wait_seconds_bucket{application=\"ignoa-api\", operation=~\"$operation\", outcome=\"acquired\"}[$__rate_interval]))) > 0",
+          "legendFormat": "p99",
           "range": true
         }
       ]
     },
     {
       "type": "timeseries",
-      "title": "락 보유 p99",
-      "description": "",
+      "title": "락 보유 p50 / p99",
+      "description": "락을 잡은 채 작업(DB 처리 등)을 실행한 시간. All이면 모든 작업을 합친 분포",
       "id": 19,
       "datasource": {
         "type": "prometheus",
@@ -900,7 +912,8 @@
             "fillOpacity": 10,
             "showPoints": "never",
             "spanNulls": true
-          }
+          },
+          "noValue": "최근 락 획득 없음"
         },
         "overrides": []
       },
@@ -922,8 +935,18 @@
             "uid": "eg0q0rxkuivwgc"
           },
           "refId": "A",
-          "expr": "histogram_quantile(0.99, sum by (le, operation) (rate(lock_hold_time_seconds_bucket{application=\"ignoa-api\"}[$__rate_interval])))",
-          "legendFormat": "{{operation}}",
+          "expr": "histogram_quantile(0.5, sum by (le) (rate(lock_hold_time_seconds_bucket{application=\"ignoa-api\", operation=~\"$operation\"}[$__rate_interval]))) > 0",
+          "legendFormat": "p50",
+          "range": true
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "eg0q0rxkuivwgc"
+          },
+          "refId": "B",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(lock_hold_time_seconds_bucket{application=\"ignoa-api\", operation=~\"$operation\"}[$__rate_interval]))) > 0",
+          "legendFormat": "p99",
           "range": true
         }
       ]
@@ -931,7 +954,7 @@
     {
       "type": "timeseries",
       "title": "락 획득 결과 (초당)",
-      "description": "acquired 외의 결과(timeout, infra_error)가 보이면 확인",
+      "description": "평소에는 acquired만 보임. timeout은 같은 상품에 요청이 몰린 경우, infra_error는 Redis 장애. 비율과 비용은 아래 실패 패널에서 확인",
       "id": 20,
       "datasource": {
         "type": "prometheus",
@@ -946,6 +969,7 @@
       "fieldConfig": {
         "defaults": {
           "unit": "short",
+          "noValue": "최근 락 획득 없음",
           "custom": {
             "drawStyle": "line",
             "lineWidth": 1,
@@ -974,15 +998,175 @@
             "uid": "eg0q0rxkuivwgc"
           },
           "refId": "A",
-          "expr": "sum by (operation, outcome) (rate(lock_acquire_wait_seconds_count{application=\"ignoa-api\"}[$__rate_interval])) > 0",
+          "expr": "sum by (operation, outcome) (rate(lock_acquire_wait_seconds_count{application=\"ignoa-api\", operation=~\"$operation\"}[$__rate_interval])) > 0",
           "legendFormat": "{{operation}} / {{outcome}}",
+          "range": true
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "락 실패 비율 (작업별)",
+      "description": "락 획득 시도 중 acquired가 아닌 결과(timeout, infra_error 등)의 비율. 빨간 선은 SLO 초안 0.5%",
+      "id": 21,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "eg0q0rxkuivwgc"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 41
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "noValue": "최근 락 실패 없음",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 10,
+            "showPoints": "never",
+            "spanNulls": true,
+            "thresholdsStyle": {
+              "mode": "line"
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 0.005
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "eg0q0rxkuivwgc"
+          },
+          "refId": "A",
+          "expr": "(sum by (operation) (rate(lock_acquire_wait_seconds_count{application=\"ignoa-api\", operation=~\"$operation\", outcome!=\"acquired\"}[$__rate_interval])) / sum by (operation) (rate(lock_acquire_wait_seconds_count{application=\"ignoa-api\", operation=~\"$operation\"}[$__rate_interval]))) > 0",
+          "legendFormat": "{{operation}}",
+          "range": true
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "락 실패 시 대기 시간 (평균·최대)",
+      "description": "실패로 끝난 락 획득 시도가 결과를 받기까지 걸린 시간. infra_error는 Redis 오류를 알기까지의 시간으로, 자동 마감에서는 건마다 이만큼 마감이 늦어짐",
+      "id": 22,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "eg0q0rxkuivwgc"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 41
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "min": 0,
+          "noValue": "최근 락 실패 없음",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 10,
+            "showPoints": "never",
+            "spanNulls": true
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "eg0q0rxkuivwgc"
+          },
+          "refId": "A",
+          "expr": "(sum by (operation, outcome) (rate(lock_acquire_wait_seconds_sum{application=\"ignoa-api\", operation=~\"$operation\", outcome!=\"acquired\"}[$__rate_interval])) / sum by (operation, outcome) (rate(lock_acquire_wait_seconds_count{application=\"ignoa-api\", operation=~\"$operation\", outcome!=\"acquired\"}[$__rate_interval]))) > 0",
+          "legendFormat": "{{operation}} / {{outcome}} 평균",
+          "range": true
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "eg0q0rxkuivwgc"
+          },
+          "refId": "B",
+          "expr": "max by (operation, outcome) (lock_acquire_wait_seconds_max{application=\"ignoa-api\", operation=~\"$operation\", outcome!=\"acquired\"}) > 0",
+          "legendFormat": "{{operation}} / {{outcome}} 최대",
           "range": true
         }
       ]
     }
   ],
   "templating": {
-    "list": []
+    "list": [
+      {
+        "name": "operation",
+        "label": "락 작업",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "eg0q0rxkuivwgc"
+        },
+        "definition": "label_values(lock_acquire_wait_seconds_count{application=\"ignoa-api\"}, operation)",
+        "query": {
+          "query": "label_values(lock_acquire_wait_seconds_count{application=\"ignoa-api\"}, operation)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "refresh": 1,
+        "sort": 1,
+        "includeAll": true,
+        "allValue": ".*",
+        "multi": false,
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
+        "hide": 0
+      }
+    ]
   },
   "annotations": {
     "list": []
