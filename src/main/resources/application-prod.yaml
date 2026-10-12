@@ -49,11 +49,11 @@ management:
       maximum-expected-value:
         lock.hold.time: 3s
         lock.acquire.wait: 3s
-        auction.close.lag: 2m
+        auction.close.lag: 5m
         auction.close.item.duration: 3s
       slo:
         lock.acquire.wait: 250ms, 500ms, 1s
-        auction.close.lag: 15s
+        auction.close.lag: 10s
 
 sentry:
   dsn: ${SENTRY_DSN}
