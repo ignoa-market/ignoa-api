@@ -58,7 +58,7 @@ prometheus.remote_write "cloud" {
 }
 
 // ===== 트레이스: OTel agent → Tempo =====
-// 흐름: 7) 수신 → 7-1) 샘플링 → 8) 배치 → 9) 전송
+// 흐름: 7) 수신 → 7-1) Sentry 전송 span 제외 → 7-2) 샘플링 → 8) 배치 → 9) 전송
 
 // 7) 수신: 앱의 OTel agent가 OTLP/HTTP(4318)로 전송
 otelcol.receiver.otlp "default" {
@@ -66,11 +66,25 @@ otelcol.receiver.otlp "default" {
     endpoint = "0.0.0.0:4318"
   }
   output {
+    traces = [otelcol.processor.filter.drop_sentry.input]
+  }
+}
+
+// 7-1) Sentry 전송 span 제외: 에러 이벤트를 sentry.io로 보내는 비동기 요청이 원래 요청 트레이스에 붙어
+//      트레이스 시간이 실제보다 길게 보이므로, 샘플링(느린 트레이스 판단) 전에 이 span만 버림
+otelcol.processor.filter "drop_sentry" {
+  error_mode = "ignore"
+
+  traces {
+    span = [`IsMatch(attributes["server.address"], ".*\\.sentry\\.io$")`]
+  }
+
+  output {
     traces = [otelcol.processor.tail_sampling.default.input]
   }
 }
 
-// 7-1) 샘플링: 트레이스를 모은 뒤 전송 여부 판단
+// 7-2) 샘플링: 트레이스를 모은 뒤 전송 여부 판단
 //      우선순위: drop > 나머지 정책 중 하나라도 일치 > 기본은 버림
 otelcol.processor.tail_sampling "default" {
   decision_wait = "10s"  // 판단 전 대기 시간. Tempo 도착도 그만큼 늦어짐

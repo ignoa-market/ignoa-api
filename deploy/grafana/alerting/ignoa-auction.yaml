@@ -1,0 +1,77 @@
+apiVersion: 1
+groups:
+    - orgId: 1
+      name: auction
+      folder: ignoa
+      interval: 1m
+      rules:
+        - uid: bg10xvc31ov0gf
+          title: AuctionCloseBacklog
+          condition: C
+          data:
+            - refId: A
+              relativeTimeRange:
+                from: 600
+                to: 0
+              datasourceUid: eg0q0rxkuivwgc
+              model:
+                datasource:
+                    type: prometheus
+                    uid: eg0q0rxkuivwgc
+                editorMode: code
+                expr: max(auction_close_backlog{application="ignoa-api"})
+                instant: true
+                intervalMs: 1000
+                legendFormat: __auto
+                maxDataPoints: 43200
+                range: false
+                refId: A
+            - refId: C
+              queryType: expression
+              datasourceUid: __expr__
+              model:
+                conditions:
+                    - evaluator:
+                        params:
+                            - 20
+                        type: gt
+                      operator:
+                        type: and
+                      query:
+                        params:
+                            - C
+                      reducer:
+                        params: []
+                        type: last
+                      type: query
+                datasource:
+                    type: __expr__
+                    uid: __expr__
+                expression: A
+                intervalMs: 1000
+                maxDataPoints: 43200
+                refId: C
+                type: threshold
+          dashboardUid: ignoa-api-auction-close
+          panelId: 3
+          noDataState: OK
+          execErrState: KeepLast
+          for: 3m
+          keepFiringFor: 2m
+          annotations:
+            __dashboardUid__: ignoa-api-auction-close
+            __panelId__: "3"
+            description: |-
+                [영향]
+                : 경매가 끝나도 낙찰 결과가 늦게 확정되거나 확정되지 않음
+
+                [확인 순서]
+                1. Grafana 경매 마감 대시보드의 마감 1건 처리 시간·자동 마감 1회 처리 시간
+                2. Grafana 자원 대시보드의 분산 락 실패 비율 (Redis 장애 여부)
+                3. Loki에서 "경매 자동 마감" 로그와 ERROR 로그
+            summary: 밀린 경매 {{ $values.A.Value }}건 - 3분 이상 20건 초과
+          labels:
+            severity: warning
+          isPaused: false
+          notification_settings:
+            receiver: ignoa-slack
