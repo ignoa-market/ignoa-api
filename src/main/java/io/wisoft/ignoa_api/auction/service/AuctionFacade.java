@@ -15,11 +15,13 @@ public class AuctionFacade {
     private final RedissonDistributedLock distributedLock;
 
     public boolean closeAuction(Long itemId) {
-        return distributedLock.executeWithLockOrFailOpen(
-                ItemLockKey.of(itemId),
-                LockOperation.AUTO_CLOSE,
-                () -> auctionService.closeAuction(itemId)
-        );
+        return auctionService.closeAuction(itemId);
+
+//        return distributedLock.executeWithLockOrFailOpen(
+//                ItemLockKey.of(itemId),
+//                LockOperation.AUTO_CLOSE,
+//                () -> auctionService.closeAuction(itemId)
+//        );
     }
 
     public AuctionExtensionResponse extendAuction(Long itemId, Long userId) {
