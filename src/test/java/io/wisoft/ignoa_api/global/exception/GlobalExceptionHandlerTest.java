@@ -10,10 +10,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.RedisConnectionFailureException;
+import org.springframework.http.HttpMethod;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -67,8 +69,24 @@ class GlobalExceptionHandlerTest {
                 .andExpect(jsonPath("$.code").value(ErrorCode.AUTH_INFRASTRUCTURE_ERROR.name()));
     }
 
+    @Test
+    void 존재하지_않는_경로는_404와_RESOURCE_NOT_FOUND로_응답하고_ERROR를_남기지_않는다() throws Exception {
+        try (LogCapture logs = new LogCapture()) {
+            mockMvc.perform(get("/test/no-resource"))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.code").value(ErrorCode.RESOURCE_NOT_FOUND.name()));
+            assertThat(logs.events()).singleElement()
+                    .extracting(ILoggingEvent::getLevel).isEqualTo(Level.DEBUG);
+        }
+    }
+
     @RestController
     static class ThrowingController {
+
+        @GetMapping("/test/no-resource")
+        void noResource() throws NoResourceFoundException {
+            throw new NoResourceFoundException(HttpMethod.GET, "api/__trace-check");
+        }
 
         @GetMapping("/test/expired-token")
         void expiredToken() {

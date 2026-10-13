@@ -23,6 +23,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(JwtSecurityIntegrationTest.TestController.class)
@@ -71,6 +72,14 @@ class JwtSecurityIntegrationTest {
         mockMvc.perform(get("/api/protected")
                         .header("Authorization", "Bearer test-access-token"))
                 .andExpect(status().isServiceUnavailable());
+    }
+
+    @Test
+    void 로그인_사용자의_존재하지_않는_경로_요청은_404로_응답한다() throws Exception {
+        mockMvc.perform(get("/api/__trace-check")
+                        .header("Authorization", "Bearer test-access-token"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("RESOURCE_NOT_FOUND"));
     }
 
     @RestController
