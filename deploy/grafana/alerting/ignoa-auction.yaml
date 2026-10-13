@@ -56,7 +56,7 @@ groups:
           panelId: 3
           noDataState: OK
           execErrState: KeepLast
-          for: 3m
+          for: 1m
           keepFiringFor: 2m
           annotations:
             __dashboardUid__: ignoa-api-auction-close
@@ -69,7 +69,7 @@ groups:
                 1. Grafana 경매 마감 대시보드의 마감 1건 처리 시간·자동 마감 1회 처리 시간
                 2. Grafana 자원 대시보드의 분산 락 실패 비율 (Redis 장애 여부)
                 3. Loki에서 "경매 자동 마감" 로그와 ERROR 로그
-            summary: 밀린 경매 {{ $values.A.Value }}건 - 3분 이상 20건 초과
+            summary: 밀린 경매 {{ $values.A.Value }}건 - 1분 이상 20건 초과
           labels:
             severity: warning
           isPaused: false
