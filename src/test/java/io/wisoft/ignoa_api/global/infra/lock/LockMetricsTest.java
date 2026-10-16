@@ -30,7 +30,7 @@ class LockMetricsTest {
                 .allSatisfy(timer -> assertThat(timer.count()).isZero());
 
         assertThat(meterRegistry.get("lock.acquire.wait")
-                .tags("key", "item:lock", "operation", "auto_close", "outcome", "infra_error")
+                .tags("key", "item:lock", "operation", "bid", "outcome", "infra_error")
                 .timer().count()).isZero();
     }
 }

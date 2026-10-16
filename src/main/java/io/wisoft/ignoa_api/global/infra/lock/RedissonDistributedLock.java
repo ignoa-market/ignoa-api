@@ -31,16 +31,6 @@ public class RedissonDistributedLock {
         }
     }
 
-    public <T> T executeWithLockOrFailOpen(String key, LockOperation operation, Supplier<T> task) {
-        try {
-            return execute(key, operation, task);
-
-        } catch (LockInfrastructureException e) {
-            log.debug("분산 락 Fail-Open: key={}, operation={}, reason=Redis 인프라 장애", key, operation);
-            return task.get();
-        }
-    }
-
     // 락 획득 → 작업 실행 → 락 해제
     private <T> T execute(String key, LockOperation operation, Supplier<T> task) {
         RLock lock = redissonClient.getLock(key);

@@ -125,6 +125,29 @@ class AuctionCloseJobTest {
     }
 
     @Test
+    void 배치_1회_처리_시간은_처리할_경매가_있는_실행만_기록한다() {
+        ItemRepository itemRepository = mock(ItemRepository.class);
+        AuctionFacade auctionFacade = mock(AuctionFacade.class);
+        SimpleMeterRegistry registry = new SimpleMeterRegistry();
+        AuctionCloseJob job = new AuctionCloseJob(
+                auctionFacade,
+                itemRepository,
+                new AuctionCloseMetrics(registry),
+                Runnable::run
+        );
+
+        when(itemRepository.findExpiredActiveItems(any(LocalDateTime.class), any(Pageable.class)))
+                .thenReturn(List.of())
+                .thenReturn(List.of(expiredItem(1L)));
+        when(auctionFacade.closeAuction(1L)).thenReturn(true);
+
+        job.closeExpiredAuctions();
+        job.closeExpiredAuctions();
+
+        assertThat(registry.get("auction.close.job.duration").timer().count()).isEqualTo(1);
+    }
+
+    @Test
     void 묶음_1000건을_실패_없이_처리하면_이어서_처리하도록_true를_반환한다() {
         ItemRepository itemRepository = mock(ItemRepository.class);
         AuctionFacade auctionFacade = mock(AuctionFacade.class);
