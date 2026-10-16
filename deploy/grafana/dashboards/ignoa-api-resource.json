@@ -543,7 +543,7 @@
     },
     {
       "type": "timeseries",
-      "title": "커넥션 획득 시간",
+      "title": "커넥션 획득 시간 p50 / p95 / p99",
       "description": "",
       "id": 12,
       "datasource": {
@@ -589,6 +589,16 @@
           "refId": "A",
           "expr": "histogram_quantile(0.5, sum by (le) (rate(hikaricp_connections_acquire_seconds_bucket{application=\"ignoa-api\"}[$__rate_interval])))",
           "legendFormat": "p50",
+          "range": true
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "eg0q0rxkuivwgc"
+          },
+          "refId": "C",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(hikaricp_connections_acquire_seconds_bucket{application=\"ignoa-api\"}[$__rate_interval])))",
+          "legendFormat": "p95",
           "range": true
         },
         {
@@ -1096,7 +1106,7 @@
     },
     {
       "type": "timeseries",
-      "title": "락 실패 시 대기 시간 (avg·max)",
+      "title": "락 실패 시 대기 시간 p50 / p95 / p99 / max",
       "description": "실패까지 걸린 시간. timeout: 대기 상한까지 기다림(409), infra_error: Redis 장애 감지까지(503)",
       "id": 22,
       "datasource": {
@@ -1142,8 +1152,8 @@
             "uid": "eg0q0rxkuivwgc"
           },
           "refId": "A",
-          "expr": "(sum by (operation, outcome) (rate(lock_acquire_wait_seconds_sum{application=\"ignoa-api\", operation=~\"$operation\", outcome!=\"acquired\"}[$__rate_interval])) / sum by (operation, outcome) (rate(lock_acquire_wait_seconds_count{application=\"ignoa-api\", operation=~\"$operation\", outcome!=\"acquired\"}[$__rate_interval]))) > 0",
-          "legendFormat": "{{operation}} / {{outcome}} avg",
+          "expr": "histogram_quantile(0.5, sum by (le, operation, outcome) (rate(lock_acquire_wait_seconds_bucket{application=\"ignoa-api\", operation=~\"$operation\", outcome!=\"acquired\"}[$__rate_interval]))) > 0",
+          "legendFormat": "{{operation}} / {{outcome}} p50",
           "range": true
         },
         {
@@ -1152,6 +1162,26 @@
             "uid": "eg0q0rxkuivwgc"
           },
           "refId": "B",
+          "expr": "histogram_quantile(0.95, sum by (le, operation, outcome) (rate(lock_acquire_wait_seconds_bucket{application=\"ignoa-api\", operation=~\"$operation\", outcome!=\"acquired\"}[$__rate_interval]))) > 0",
+          "legendFormat": "{{operation}} / {{outcome}} p95",
+          "range": true
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "eg0q0rxkuivwgc"
+          },
+          "refId": "C",
+          "expr": "histogram_quantile(0.99, sum by (le, operation, outcome) (rate(lock_acquire_wait_seconds_bucket{application=\"ignoa-api\", operation=~\"$operation\", outcome!=\"acquired\"}[$__rate_interval]))) > 0",
+          "legendFormat": "{{operation}} / {{outcome}} p99",
+          "range": true
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "eg0q0rxkuivwgc"
+          },
+          "refId": "D",
           "expr": "max by (operation, outcome) (lock_acquire_wait_seconds_max{application=\"ignoa-api\", operation=~\"$operation\", outcome!=\"acquired\"}) > 0",
           "legendFormat": "{{operation}} / {{outcome}} max",
           "range": true
