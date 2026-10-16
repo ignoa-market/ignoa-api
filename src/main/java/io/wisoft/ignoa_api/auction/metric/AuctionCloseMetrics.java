@@ -23,7 +23,7 @@ public class AuctionCloseMetrics {
         this.meterRegistry = meterRegistry;
 
         this.jobDuration = Timer.builder("auction.close.job.duration")
-                .description("자동 마감 1회 처리 시간 (만료 경매 조회부터 최대 1,000건 마감까지)")
+                .description("배치 1회 처리 시간 (처리할 경매가 있는 실행만, 만료 경매 조회부터 최대 1,000건 마감까지)")
                 .register(meterRegistry);
 
         this.itemDuration = Timer.builder("auction.close.item.duration")

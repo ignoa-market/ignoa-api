@@ -82,22 +82,24 @@ public class AuctionCloseJob {
     }
 
     private void recordResult(Timer.Sample sample, int targetCount, CloseCounts counts) {
+        if (targetCount == 0) {
+            return;
+        }
+
         int completed = counts.completed.get();
         int skipped = counts.skipped.get();
         int failed = counts.failed.get();
 
         long durationNanos = auctionCloseMetrics.recordJob(sample, completed, skipped, failed);
 
-        if (targetCount > 0) {
-            log.info(
-                    "경매 자동 마감 작업 완료: target={}, completed={}, skipped={}, failed={}, durationMs={}",
-                    targetCount,
-                    completed,
-                    skipped,
-                    failed,
-                    TimeUnit.NANOSECONDS.toMillis(durationNanos)
-            );
-        }
+        log.info(
+                "경매 자동 마감 작업 완료: target={}, completed={}, skipped={}, failed={}, durationMs={}",
+                targetCount,
+                completed,
+                skipped,
+                failed,
+                TimeUnit.NANOSECONDS.toMillis(durationNanos)
+        );
     }
 
     private static final class CloseCounts {
