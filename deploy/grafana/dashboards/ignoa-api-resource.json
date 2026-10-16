@@ -827,8 +827,8 @@
     },
     {
       "type": "timeseries",
-      "title": "락 대기 p50 / p99 (획득 성공)",
-      "description": "락을 얻은 요청의 대기 시간. All이면 모든 작업을 합친 분포. 작업별 대기 상한: 입찰 250ms, 마감·연장 500ms, 수정·삭제 1s",
+      "title": "락 대기 p50 / p95 / p99 (획득 성공)",
+      "description": "락을 얻은 요청의 대기 시간. All이면 모든 작업을 합친 분포. 작업별 대기 상한: 입찰 250ms, 연장 500ms, 수정·삭제 1s",
       "id": 18,
       "datasource": {
         "type": "prometheus",
@@ -881,6 +881,16 @@
             "type": "prometheus",
             "uid": "eg0q0rxkuivwgc"
           },
+          "refId": "C",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(lock_acquire_wait_seconds_bucket{application=\"ignoa-api\", operation=~\"$operation\", outcome=\"acquired\"}[$__rate_interval]))) > 0",
+          "legendFormat": "p95",
+          "range": true
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "eg0q0rxkuivwgc"
+          },
           "refId": "B",
           "expr": "histogram_quantile(0.99, sum by (le) (rate(lock_acquire_wait_seconds_bucket{application=\"ignoa-api\", operation=~\"$operation\", outcome=\"acquired\"}[$__rate_interval]))) > 0",
           "legendFormat": "p99",
@@ -890,7 +900,7 @@
     },
     {
       "type": "timeseries",
-      "title": "락 보유 p50 / p99",
+      "title": "락 보유 p50 / p95 / p99",
       "description": "락을 잡은 채 작업(DB 처리 등)을 실행한 시간. All이면 모든 작업을 합친 분포",
       "id": 19,
       "datasource": {
@@ -937,6 +947,16 @@
           "refId": "A",
           "expr": "histogram_quantile(0.5, sum by (le) (rate(lock_hold_time_seconds_bucket{application=\"ignoa-api\", operation=~\"$operation\"}[$__rate_interval]))) > 0",
           "legendFormat": "p50",
+          "range": true
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "eg0q0rxkuivwgc"
+          },
+          "refId": "C",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(lock_hold_time_seconds_bucket{application=\"ignoa-api\", operation=~\"$operation\"}[$__rate_interval]))) > 0",
+          "legendFormat": "p95",
           "range": true
         },
         {

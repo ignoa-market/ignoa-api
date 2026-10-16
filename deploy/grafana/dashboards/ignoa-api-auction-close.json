@@ -17,8 +17,8 @@
   "panels": [
     {
       "type": "timeseries",
-      "title": "마감 확정 시간 p50 / p99 (폴링 대기 포함)",
-      "description": "경매 1건마다, 종료 시각부터 서버에서 마감이 확정(낙찰자·채팅방·결제 대기 거래 생성)되기까지 걸린 시간. 다음 자동 마감까지 기다린 시간(최대 1초)을 포함하고, 사용자 화면 반영은 포함하지 않음. p50은 절반, p99는 99%의 경매가 이 시간 안에 마감됨",
+      "title": "경매 종료 → 낙찰 확정까지 걸린 시간",
+      "description": "경매 1건마다, 종료 시각부터 서버에서 낙찰이 확정(낙찰자·채팅방·결제 대기 거래 생성)되기까지 걸린 시간. 다음 자동 마감까지 기다린 시간(최대 1초)과 앞 경매들을 기다린 시간을 포함하고, 사용자 화면 반영은 포함하지 않음. p50: 보통 기다리는 시간(평소 약 0.5초), 최대: 가장 늦게 확정된 경매의 시간. 점선은 목표 10초",
       "id": 1,
       "datasource": {
         "type": "prometheus",
@@ -39,9 +39,25 @@
             "lineWidth": 1,
             "fillOpacity": 10,
             "showPoints": "never",
-            "spanNulls": 300000
+            "spanNulls": 300000,
+            "thresholdsStyle": {
+              "mode": "dashed"
+            }
           },
-          "noValue": "최근 마감 없음"
+          "noValue": "최근 마감 없음",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 10
+              }
+            ]
+          }
         },
         "overrides": []
       },
@@ -73,16 +89,16 @@
             "uid": "eg0q0rxkuivwgc"
           },
           "refId": "B",
-          "expr": "histogram_quantile(0.99, sum by (le) (rate(auction_close_lag_seconds_bucket{application=\"ignoa-api\"}[$__rate_interval]))) > 0",
+          "expr": "max(auction_close_lag_seconds_max{application=\"ignoa-api\"}) > 0",
           "range": true,
-          "legendFormat": "p99"
+          "legendFormat": "최대"
         }
       ]
     },
     {
       "type": "timeseries",
       "title": "밀린 경매 수",
-      "description": "종료 시각이 지났지만 아직 마감되지 않은 경매 수(1분마다 DB에서 셈). 자동 마감이 멈추거나 따라잡지 못하면 계속 올라감. 1분 안에 처리되는 짧은 적체는 보이지 않을 수 있음",
+      "description": "종료 시각이 지났지만 아직 마감되지 않은 경매 수(1분마다 DB에서 셈). 자동 마감이 멈추거나 따라잡지 못하면 계속 올라감. 1분 안에 처리되는 짧은 적체는 보이지 않을 수 있음. 20건 초과가 1분 이어지면 Slack 알림",
       "id": 3,
       "datasource": {
         "type": "prometheus",
@@ -136,8 +152,8 @@
     },
     {
       "type": "timeseries",
-      "title": "마감 결과 (초당)",
-      "description": "completed: 마감 완료, skipped: 이미 마감됐거나 조건 불충족, failed: 예외로 실패(다음 실행에서 재시도). 몇 분 구간의 평균이라 짧은 시간에 몰린 처리는 실제보다 낮게 보임",
+      "title": "초당 마감 건수 (결과별)",
+      "description": "마감 완료: 정상 마감 / 건너뜀: 이미 마감됐거나 마감 조건이 맞지 않음 / 실패: 예외로 실패, 다음 실행에서 다시 시도. 몇 분 평균이라 짧게 몰린 처리는 실제보다 낮게 보임",
       "id": 4,
       "datasource": {
         "type": "prometheus",
@@ -162,7 +178,44 @@
           },
           "noValue": "최근 마감 없음"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "completed"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "마감 완료"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "skipped"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "건너뜀"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "failed"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "실패"
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "legend": {
@@ -190,8 +243,8 @@
     },
     {
       "type": "timeseries",
-      "title": "자동 마감 1회 처리 시간 (최대 1,000건)",
-      "description": "자동 마감 1회가 시작부터 끝까지 걸린 시간. 기다린 시간은 포함하지 않아, 마감 확정 시간의 최대 − 최소와 거의 같음. 처리 건수에 따라 달라지므로 마감 결과와 함께 볼 것",
+      "title": "자동 마감 1회 실행 시간 (최대 1,000건씩)",
+      "description": "자동 마감이 한 번 돌 때 시작부터 끝까지 걸린 시간. 처리한 건수에 따라 달라지므로 '초당 마감 건수'와 함께 볼 것",
       "id": 5,
       "datasource": {
         "type": "prometheus",
@@ -253,8 +306,8 @@
     },
     {
       "type": "timeseries",
-      "title": "마감 1건 처리 시간 p50 / p99",
-      "description": "경매 1건의 마감 처리(락 대기·마감 트랜잭션·락 해제)에 걸린 시간. 앞 상품을 기다린 시간은 포함하지 않음. 평소 수십 ms, Redis 장애 시 락 대기 때문에 크게 늘어남",
+      "title": "경매 1건 마감 처리 시간",
+      "description": "앞 경매를 기다린 시간은 빼고, 경매 1건의 마감 트랜잭션(상품 상태 변경·입찰 결과 확정·채팅방·거래 생성)만 잰 시간. 평소 수십 ms",
       "id": 7,
       "datasource": {
         "type": "prometheus",
@@ -302,6 +355,16 @@
           "expr": "histogram_quantile(0.5, sum by (le) (rate(auction_close_item_duration_seconds_bucket{application=\"ignoa-api\"}[$__rate_interval]))) > 0",
           "range": true,
           "legendFormat": "p50"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "eg0q0rxkuivwgc"
+          },
+          "refId": "C",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(auction_close_item_duration_seconds_bucket{application=\"ignoa-api\"}[$__rate_interval]))) > 0",
+          "range": true,
+          "legendFormat": "p95"
         },
         {
           "datasource": {
