@@ -27,7 +27,7 @@ public class AuctionCloseMetrics {
                 .register(meterRegistry);
 
         this.itemDuration = Timer.builder("auction.close.item.duration")
-                .description("마감 1건 처리 시간 (락 대기·마감 트랜잭션·락 해제 포함, 앞 상품을 기다린 시간 제외)")
+                .description("마감 1건 처리 시간 (마감 트랜잭션만, 앞 상품을 기다린 시간 제외)")
                 .register(meterRegistry);
 
         this.closeLag = Timer.builder("auction.close.lag")

@@ -176,44 +176,18 @@ class RedissonDistributedLockTest {
     }
 
     @Test
-    void Fail_Open_락은_정상_획득_후_task의_결과를_반환한다() throws InterruptedException {
-        given(lock.tryLock(anyLong(), any(TimeUnit.class))).willReturn(true);
-        given(lock.isHeldByCurrentThread()).willReturn(true);
-
-        boolean closed = distributedLock.executeWithLockOrFailOpen(
-                "item:lock:1", LockOperation.AUTO_CLOSE, () -> true
-        );
-
-        assertThat(closed).isTrue();
-        verify(lock).unlock();
-    }
-
-    @Test
-    void Fail_Open_락은_Redis_장애_시_락_없이_실행한_task의_결과를_반환한다() throws InterruptedException {
-        given(lock.tryLock(anyLong(), any(TimeUnit.class)))
-                .willThrow(new RedisException("Redis 장애"));
-
-        boolean closed = distributedLock.executeWithLockOrFailOpen(
-                "item:lock:1", LockOperation.AUTO_CLOSE, () -> false
-        );
-
-        assertThat(closed).isFalse();
-        verify(lock, never()).unlock();
-    }
-
-    @Test
     void Redis_장애_시_락_획득_지표는_남기고_요청별_WARN은_남기지_않는다() throws InterruptedException {
         given(lock.tryLock(anyLong(), any(TimeUnit.class)))
                 .willThrow(new RedisException("Redis 장애"));
 
         try (LogCapture logs = new LogCapture()) {
-            distributedLock.executeWithLockOrFailOpen(
-                    "item:lock:1", LockOperation.AUTO_CLOSE, () -> false);
+            catchThrowableOfType(BusinessException.class, () -> distributedLock.executeWithLock(
+                    "item:lock:1", LockOperation.BID, () -> "입찰 완료"));
 
             assertThat(logs.events()).singleElement()
                     .extracting(ILoggingEvent::getLevel).isEqualTo(Level.DEBUG);
             assertThat(meterRegistry.get("lock.acquire.wait")
-                    .tags("key", "item:lock", "operation", "auto_close", "outcome", "infra_error")
+                    .tags("key", "item:lock", "operation", "bid", "outcome", "infra_error")
                     .timer().count()).isEqualTo(1);
         }
     }
