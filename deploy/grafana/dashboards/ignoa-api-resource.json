@@ -317,7 +317,7 @@
           },
           "refId": "A",
           "expr": "process_cpu_usage{application=\"ignoa-api\"}",
-          "legendFormat": "앱 프로세스",
+          "legendFormat": "process",
           "range": true
         },
         {
@@ -327,7 +327,7 @@
           },
           "refId": "B",
           "expr": "system_cpu_usage{application=\"ignoa-api\"}",
-          "legendFormat": "시스템 전체",
+          "legendFormat": "system",
           "range": true
         }
       ]
@@ -379,7 +379,7 @@
           },
           "refId": "A",
           "expr": "sum(jvm_memory_used_bytes{application=\"ignoa-api\", area=\"heap\"})",
-          "legendFormat": "사용",
+          "legendFormat": "used",
           "range": true
         },
         {
@@ -389,7 +389,7 @@
           },
           "refId": "B",
           "expr": "sum(jvm_memory_max_bytes{application=\"ignoa-api\", area=\"heap\"} > 0)",
-          "legendFormat": "최대",
+          "legendFormat": "max",
           "range": true
         }
       ]
@@ -506,7 +506,7 @@
           },
           "refId": "A",
           "expr": "hikaricp_connections_active{application=\"ignoa-api\"}",
-          "legendFormat": "사용 중",
+          "legendFormat": "active",
           "range": true
         },
         {
@@ -516,7 +516,7 @@
           },
           "refId": "B",
           "expr": "hikaricp_connections_idle{application=\"ignoa-api\"}",
-          "legendFormat": "유휴",
+          "legendFormat": "idle",
           "range": true
         },
         {
@@ -526,7 +526,7 @@
           },
           "refId": "C",
           "expr": "hikaricp_connections_pending{application=\"ignoa-api\"}",
-          "legendFormat": "대기",
+          "legendFormat": "pending",
           "range": true
         },
         {
@@ -536,7 +536,7 @@
           },
           "refId": "D",
           "expr": "hikaricp_connections_max{application=\"ignoa-api\"}",
-          "legendFormat": "최대",
+          "legendFormat": "max",
           "range": true
         }
       ]
@@ -587,8 +587,8 @@
             "uid": "eg0q0rxkuivwgc"
           },
           "refId": "A",
-          "expr": "histogram_quantile(0.99, sum by (le) (rate(hikaricp_connections_acquire_seconds_bucket{application=\"ignoa-api\"}[$__rate_interval])))",
-          "legendFormat": "p99",
+          "expr": "histogram_quantile(0.5, sum by (le) (rate(hikaricp_connections_acquire_seconds_bucket{application=\"ignoa-api\"}[$__rate_interval])))",
+          "legendFormat": "p50",
           "range": true
         },
         {
@@ -597,8 +597,8 @@
             "uid": "eg0q0rxkuivwgc"
           },
           "refId": "B",
-          "expr": "sum(rate(hikaricp_connections_acquire_seconds_sum{application=\"ignoa-api\"}[$__rate_interval])) / sum(rate(hikaricp_connections_acquire_seconds_count{application=\"ignoa-api\"}[$__rate_interval]))",
-          "legendFormat": "평균",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(hikaricp_connections_acquire_seconds_bucket{application=\"ignoa-api\"}[$__rate_interval])))",
+          "legendFormat": "p99",
           "range": true
         }
       ]
@@ -715,7 +715,7 @@
           },
           "refId": "A",
           "expr": "tomcat_threads_busy_threads{application=\"ignoa-api\"}",
-          "legendFormat": "사용 중",
+          "legendFormat": "busy",
           "range": true
         },
         {
@@ -725,7 +725,7 @@
           },
           "refId": "B",
           "expr": "tomcat_threads_current_threads{application=\"ignoa-api\"}",
-          "legendFormat": "생성됨",
+          "legendFormat": "current",
           "range": true
         },
         {
@@ -735,7 +735,7 @@
           },
           "refId": "C",
           "expr": "tomcat_threads_config_max_threads{application=\"ignoa-api\"}",
-          "legendFormat": "최대",
+          "legendFormat": "max",
           "range": true
         }
       ]
@@ -787,7 +787,7 @@
           },
           "refId": "A",
           "expr": "jvm_threads_live_threads{application=\"ignoa-api\"}",
-          "legendFormat": "전체",
+          "legendFormat": "live",
           "range": true
         },
         {
@@ -797,7 +797,7 @@
           },
           "refId": "B",
           "expr": "jvm_threads_daemon_threads{application=\"ignoa-api\"}",
-          "legendFormat": "데몬",
+          "legendFormat": "daemon",
           "range": true
         },
         {
@@ -807,7 +807,7 @@
           },
           "refId": "C",
           "expr": "jvm_threads_peak_threads{application=\"ignoa-api\"}",
-          "legendFormat": "최대치",
+          "legendFormat": "peak",
           "range": true
         }
       ]
@@ -828,7 +828,7 @@
     {
       "type": "timeseries",
       "title": "락 대기 p50 / p95 / p99 (획득 성공)",
-      "description": "락을 얻은 요청의 대기 시간. All이면 모든 작업을 합친 분포. 작업별 대기 상한: 입찰 250ms, 연장 500ms, 수정·삭제 1s",
+      "description": "락을 얻은 요청의 대기 시간. 대기 상한: 입찰 250ms, 연장 500ms, 수정·삭제 1s",
       "id": 18,
       "datasource": {
         "type": "prometheus",
@@ -901,7 +901,7 @@
     {
       "type": "timeseries",
       "title": "락 보유 p50 / p95 / p99",
-      "description": "락을 잡은 채 작업(DB 처리 등)을 실행한 시간. All이면 모든 작업을 합친 분포",
+      "description": "락을 잡고 작업(DB 처리 등)을 실행한 시간",
       "id": 19,
       "datasource": {
         "type": "prometheus",
@@ -974,7 +974,7 @@
     {
       "type": "timeseries",
       "title": "락 획득 결과 (초당)",
-      "description": "평소에는 acquired만 보임. timeout은 같은 상품에 요청이 몰린 경우, infra_error는 Redis 장애. 비율과 비용은 아래 실패 패널에서 확인",
+      "description": "timeout: 같은 상품에 요청이 몰림, infra_error: Redis 장애",
       "id": 20,
       "datasource": {
         "type": "prometheus",
@@ -1027,7 +1027,7 @@
     {
       "type": "timeseries",
       "title": "락 실패 비율 (작업별)",
-      "description": "락 획득 시도 중 acquired가 아닌 결과(timeout, infra_error 등)의 비율. 빨간 선은 SLO 초안 0.5%",
+      "description": "락 획득 실패(timeout, infra_error) 비율. 빨간 선은 0.5%",
       "id": 21,
       "datasource": {
         "type": "prometheus",
@@ -1096,8 +1096,8 @@
     },
     {
       "type": "timeseries",
-      "title": "락 실패 시 대기 시간 (평균·최대)",
-      "description": "실패로 끝난 락 획득 시도가 결과를 받기까지 걸린 시간. infra_error는 Redis 오류를 알기까지의 시간으로, 자동 마감에서는 건마다 이만큼 마감이 늦어짐",
+      "title": "락 실패 시 대기 시간 (avg·max)",
+      "description": "실패까지 걸린 시간. timeout: 대기 상한까지 기다림(409), infra_error: Redis 장애 감지까지(503)",
       "id": 22,
       "datasource": {
         "type": "prometheus",
@@ -1143,7 +1143,7 @@
           },
           "refId": "A",
           "expr": "(sum by (operation, outcome) (rate(lock_acquire_wait_seconds_sum{application=\"ignoa-api\", operation=~\"$operation\", outcome!=\"acquired\"}[$__rate_interval])) / sum by (operation, outcome) (rate(lock_acquire_wait_seconds_count{application=\"ignoa-api\", operation=~\"$operation\", outcome!=\"acquired\"}[$__rate_interval]))) > 0",
-          "legendFormat": "{{operation}} / {{outcome}} 평균",
+          "legendFormat": "{{operation}} / {{outcome}} avg",
           "range": true
         },
         {
@@ -1153,7 +1153,7 @@
           },
           "refId": "B",
           "expr": "max by (operation, outcome) (lock_acquire_wait_seconds_max{application=\"ignoa-api\", operation=~\"$operation\", outcome!=\"acquired\"}) > 0",
-          "legendFormat": "{{operation}} / {{outcome}} 최대",
+          "legendFormat": "{{operation}} / {{outcome}} max",
           "range": true
         }
       ]
