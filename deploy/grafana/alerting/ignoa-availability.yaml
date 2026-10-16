@@ -61,13 +61,12 @@ groups:
           keepFiringFor: 2m
           annotations:
             description: |-
-                [영향]
-                : 서버 중단 또는 모니터링 중단 (대시보드·알림으로 상태 확인 불가)
+                [영향]: 서버 중단 또는 모니터링 중단 (대시보드·알림으로 상태 확인 불가)
 
                 [확인 순서]
-                1.  앱·Alloy 컨테이너 상태 (docker ps)
-                2.  EC2 상태 검사 (AWS 콘솔)
-                3.  Grafana 개요 대시보드
+                1. 앱·Alloy 컨테이너 상태 (docker ps)
+                2. EC2 상태 검사 (AWS 콘솔)
+                3. Grafana 개요 대시보드
             summary: '{{ $labels.job }} - 지표 수집 2분 이상 실패'
           labels:
             severity: critical
@@ -138,7 +137,13 @@ groups:
           for: 5m
           keepFiringFor: 2m
           annotations:
-            description: "[영향]\n: 일부 요청이 서버 오류(5xx)로 실패 중\n\n[확인] \n1. Sentry 최근 에러와 trace_id\n2. Grafana 개요 대시보드의 응답 시간·5xx 추이\n3. Loki에서 같은 시각 ERROR 로그"
+            description: |-
+                [영향]: 일부 요청이 서버 오류(5xx)로 실패 중
+
+                [확인 순서]
+                1. Sentry 최근 에러와 trace_id
+                2. Grafana 개요 대시보드의 응답 시간·5xx 추이
+                3. Loki에서 같은 시각 ERROR 로그
             summary: '{{ $labels.job }} 5xx 비율 {{ humanizePercentage $values.A.Value }} - 5분간 5% 초과'
           labels:
             severity: warning

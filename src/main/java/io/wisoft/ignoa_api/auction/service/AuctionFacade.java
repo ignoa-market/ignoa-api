@@ -16,12 +16,6 @@ public class AuctionFacade {
 
     public boolean closeAuction(Long itemId) {
         return auctionService.closeAuction(itemId);
-
-//        return distributedLock.executeWithLockOrFailOpen(
-//                ItemLockKey.of(itemId),
-//                LockOperation.AUTO_CLOSE,
-//                () -> auctionService.closeAuction(itemId)
-//        );
     }
 
     public AuctionExtensionResponse extendAuction(Long itemId, Long userId) {

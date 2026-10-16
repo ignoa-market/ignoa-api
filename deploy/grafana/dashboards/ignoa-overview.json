@@ -30,7 +30,7 @@
     {
       "type": "stat",
       "title": "api",
-      "description": "Alloy가 /actuator/prometheus를 가져오는 데 성공하면 UP. '수집 안 됨'이면 EC2나 Alloy 자체가 멈춘 것일 수 있음",
+      "description": "수집에 성공하면 UP. '수집 안 됨'이면 EC2나 Alloy가 멈췄을 수 있음",
       "id": 2,
       "datasource": {
         "type": "prometheus",
@@ -149,7 +149,7 @@
     {
       "type": "stat",
       "title": "payment",
-      "description": "Alloy가 /actuator/prometheus를 가져오는 데 성공하면 UP. '수집 안 됨'이면 EC2나 Alloy 자체가 멈춘 것일 수 있음",
+      "description": "수집에 성공하면 UP. '수집 안 됨'이면 EC2나 Alloy가 멈췄을 수 있음",
       "id": 4,
       "datasource": {
         "type": "prometheus",
@@ -280,8 +280,8 @@
     },
     {
       "type": "timeseries",
-      "title": "초당 요청 수",
-      "description": "/actuator 요청(헬스체크·지표 수집)은 제외",
+      "title": "초당 요청 수 (응답별)",
+      "description": "/actuator 요청은 제외. 2xx에는 3xx를 포함",
       "id": 7,
       "datasource": {
         "type": "prometheus",
@@ -300,12 +300,62 @@
           "custom": {
             "drawStyle": "line",
             "lineWidth": 1,
-            "fillOpacity": 10,
+            "fillOpacity": 30,
             "showPoints": "never",
-            "spanNulls": true
+            "spanNulls": true,
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            }
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "2xx"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "green"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "4xx"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "orange"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "5xx"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "red"
+                }
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "legend": {
@@ -325,8 +375,8 @@
             "uid": "eg0q0rxkuivwgc"
           },
           "refId": "A",
-          "expr": "sum(rate(http_server_requests_seconds_count{job=\"ignoa-api\", uri!~\"/actuator.*\"}[$__rate_interval]))",
-          "legendFormat": "전체",
+          "expr": "sum(rate(http_server_requests_seconds_count{job=\"ignoa-api\", uri!~\"/actuator.*\", status=~\"2..|3..\"}[$__rate_interval])) or vector(0)",
+          "legendFormat": "2xx",
           "range": true
         },
         {
@@ -335,6 +385,16 @@
             "uid": "eg0q0rxkuivwgc"
           },
           "refId": "B",
+          "expr": "sum(rate(http_server_requests_seconds_count{job=\"ignoa-api\", uri!~\"/actuator.*\", status=~\"4..\"}[$__rate_interval])) or vector(0)",
+          "legendFormat": "4xx",
+          "range": true
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "eg0q0rxkuivwgc"
+          },
+          "refId": "C",
           "expr": "sum(rate(http_server_requests_seconds_count{job=\"ignoa-api\", uri!~\"/actuator.*\", status=~\"5..\"}[$__rate_interval])) or vector(0)",
           "legendFormat": "5xx",
           "range": true
@@ -344,7 +404,7 @@
     {
       "type": "timeseries",
       "title": "5xx 비율",
-      "description": "요청이 없는 구간은 비어 보임",
+      "description": "/actuator 요청은 제외. 요청이 없으면 0",
       "id": 8,
       "datasource": {
         "type": "prometheus",
@@ -367,7 +427,11 @@
             "showPoints": "never",
             "spanNulls": true
           },
-          "max": 1
+          "max": 1,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "red"
+          }
         },
         "overrides": []
       },
@@ -389,7 +453,7 @@
             "uid": "eg0q0rxkuivwgc"
           },
           "refId": "A",
-          "expr": "(sum(rate(http_server_requests_seconds_count{job=\"ignoa-api\", uri!~\"/actuator.*\", status=~\"5..\"}[$__rate_interval])) or vector(0)) / sum(rate(http_server_requests_seconds_count{job=\"ignoa-api\", uri!~\"/actuator.*\"}[$__rate_interval]))",
+          "expr": "((sum(rate(http_server_requests_seconds_count{job=\"ignoa-api\", uri!~\"/actuator.*\", status=~\"5..\"}[$__rate_interval])) or vector(0)) / clamp_min(sum(rate(http_server_requests_seconds_count{job=\"ignoa-api\", uri!~\"/actuator.*\"}[$__rate_interval])), 1e-9)) or vector(0)",
           "legendFormat": "5xx 비율",
           "range": true
         }
@@ -397,8 +461,8 @@
     },
     {
       "type": "timeseries",
-      "title": "응답 시간",
-      "description": "p99는 응답 시간 히스토그램 설정이 있어야 계산됨",
+      "title": "응답 시간 p50 / p95 / p99",
+      "description": "/actuator 요청은 제외",
       "id": 9,
       "datasource": {
         "type": "prometheus",
@@ -442,8 +506,8 @@
             "uid": "eg0q0rxkuivwgc"
           },
           "refId": "A",
-          "expr": "histogram_quantile(0.99, sum by (le) (rate(http_server_requests_seconds_bucket{job=\"ignoa-api\", uri!~\"/actuator.*\"}[$__rate_interval])))",
-          "legendFormat": "p99",
+          "expr": "histogram_quantile(0.5, sum by (le) (rate(http_server_requests_seconds_bucket{job=\"ignoa-api\", uri!~\"/actuator.*\"}[$__rate_interval])))",
+          "legendFormat": "p50",
           "range": true
         },
         {
@@ -452,8 +516,18 @@
             "uid": "eg0q0rxkuivwgc"
           },
           "refId": "B",
-          "expr": "sum(rate(http_server_requests_seconds_sum{job=\"ignoa-api\", uri!~\"/actuator.*\"}[$__rate_interval])) / sum(rate(http_server_requests_seconds_count{job=\"ignoa-api\", uri!~\"/actuator.*\"}[$__rate_interval]))",
-          "legendFormat": "평균",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(http_server_requests_seconds_bucket{job=\"ignoa-api\", uri!~\"/actuator.*\"}[$__rate_interval])))",
+          "legendFormat": "p95",
+          "range": true
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "eg0q0rxkuivwgc"
+          },
+          "refId": "C",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(http_server_requests_seconds_bucket{job=\"ignoa-api\", uri!~\"/actuator.*\"}[$__rate_interval])))",
+          "legendFormat": "p99",
           "range": true
         }
       ]
@@ -473,8 +547,8 @@
     },
     {
       "type": "timeseries",
-      "title": "초당 요청 수",
-      "description": "/actuator 요청(헬스체크·지표 수집)은 제외",
+      "title": "초당 요청 수 (응답별)",
+      "description": "/actuator 요청은 제외. 2xx에는 3xx를 포함",
       "id": 11,
       "datasource": {
         "type": "prometheus",
@@ -493,12 +567,62 @@
           "custom": {
             "drawStyle": "line",
             "lineWidth": 1,
-            "fillOpacity": 10,
+            "fillOpacity": 30,
             "showPoints": "never",
-            "spanNulls": true
+            "spanNulls": true,
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            }
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "2xx"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "green"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "4xx"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "orange"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "5xx"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "red"
+                }
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "legend": {
@@ -518,8 +642,8 @@
             "uid": "eg0q0rxkuivwgc"
           },
           "refId": "A",
-          "expr": "sum(rate(http_server_requests_seconds_count{job=\"ignoa-payment\", uri!~\"/actuator.*\"}[$__rate_interval]))",
-          "legendFormat": "전체",
+          "expr": "sum(rate(http_server_requests_seconds_count{job=\"ignoa-payment\", uri!~\"/actuator.*\", status=~\"2..|3..\"}[$__rate_interval])) or vector(0)",
+          "legendFormat": "2xx",
           "range": true
         },
         {
@@ -528,6 +652,16 @@
             "uid": "eg0q0rxkuivwgc"
           },
           "refId": "B",
+          "expr": "sum(rate(http_server_requests_seconds_count{job=\"ignoa-payment\", uri!~\"/actuator.*\", status=~\"4..\"}[$__rate_interval])) or vector(0)",
+          "legendFormat": "4xx",
+          "range": true
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "eg0q0rxkuivwgc"
+          },
+          "refId": "C",
           "expr": "sum(rate(http_server_requests_seconds_count{job=\"ignoa-payment\", uri!~\"/actuator.*\", status=~\"5..\"}[$__rate_interval])) or vector(0)",
           "legendFormat": "5xx",
           "range": true
@@ -537,7 +671,7 @@
     {
       "type": "timeseries",
       "title": "5xx 비율",
-      "description": "요청이 없는 구간은 비어 보임",
+      "description": "/actuator 요청은 제외. 요청이 없으면 0",
       "id": 12,
       "datasource": {
         "type": "prometheus",
@@ -560,7 +694,11 @@
             "showPoints": "never",
             "spanNulls": true
           },
-          "max": 1
+          "max": 1,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "red"
+          }
         },
         "overrides": []
       },
@@ -582,7 +720,7 @@
             "uid": "eg0q0rxkuivwgc"
           },
           "refId": "A",
-          "expr": "(sum(rate(http_server_requests_seconds_count{job=\"ignoa-payment\", uri!~\"/actuator.*\", status=~\"5..\"}[$__rate_interval])) or vector(0)) / sum(rate(http_server_requests_seconds_count{job=\"ignoa-payment\", uri!~\"/actuator.*\"}[$__rate_interval]))",
+          "expr": "((sum(rate(http_server_requests_seconds_count{job=\"ignoa-payment\", uri!~\"/actuator.*\", status=~\"5..\"}[$__rate_interval])) or vector(0)) / clamp_min(sum(rate(http_server_requests_seconds_count{job=\"ignoa-payment\", uri!~\"/actuator.*\"}[$__rate_interval])), 1e-9)) or vector(0)",
           "legendFormat": "5xx 비율",
           "range": true
         }
@@ -590,8 +728,8 @@
     },
     {
       "type": "timeseries",
-      "title": "응답 시간",
-      "description": "p99는 응답 시간 히스토그램 설정이 있어야 계산됨 (payment는 배포 후부터)",
+      "title": "응답 시간 p50 / p95 / p99",
+      "description": "/actuator 요청은 제외",
       "id": 13,
       "datasource": {
         "type": "prometheus",
@@ -635,8 +773,8 @@
             "uid": "eg0q0rxkuivwgc"
           },
           "refId": "A",
-          "expr": "histogram_quantile(0.99, sum by (le) (rate(http_server_requests_seconds_bucket{job=\"ignoa-payment\", uri!~\"/actuator.*\"}[$__rate_interval])))",
-          "legendFormat": "p99",
+          "expr": "histogram_quantile(0.5, sum by (le) (rate(http_server_requests_seconds_bucket{job=\"ignoa-payment\", uri!~\"/actuator.*\"}[$__rate_interval])))",
+          "legendFormat": "p50",
           "range": true
         },
         {
@@ -645,8 +783,18 @@
             "uid": "eg0q0rxkuivwgc"
           },
           "refId": "B",
-          "expr": "sum(rate(http_server_requests_seconds_sum{job=\"ignoa-payment\", uri!~\"/actuator.*\"}[$__rate_interval])) / sum(rate(http_server_requests_seconds_count{job=\"ignoa-payment\", uri!~\"/actuator.*\"}[$__rate_interval]))",
-          "legendFormat": "평균",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(http_server_requests_seconds_bucket{job=\"ignoa-payment\", uri!~\"/actuator.*\"}[$__rate_interval])))",
+          "legendFormat": "p95",
+          "range": true
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "eg0q0rxkuivwgc"
+          },
+          "refId": "C",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(http_server_requests_seconds_bucket{job=\"ignoa-payment\", uri!~\"/actuator.*\"}[$__rate_interval])))",
+          "legendFormat": "p99",
           "range": true
         }
       ]
@@ -671,6 +819,14 @@
       "title": "ignoa-api / 경매 마감",
       "type": "link",
       "url": "/d/ignoa-api-auction-close",
+      "keepTime": true,
+      "icon": "dashboard",
+      "targetBlank": false
+    },
+    {
+      "title": "ignoa-api / 입찰",
+      "type": "link",
+      "url": "/d/ignoa-api-bid",
       "keepTime": true,
       "icon": "dashboard",
       "targetBlank": false

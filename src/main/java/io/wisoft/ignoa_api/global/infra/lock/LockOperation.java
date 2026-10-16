@@ -9,7 +9,6 @@ public enum LockOperation {
 
     BID("bid", 250L),
     EXTEND("extend", 500L),
-    AUTO_CLOSE("auto_close", 500L),
     UPDATE("update", 1_000L),
     DELETE("delete", 1_000L);
 
