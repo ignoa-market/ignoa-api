@@ -18,6 +18,8 @@ import java.time.LocalDateTime;
 )
 public class User extends BaseEntity {
 
+    public static final int WITHDRAWAL_GRACE_DAYS = 30;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -103,5 +105,9 @@ public class User extends BaseEntity {
 
     public void restore() {
         this.deletedAt = null;
+    }
+
+    public boolean isRecoverable(LocalDateTime now) {
+        return deletedAt != null && deletedAt.isAfter(now.minusDays(WITHDRAWAL_GRACE_DAYS));
     }
 }

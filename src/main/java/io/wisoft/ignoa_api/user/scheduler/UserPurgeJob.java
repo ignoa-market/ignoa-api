@@ -27,7 +27,7 @@ public class UserPurgeJob {
         int failCount = 0;
         int totalTargetCount = 0;
 
-        LocalDateTime cutoff = LocalDateTime.now().minusDays(30);
+        LocalDateTime cutoff = LocalDateTime.now().minusDays(User.WITHDRAWAL_GRACE_DAYS);
 
         while (true) {
             List<User> users = userQueryService.findPurgeTargets(cutoff, lastId, BATCH_SIZE);
