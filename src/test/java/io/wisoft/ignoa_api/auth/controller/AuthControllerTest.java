@@ -64,4 +64,13 @@ class AuthControllerTest {
                 .andExpect(cookie().value("refresh_token", ""))
                 .andExpect(cookie().maxAge("refresh_token", 0));
     }
+
+    @Test
+    void Authorization_헤더가_없는_로그아웃은_RT_쿠키를_만료하지_않는다() throws Exception {
+        // When & Then
+        mockMvc.perform(post("/api/auth/logout")
+                        .cookie(new Cookie("refresh_token", "test-refresh-token")))
+                .andExpect(status().isUnauthorized())
+                .andExpect(cookie().doesNotExist("refresh_token"));
+    }
 }
