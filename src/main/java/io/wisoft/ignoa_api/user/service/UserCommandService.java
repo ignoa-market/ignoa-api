@@ -111,19 +111,8 @@ public class UserCommandService {
     }
 
     public void purgeUser(User user) {
-        ProfileImageSource mediaSource = user.getProfileImageSource();
-        String mediaReference = user.getProfileImageReference();
-
         wishRepository.deleteAllByUserId(user.getId());
         user.purgePersonalData();
         userRepository.save(user);
-
-        if (mediaSource == ProfileImageSource.MANAGED) {
-            outboxAppender.save(
-                    user.getId().toString(),
-                    "USER",
-                    mediaReference,
-                    OutboxEventType.PURGE_PERSONAL_DATA);
-        }
     }
 }

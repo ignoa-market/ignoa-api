@@ -49,6 +49,9 @@ public class User extends BaseEntity {
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
+    @Column(name = "purged_at")
+    private LocalDateTime purgedAt;
+
     public User(String email, String password, String nickname, String address) {
         this.email = email;
         this.password = password;
@@ -91,6 +94,7 @@ public class User extends BaseEntity {
         this.address = null;
         this.profileImageReference = null;
         this.profileImageSource = null;
+        this.purgedAt = LocalDateTime.now();
     }
 
     public boolean isDeleted() {

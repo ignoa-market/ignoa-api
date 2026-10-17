@@ -20,17 +20,17 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     Optional<User> findByProviderAndOauthId(String provider, String oauthId);
 
-    // 지정한 탈퇴일 범위에서 마지막 처리 ID 이후의 회원을 순서대로 조회
+    // 탈퇴 후 기준 시점이 지났고 아직 파기되지 않은 회원을 마지막 처리 ID 이후부터 순서대로 조회
     @Query("""
             SELECT u
             FROM User u
-            WHERE u.deletedAt >= :startDateTime
-                AND u.deletedAt < :endDateTime
+            WHERE u.deletedAt < :cutoff
                 AND u.id > :lastId
+                AND u.purgedAt IS NULL
             ORDER BY u.id ASC
             """)
-    List<User> findPurgeTargets(@Param("startDateTime") LocalDateTime startDateTime, @Param("endDateTime") LocalDateTime endDateTime,
-                                @Param("lastId") Long lastId, Pageable pageable);
+    List<User> findPurgeTargets(@Param("cutoff") LocalDateTime cutoff, @Param("lastId") Long lastId,
+                                Pageable pageable);
 
     boolean existsByEmailAndProvider(String email, String local);
 }
