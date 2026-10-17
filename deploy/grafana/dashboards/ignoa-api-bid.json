@@ -68,7 +68,7 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "reqps",
+          "unit": "suffix: RPS",
           "min": 0,
           "custom": {
             "drawStyle": "line",
@@ -197,7 +197,7 @@
     {
       "type": "timeseries",
       "title": "입찰 응답 시간 p50 / p95 / p99",
-      "description": "POST /api/items/{itemId}/bids 전체 응답 시간(락 대기 포함)",
+      "description": "POST /api/items/{itemId}/bids 응답 시간(락 대기 포함). 반영(2xx)·가격 경합(409)만, 바로 끝나는 400·403 제외",
       "id": 3,
       "datasource": {
         "type": "prometheus",
@@ -242,7 +242,7 @@
             "uid": "eg0q0rxkuivwgc"
           },
           "refId": "A",
-          "expr": "histogram_quantile(0.5, sum by (le) (rate(http_server_requests_seconds_bucket{application=\"ignoa-api\", uri=\"/api/items/{itemId}/bids\", method=\"POST\"}[$__rate_interval]))) > 0",
+          "expr": "histogram_quantile(0.5, sum by (le) (rate(http_server_requests_seconds_bucket{application=\"ignoa-api\", uri=\"/api/items/{itemId}/bids\", method=\"POST\", status=~\"2..|409\"}[$__rate_interval]))) > 0",
           "range": true,
           "legendFormat": "p50"
         },
@@ -252,7 +252,7 @@
             "uid": "eg0q0rxkuivwgc"
           },
           "refId": "B",
-          "expr": "histogram_quantile(0.95, sum by (le) (rate(http_server_requests_seconds_bucket{application=\"ignoa-api\", uri=\"/api/items/{itemId}/bids\", method=\"POST\"}[$__rate_interval]))) > 0",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(http_server_requests_seconds_bucket{application=\"ignoa-api\", uri=\"/api/items/{itemId}/bids\", method=\"POST\", status=~\"2..|409\"}[$__rate_interval]))) > 0",
           "range": true,
           "legendFormat": "p95"
         },
@@ -262,7 +262,7 @@
             "uid": "eg0q0rxkuivwgc"
           },
           "refId": "C",
-          "expr": "histogram_quantile(0.99, sum by (le) (rate(http_server_requests_seconds_bucket{application=\"ignoa-api\", uri=\"/api/items/{itemId}/bids\", method=\"POST\"}[$__rate_interval]))) > 0",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(http_server_requests_seconds_bucket{application=\"ignoa-api\", uri=\"/api/items/{itemId}/bids\", method=\"POST\", status=~\"2..|409\"}[$__rate_interval]))) > 0",
           "range": true,
           "legendFormat": "p99"
         }
