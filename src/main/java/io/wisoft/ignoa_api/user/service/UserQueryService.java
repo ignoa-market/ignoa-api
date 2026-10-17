@@ -46,10 +46,9 @@ public class UserQueryService {
         return MyProfile.from(user, profileImageUrl);
     }
 
-    public List<User> findPurgeTargets(LocalDateTime startDateTime, LocalDateTime endDateTime, Long lastId, int batchSize) {
+    public List<User> findPurgeTargets(LocalDateTime cutoff, Long lastId, int batchSize) {
         return userRepository.findPurgeTargets(
-                startDateTime,
-                endDateTime,
+                cutoff,
                 lastId,
                 PageRequest.of(0, batchSize)
         );

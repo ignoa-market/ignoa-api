@@ -18,6 +18,8 @@ import java.time.LocalDateTime;
 )
 public class User extends BaseEntity {
 
+    public static final int WITHDRAWAL_GRACE_DAYS = 30;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -48,6 +50,9 @@ public class User extends BaseEntity {
 
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
+
+    @Column(name = "purged_at")
+    private LocalDateTime purgedAt;
 
     public User(String email, String password, String nickname, String address) {
         this.email = email;
@@ -91,6 +96,7 @@ public class User extends BaseEntity {
         this.address = null;
         this.profileImageReference = null;
         this.profileImageSource = null;
+        this.purgedAt = LocalDateTime.now();
     }
 
     public boolean isDeleted() {
@@ -99,5 +105,9 @@ public class User extends BaseEntity {
 
     public void restore() {
         this.deletedAt = null;
+    }
+
+    public boolean isRecoverable(LocalDateTime now) {
+        return deletedAt != null && deletedAt.isAfter(now.minusDays(WITHDRAWAL_GRACE_DAYS));
     }
 }
