@@ -36,6 +36,9 @@ public class User extends BaseEntity {
     @Column
     private String address;
 
+    @Column(length = 100)
+    private String bio;
+
     @Enumerated(EnumType.STRING)
     private ProfileImageSource profileImageSource;
 
@@ -75,9 +78,11 @@ public class User extends BaseEntity {
         return user;
     }
 
-    public void updateProfile(String nickname, String address) {
+    public void updateProfile(String nickname, String address, String bio) {
         if (nickname != null) this.nickname = nickname;
         if (address != null) this.address = address;
+        // 앞뒤 공백은 지우고, 빈 문자열은 자기소개를 지우는 요청으로 보고 null로 저장한다
+        if (bio != null) this.bio = bio.isBlank() ? null : bio.strip();
     }
 
     public void updateProfileImage(String profileImageReference, ProfileImageSource profileImageSource) {
@@ -94,6 +99,7 @@ public class User extends BaseEntity {
         this.password = null;
         this.nickname = "탈퇴한 사용자_" + this.id;
         this.address = null;
+        this.bio = null;
         this.profileImageReference = null;
         this.profileImageSource = null;
         this.purgedAt = LocalDateTime.now();

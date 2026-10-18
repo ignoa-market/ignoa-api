@@ -82,11 +82,13 @@ public class UserCommandService {
     public MyProfile updateProfile(Long userId, UpdateUserRequest request) {
         User user = userQueryService.findById(userId);
 
-        if (request.nickname() != null && userRepository.existsByNickname(request.nickname())) {
+        // 지금 내 닉네임을 그대로 보낸 경우는 중복이 아니다
+        boolean nicknameChanged = request.nickname() != null && !request.nickname().equals(user.getNickname());
+        if (nicknameChanged && userRepository.existsByNickname(request.nickname())) {
             throw new BusinessException(ErrorCode.DUPLICATE_NAME);
         }
 
-        user.updateProfile(request.nickname(), request.address());
+        user.updateProfile(request.nickname(), request.address(), request.bio());
         String profileImageUrl = mediaUrlResolver.toUrl(user.getProfileImageReference(), user.getProfileImageSource());
 
         return MyProfile.from(user, profileImageUrl);
