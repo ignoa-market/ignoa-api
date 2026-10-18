@@ -1,7 +1,8 @@
 package io.wisoft.ignoa_api.bid.repository;
 
 import io.wisoft.ignoa_api.bid.entity.Bid;
-import org.springframework.data.jpa.repository.EntityGraph;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -19,16 +20,7 @@ public interface BidRepository extends JpaRepository<Bid, Long> {
     Optional<Bid> findTopByBidderIdAndItemIdOrderByPriceDesc(Long bidderId, Long itemId);
 
     @Query("""
-            SELECT b
-            FROM Bid b
-            JOIN FETCH b.bidder
-            WHERE b.item.id = :itemId
-            ORDER BY b.price DESC
-            """)
-    List<Bid> findByItemIdWithBidder(Long itemId);
-
-    @Query("""
-            SELECT COUNT(b) > 0 
+            SELECT COUNT(b) > 0
             FROM Bid b 
             WHERE b.bidder.id = :userId
                 AND b.item.status IN ('ACTIVE', 'BUY_NOW_PENDING')
@@ -56,4 +48,15 @@ public interface BidRepository extends JpaRepository<Bid, Long> {
             LIMIT 1
             """, nativeQuery = true)
     int markWinningBid(@Param("itemId") Long itemId);
+
+    // 입찰 내역 - beforeBidId 이전 입찰을 최신순 조회 (현재가보다 높을 때만 저장되므로 ID순 = 가격순)
+    @Query("""
+            SELECT b
+            FROM Bid b
+            JOIN FETCH b.bidder
+            WHERE b.item.id = :itemId
+                AND (:beforeBidId IS NULL OR b.id < :beforeBidId)
+            ORDER BY b.id DESC
+            """)
+    Slice<Bid> findBidHistory(@Param("itemId") Long itemId, @Param("beforeBidId") Long beforeBidId, Pageable pageable);
 }
