@@ -1,13 +1,12 @@
 package io.wisoft.ignoa_api.user.scheduler;
 
 import io.wisoft.ignoa_api.user.entity.User;
-import io.wisoft.ignoa_api.user.service.UserCommandService;
+import io.wisoft.ignoa_api.user.service.UserFacade;
 import io.wisoft.ignoa_api.user.service.UserQueryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -16,23 +15,22 @@ import java.util.List;
 @RequiredArgsConstructor
 public class UserPurgeJob {
 
-    private final UserCommandService userCommandService;
+    private static final int BATCH_SIZE = 500;
+
     private final UserQueryService userQueryService;
+    private final UserFacade userFacade;
 
     public void execute() {
-        final int BATCH_SIZE = 500;
         Long lastId = 0L;
 
         int successCount = 0;
         int failCount = 0;
         int totalTargetCount = 0;
 
-        LocalDate targetDate = LocalDate.now().minusDays(30);
-        LocalDateTime startDateTime = targetDate.atStartOfDay();
-        LocalDateTime endDateTime = targetDate.plusDays(1).atStartOfDay();
+        LocalDateTime cutoff = LocalDateTime.now().minusDays(User.WITHDRAWAL_GRACE_DAYS);
 
         while (true) {
-            List<User> users = userQueryService.findPurgeTargets(startDateTime, endDateTime, lastId, BATCH_SIZE);
+            List<User> users = userQueryService.findPurgeTargets(cutoff, lastId, BATCH_SIZE);
 
             if (users.isEmpty()) {
                 break;
@@ -43,7 +41,7 @@ public class UserPurgeJob {
                 totalTargetCount++;
 
                 try {
-                    userCommandService.purgeUser(user);
+                    userFacade.purgeUser(user);
                     successCount++;
                     log.debug("탈퇴 회원 개인정보 파기 완료: userId={}", user.getId());
 

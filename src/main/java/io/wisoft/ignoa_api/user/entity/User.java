@@ -18,6 +18,8 @@ import java.time.LocalDateTime;
 )
 public class User extends BaseEntity {
 
+    public static final int WITHDRAWAL_GRACE_DAYS = 30;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -34,6 +36,9 @@ public class User extends BaseEntity {
     @Column
     private String address;
 
+    @Column(length = 100)
+    private String bio;
+
     @Enumerated(EnumType.STRING)
     private ProfileImageSource profileImageSource;
 
@@ -48,6 +53,9 @@ public class User extends BaseEntity {
 
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
+
+    @Column(name = "purged_at")
+    private LocalDateTime purgedAt;
 
     public User(String email, String password, String nickname, String address) {
         this.email = email;
@@ -70,9 +78,11 @@ public class User extends BaseEntity {
         return user;
     }
 
-    public void updateProfile(String nickname, String address) {
+    public void updateProfile(String nickname, String address, String bio) {
         if (nickname != null) this.nickname = nickname;
         if (address != null) this.address = address;
+        // 앞뒤 공백은 지우고, 빈 문자열은 자기소개를 지우는 요청으로 보고 null로 저장한다
+        if (bio != null) this.bio = bio.isBlank() ? null : bio.strip();
     }
 
     public void updateProfileImage(String profileImageReference, ProfileImageSource profileImageSource) {
@@ -89,8 +99,10 @@ public class User extends BaseEntity {
         this.password = null;
         this.nickname = "탈퇴한 사용자_" + this.id;
         this.address = null;
+        this.bio = null;
         this.profileImageReference = null;
         this.profileImageSource = null;
+        this.purgedAt = LocalDateTime.now();
     }
 
     public boolean isDeleted() {
@@ -99,5 +111,9 @@ public class User extends BaseEntity {
 
     public void restore() {
         this.deletedAt = null;
+    }
+
+    public boolean isRecoverable(LocalDateTime now) {
+        return deletedAt != null && deletedAt.isAfter(now.minusDays(WITHDRAWAL_GRACE_DAYS));
     }
 }

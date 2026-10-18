@@ -51,6 +51,12 @@ spring:
         pool:
           max-wait: 500ms
 
+  # 스케줄러 (작업 수만큼 스레드를 두어, 한 작업이 길어져도 다른 작업이 기다리지 않게 함)
+  task:
+    scheduling:
+      pool:
+        size: 5
+
 ### Redisson (분산 락) ###
 ignoa:
   redis:

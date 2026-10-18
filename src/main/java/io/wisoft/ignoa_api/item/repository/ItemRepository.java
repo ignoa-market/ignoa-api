@@ -152,12 +152,13 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
     int reserveBuyNowIfActive(@Param("id") Long id, @Param("buyNowPrice") Long buyNowPrice,
                               @Param("now") LocalDateTime now);
 
-    // 즉시구매 결제 완료: BUY_NOW_PENDING → BUY_NOW_CLOSED (구매자를 최고 입찰자로 기록)
+    // 즉시구매 결제 완료: BUY_NOW_PENDING → BUY_NOW_CLOSED (구매자를 최고 입찰자로, 현재가를 실제 거래가인 즉시구매가로 기록)
     @Modifying
     @Query("""
             UPDATE Item i
             SET i.status = 'BUY_NOW_CLOSED',
                 i.highestBidder = :buyer,
+                i.currentPrice = i.buyNowPrice,
                 i.version = i.version + 1
             WHERE i.id = :id
                 AND i.status = 'BUY_NOW_PENDING'

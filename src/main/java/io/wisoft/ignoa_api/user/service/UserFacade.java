@@ -9,6 +9,7 @@ import io.wisoft.ignoa_api.global.infra.storage.StorageUploadResult;
 import io.wisoft.ignoa_api.global.outbox.entity.OutboxEventType;
 import io.wisoft.ignoa_api.global.outbox.service.OutboxAppender;
 import io.wisoft.ignoa_api.user.dto.response.MyProfile;
+import io.wisoft.ignoa_api.user.entity.ProfileImageSource;
 import io.wisoft.ignoa_api.user.entity.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -67,5 +68,13 @@ public class UserFacade {
         userCommandService.withdraw(userId);
         tokenBlacklistService.blacklist(accessToken);
         refreshTokenService.delete(refreshToken);
+    }
+
+    public void purgeUser(User user) {
+        if (user.getProfileImageSource() == ProfileImageSource.MANAGED) {
+            storageService.delete(user.getProfileImageReference());
+        }
+
+        userCommandService.purgeUser(user);
     }
 }
