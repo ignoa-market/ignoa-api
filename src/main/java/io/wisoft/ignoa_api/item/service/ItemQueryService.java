@@ -8,6 +8,8 @@ import io.wisoft.ignoa_api.item.dto.request.ItemPreviewRequest;
 import io.wisoft.ignoa_api.item.dto.response.*;
 import io.wisoft.ignoa_api.item.entity.Item;
 import io.wisoft.ignoa_api.item.repository.ItemRepository;
+import io.wisoft.ignoa_api.trade.entity.Trade;
+import io.wisoft.ignoa_api.trade.service.TradeReader;
 import io.wisoft.ignoa_api.wish.repository.WishRepository;
 import io.wisoft.ignoa_api.wish.repository.dto.WishCount;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +34,7 @@ public class ItemQueryService {
     private final ItemRepository itemRepository;
     private final WishRepository wishRepository;
     private final BidRepository bidRepository;
+    private final TradeReader tradeReader;
 
     public ItemDetail getItem(Long itemId, Long userId) {
         Item item = itemReader.getByIdWithSeller(itemId);
@@ -72,6 +75,23 @@ public class ItemQueryService {
     public List<ItemPreview> getMyBidItems(Long userId) {
         List<Item> items = itemRepository.findItemsByBidderId(userId);
         return buildPreviews(userId, items);
+    }
+
+    public List<PurchasePreview> getMyPurchases(Long userId) {
+        List<Trade> trades = tradeReader.findPurchasesOfBuyer(userId);
+        // 같은 상품에 거래가 여러 건일 수 있어 상품은 한 번씩만 카드로 만들고, 상품 ID로 거래와 짝짓는다
+        List<Item> items = trades.stream().map(Trade::getItem).distinct().toList();
+        Map<Long, ItemPreview> previewByItemId = buildPreviews(userId, items).stream()
+                .collect(Collectors.toMap(ItemPreview::itemId, preview -> preview));
+
+        return trades.stream()
+                .map(trade -> new PurchasePreview(
+                        trade.getId(),
+                        trade.getType(),
+                        trade.getStatus(),
+                        previewByItemId.get(trade.getItem().getId())
+                ))
+                .toList();
     }
 
     private List<ItemPreview> buildPreviews(Long userId, List<Item> items) {

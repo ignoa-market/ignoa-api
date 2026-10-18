@@ -2,6 +2,7 @@ package io.wisoft.ignoa_api.user.controller;
 
 import io.wisoft.ignoa_api.global.common.ApiResponse;
 import io.wisoft.ignoa_api.item.dto.response.ItemPreview;
+import io.wisoft.ignoa_api.item.dto.response.PurchasePreview;
 import io.wisoft.ignoa_api.item.service.ItemQueryService;
 import io.wisoft.ignoa_api.user.dto.request.UpdateUserRequest;
 import io.wisoft.ignoa_api.user.dto.response.MyProfile;
@@ -112,6 +113,15 @@ public class UserController {
     ) {
         List<ItemPreview> data = itemQueryService.getMyBidItems(userId);
         ApiResponse<List<ItemPreview>> response = ApiResponse.of(data, "내 입찰 목록을 조회했습니다.");
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/me/purchases")
+    public ResponseEntity<ApiResponse<List<PurchasePreview>>> getMyPurchases(
+        @AuthenticationPrincipal Long userId
+    ) {
+        List<PurchasePreview> data = itemQueryService.getMyPurchases(userId);
+        ApiResponse<List<PurchasePreview>> response = ApiResponse.of(data, "내 구매 목록을 조회했습니다.");
         return ResponseEntity.ok(response);
     }
 }

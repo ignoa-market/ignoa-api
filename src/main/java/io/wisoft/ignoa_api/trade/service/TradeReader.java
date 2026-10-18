@@ -7,6 +7,8 @@ import io.wisoft.ignoa_api.trade.repository.TradeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+
 @Component
 @RequiredArgsConstructor
 public class TradeReader {
@@ -16,5 +18,9 @@ public class TradeReader {
     public Trade getById(Long tradeId) {
         return tradeRepository.findById(tradeId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.TRADE_NOT_FOUND));
+    }
+
+    public List<Trade> findPurchasesOfBuyer(Long buyerId) {
+        return tradeRepository.findPurchasesOfBuyer(buyerId);
     }
 }

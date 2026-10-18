@@ -73,6 +73,17 @@ public interface TradeRepository extends JpaRepository<Trade, Long> {
             """)
     Optional<Trade> findRecentTradeOfBuyer(@Param("itemId") Long itemId, @Param("buyerId") Long buyerId);
 
+    // 내 구매 목록 - 낙찰·즉시구매 모두 포함, 취소된 거래는 제외
+    @Query("""
+            SELECT t
+            FROM Trade t
+            JOIN FETCH t.item
+            WHERE t.buyer.id = :buyerId
+                AND t.status IN ('PAYMENT_PENDING', 'CONFIRMING', 'PAID')
+            ORDER BY t.id DESC
+            """)
+    List<Trade> findPurchasesOfBuyer(@Param("buyerId") Long buyerId);
+
     @Query("""
             SELECT COUNT(t) > 0
             FROM Trade t
