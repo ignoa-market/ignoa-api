@@ -1,7 +1,5 @@
 package io.wisoft.ignoa_api.item.service;
 
-import io.wisoft.ignoa_api.bid.entity.Bid;
-import io.wisoft.ignoa_api.bid.repository.BidRepository;
 import io.wisoft.ignoa_api.global.common.SliceResponse;
 import io.wisoft.ignoa_api.global.infra.storage.MediaUrlResolver;
 import io.wisoft.ignoa_api.item.dto.request.ItemPreviewRequest;
@@ -33,30 +31,29 @@ public class ItemQueryService {
 
     private final ItemRepository itemRepository;
     private final WishRepository wishRepository;
-    private final BidRepository bidRepository;
     private final TradeReader tradeReader;
 
     public ItemDetail getItem(Long itemId, Long userId) {
         Item item = itemReader.getByIdWithSeller(itemId);
 
-        Optional<Bid> myTopBid = userId != null
-                ? bidRepository.findTopByBidderIdAndItemIdOrderByPriceDesc(userId, itemId)
-                : Optional.empty();
-
-        boolean isBidder = myTopBid.isPresent();
+        // 판매자 여부
         boolean isSeller = userId != null && item.isSeller(userId);
-        boolean isTopBidder = myTopBid
-                .map(bid -> bid.isTopBid(item))
-                .orElse(false);
 
-        String profileImageUrl = mediaUrlResolver.toUrl(item.getSeller().getProfileImageReference(), item.getSeller().getProfileImageSource());
+        // 판매자 프로필
+        String profileImageUrl = mediaUrlResolver.toUrl(
+                item.getSeller().getProfileImageReference(), item.getSeller().getProfileImageSource()
+        );
         SellerProfile sellerProfile = SellerProfile.from(item.getSeller(), profileImageUrl);
+
+        // 상품 이미지
         List<ItemMediaUrls> mediaUrls = itemMediaService.getMediaUrls(itemId);
 
+        // 찜 (개수, 여부)
         int wishCount = wishRepository.countByItemId(itemId);
-        boolean isWished = userId != null && wishRepository.existsByUserIdAndItemId(userId, itemId);
+        boolean isWished = userId != null
+                && wishRepository.existsByUserIdAndItemId(userId, itemId);
 
-        return ItemDetail.of(item, mediaUrls, sellerProfile, isTopBidder, isBidder, isSeller, isWished, wishCount);
+        return ItemDetail.of(item, mediaUrls, sellerProfile, isSeller, isWished, wishCount);
     }
 
     public SliceResponse<ItemPreview> getItems(ItemPreviewRequest request, Long userId) {
