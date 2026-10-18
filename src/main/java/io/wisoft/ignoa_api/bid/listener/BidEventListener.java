@@ -18,6 +18,7 @@ public class BidEventListener {
     public void onBidPlaced(BidPlaceEvent event) {
         BidBroadcast broadcast = new BidBroadcast(
                 event.itemId(),
+                event.bidId(),
                 event.currentPrice(),
                 event.bidderNickname(),
                 event.createdAt()

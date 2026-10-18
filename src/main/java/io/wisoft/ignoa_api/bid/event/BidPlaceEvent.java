@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 
 public record BidPlaceEvent(
         Long itemId,
+        Long bidId,
         Long currentPrice,
         String bidderNickname,
         LocalDateTime createdAt
@@ -16,6 +17,7 @@ public record BidPlaceEvent(
     public static BidPlaceEvent of(Bid bid, Item item, User user) {
         return new BidPlaceEvent(
                 item.getId(),
+                bid.getId(),
                 bid.getPrice(),
                 user.getNickname(),
                 bid.getCreatedAt());

@@ -5,7 +5,7 @@ import io.wisoft.ignoa_api.chat.dto.response.ChatMessageResponse;
 import io.wisoft.ignoa_api.chat.entity.ChatMessage;
 import io.wisoft.ignoa_api.chat.repository.ChatMessageRepository;
 import io.wisoft.ignoa_api.chat.repository.ChatRoomRepository;
-import io.wisoft.ignoa_api.global.common.SliceResponse;
+import io.wisoft.ignoa_api.global.common.CursorResponse;
 import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
 import io.wisoft.ignoa_api.item.entity.Item;
@@ -129,12 +129,13 @@ class ChatMessageServiceTest extends IntegrationTestSupport {
     @Test
     void 메시지가_없는_채팅방은_빈_목록을_반환한다() {
         // When
-        SliceResponse<ChatMessageResponse> page = chatMessageService.getMessages(
+        CursorResponse<ChatMessageResponse> page = chatMessageService.getMessages(
                 chatRoomId, buyer.getId(), new ChatMessagePageRequest(null, null));
 
         // Then
         assertThat(page.content()).isEmpty();
         assertThat(page.hasNext()).isFalse();
+        assertThat(page.nextCursor()).isNull();
     }
 
     @Test
@@ -145,12 +146,12 @@ class ChatMessageServiceTest extends IntegrationTestSupport {
         }
 
         // When
-        SliceResponse<ChatMessageResponse> first = chatMessageService.getMessages(
+        CursorResponse<ChatMessageResponse> first = chatMessageService.getMessages(
                 chatRoomId, buyer.getId(), new ChatMessagePageRequest(null, 2));
-        SliceResponse<ChatMessageResponse> second = chatMessageService.getMessages(
-                chatRoomId, buyer.getId(), new ChatMessagePageRequest(lastIdOf(first), 2));
-        SliceResponse<ChatMessageResponse> third = chatMessageService.getMessages(
-                chatRoomId, buyer.getId(), new ChatMessagePageRequest(lastIdOf(second), 2));
+        CursorResponse<ChatMessageResponse> second = chatMessageService.getMessages(
+                chatRoomId, buyer.getId(), new ChatMessagePageRequest(first.nextCursor(), 2));
+        CursorResponse<ChatMessageResponse> third = chatMessageService.getMessages(
+                chatRoomId, buyer.getId(), new ChatMessagePageRequest(second.nextCursor(), 2));
 
         // Then
         assertThat(first.content()).extracting(ChatMessageResponse::content).containsExactly("메시지5", "메시지4");
@@ -159,6 +160,7 @@ class ChatMessageServiceTest extends IntegrationTestSupport {
         assertThat(second.hasNext()).isTrue();
         assertThat(third.content()).extracting(ChatMessageResponse::content).containsExactly("메시지1");
         assertThat(third.hasNext()).isFalse();
+        assertThat(third.nextCursor()).isNull();
     }
 
     @Test
@@ -177,9 +179,5 @@ class ChatMessageServiceTest extends IntegrationTestSupport {
     private Long lastMessageId() {
         return jdbcTemplate.queryForObject(
                 "SELECT last_message_id FROM chat_rooms WHERE id = ?", Long.class, chatRoomId);
-    }
-
-    private Long lastIdOf(SliceResponse<ChatMessageResponse> page) {
-        return page.content().get(page.content().size() - 1).messageId();
     }
 }
