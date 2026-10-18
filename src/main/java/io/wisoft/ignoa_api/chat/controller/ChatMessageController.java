@@ -5,7 +5,7 @@ import io.wisoft.ignoa_api.chat.dto.request.ChatMessageSendRequest;
 import io.wisoft.ignoa_api.chat.dto.response.ChatMessageResponse;
 import io.wisoft.ignoa_api.chat.service.ChatMessageService;
 import io.wisoft.ignoa_api.global.common.ApiResponse;
-import io.wisoft.ignoa_api.global.common.SliceResponse;
+import io.wisoft.ignoa_api.global.common.CursorResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -32,13 +32,13 @@ public class ChatMessageController {
     }
 
     @GetMapping("/{chatRoomId}/messages")
-    public ResponseEntity<ApiResponse<SliceResponse<ChatMessageResponse>>> getMessages(
+    public ResponseEntity<ApiResponse<CursorResponse<ChatMessageResponse>>> getMessages(
             @PathVariable Long chatRoomId,
             @AuthenticationPrincipal Long userId,
             @Valid @ModelAttribute ChatMessagePageRequest request
     ) {
-        SliceResponse<ChatMessageResponse> data = chatMessageService.getMessages(chatRoomId, userId, request);
-        ApiResponse<SliceResponse<ChatMessageResponse>> response = ApiResponse.of(data, "메시지 목록을 조회했습니다.");
+        CursorResponse<ChatMessageResponse> data = chatMessageService.getMessages(chatRoomId, userId, request);
+        ApiResponse<CursorResponse<ChatMessageResponse>> response = ApiResponse.of(data, "메시지 목록을 조회했습니다.");
         return ResponseEntity.ok(response);
     }
 }

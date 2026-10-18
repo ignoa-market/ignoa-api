@@ -7,7 +7,7 @@ import io.wisoft.ignoa_api.chat.entity.ChatRoom;
 import io.wisoft.ignoa_api.chat.event.ChatMessageSendEvent;
 import io.wisoft.ignoa_api.chat.repository.ChatMessageRepository;
 import io.wisoft.ignoa_api.chat.repository.ChatRoomRepository;
-import io.wisoft.ignoa_api.global.common.SliceResponse;
+import io.wisoft.ignoa_api.global.common.CursorResponse;
 import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
 import io.wisoft.ignoa_api.user.entity.User;
@@ -53,7 +53,7 @@ public class ChatMessageService {
         return response;
     }
 
-    public SliceResponse<ChatMessageResponse> getMessages(Long chatRoomId, Long userId, ChatMessagePageRequest request) {
+    public CursorResponse<ChatMessageResponse> getMessages(Long chatRoomId, Long userId, ChatMessagePageRequest request) {
         ChatRoom chatRoom = chatRoomRepository.findByIdWithParticipants(chatRoomId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.CHAT_ROOM_NOT_FOUND));
 
@@ -67,10 +67,16 @@ public class ChatMessageService {
                 PageRequest.of(0, request.size())
         );
 
-        List<ChatMessageResponse> responses = messages.getContent().stream()
+        List<ChatMessage> content = messages.getContent();
+
+        Long nextCursor = messages.hasNext()
+                ? content.get(content.size() - 1).getId()
+                : null;
+
+        List<ChatMessageResponse> response = content.stream()
                 .map(ChatMessageResponse::from)
                 .toList();
 
-        return SliceResponse.of(responses, messages.hasNext());
+        return CursorResponse.of(response, nextCursor, messages.hasNext());
     }
 }
