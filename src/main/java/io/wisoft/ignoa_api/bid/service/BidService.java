@@ -1,10 +1,12 @@
 package io.wisoft.ignoa_api.bid.service;
 
 import io.wisoft.ignoa_api.bid.dto.request.BidCreateRequest;
+import io.wisoft.ignoa_api.bid.dto.request.BidHistoryCursorRequest;
 import io.wisoft.ignoa_api.bid.dto.response.BidHistory;
 import io.wisoft.ignoa_api.bid.dto.response.BidResponse;
 import io.wisoft.ignoa_api.bid.entity.Bid;
 import io.wisoft.ignoa_api.bid.event.BidPlaceEvent;
+import io.wisoft.ignoa_api.global.common.CursorResponse;
 import io.wisoft.ignoa_api.global.infra.lock.LockOperation;
 import io.wisoft.ignoa_api.item.entity.Item;
 import io.wisoft.ignoa_api.bid.repository.BidRepository;
@@ -16,6 +18,8 @@ import io.wisoft.ignoa_api.global.exception.ErrorCode;
 import io.wisoft.ignoa_api.user.service.UserQueryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,6 +37,27 @@ public class BidService {
 
     private final BidRepository bidRepository;
     private final ItemRepository itemRepository;
+
+    public CursorResponse<BidHistory> getBids(Long itemId, BidHistoryCursorRequest request) {
+        if (!itemRepository.existsById(itemId)) {
+            throw new BusinessException(ErrorCode.ITEM_NOT_FOUND);
+        }
+
+        Slice<Bid> bids = bidRepository.findBidHistory(
+                itemId, request.beforeBidId(), PageRequest.of(0, request.size())
+        );
+
+        List<Bid> content = bids.getContent();
+        Long nextCursor = bids.hasNext()
+                ? content.get(content.size() - 1).getId()
+                : null;
+
+        List<BidHistory> response = content.stream()
+                .map(BidHistory::from)
+                .toList();
+
+        return CursorResponse.of(response, nextCursor, bids.hasNext());
+    }
 
     @Transactional
     public BidResponse placeBid(Long itemId, Long bidderId, BidCreateRequest request) {
@@ -65,15 +90,5 @@ public class BidService {
 
         bidRepository.markLosingBids(itemId);
         return true;
-    }
-
-    public List<BidHistory> getBids(Long itemId) {
-        if (!itemRepository.existsById(itemId)) {
-            throw new BusinessException(ErrorCode.ITEM_NOT_FOUND);
-        }
-
-        return bidRepository.findByItemIdWithBidder(itemId).stream()
-                .map(BidHistory::from)
-                .toList();
     }
 }

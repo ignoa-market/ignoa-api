@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 
 public record BidBroadcast(
         Long itemId,
+        Long bidId,
         Long currentPrice,
         String bidderNickname,
         LocalDateTime createdAt
