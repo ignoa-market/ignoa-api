@@ -13,10 +13,10 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
             SELECT cm
             FROM ChatMessage cm
             WHERE cm.chatRoom.id = :chatRoomId
-                AND (:beforeMessageId IS NULL OR cm.id < :beforeMessageId)
+                AND (:cursor IS NULL OR cm.id < :cursor)
             ORDER BY cm.id DESC
             """)
     Slice<ChatMessage> findMessages(@Param("chatRoomId") Long chatRoomId,
-                                    @Param("beforeMessageId") Long beforeMessageId,
+                                    @Param("cursor") Long cursor,
                                     Pageable pageable);
 }

@@ -1,6 +1,6 @@
 package io.wisoft.ignoa_api.chat.controller;
 
-import io.wisoft.ignoa_api.chat.dto.request.ChatMessagePageRequest;
+import io.wisoft.ignoa_api.chat.dto.request.ChatMessageCursorRequest;
 import io.wisoft.ignoa_api.chat.dto.request.ChatMessageSendRequest;
 import io.wisoft.ignoa_api.chat.dto.response.ChatMessageResponse;
 import io.wisoft.ignoa_api.chat.service.ChatMessageService;
@@ -35,7 +35,7 @@ public class ChatMessageController {
     public ResponseEntity<ApiResponse<CursorResponse<ChatMessageResponse>>> getMessages(
             @PathVariable Long chatRoomId,
             @AuthenticationPrincipal Long userId,
-            @Valid @ModelAttribute ChatMessagePageRequest request
+            @Valid @ModelAttribute ChatMessageCursorRequest request
     ) {
         CursorResponse<ChatMessageResponse> data = chatMessageService.getMessages(chatRoomId, userId, request);
         ApiResponse<CursorResponse<ChatMessageResponse>> response = ApiResponse.of(data, "메시지 목록을 조회했습니다.");

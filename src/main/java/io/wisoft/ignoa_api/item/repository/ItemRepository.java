@@ -16,31 +16,33 @@ import java.util.Optional;
 
 public interface ItemRepository extends JpaRepository<Item, Long> {
 
+    // 최신순 - 커서(상품 ID)보다 먼저 등록된 상품. 상품 ID는 등록 순서대로 늘어나므로 id 순서 = 등록 순서
     @Query("""
             SELECT i FROM Item i
-            LEFT JOIN Wish w ON w.item = i
             WHERE i.status = 'ACTIVE'
-            AND (:category IS NULL OR i.category = :category)
-            GROUP BY i
-            ORDER BY COUNT(w) DESC, i.createdAt DESC, i.id DESC
+                AND (:cursor IS NULL OR i.id < :cursor)
+            ORDER BY i.id DESC
             """)
-    Slice<Item> findPopularItems(@Param("category") String category, Pageable pageable);
+    Slice<Item> findLatestItems(@Param("cursor") Long cursor, Pageable pageable);
 
+    // 마감 임박 - 마감이 가까운 순 상위 N개 (이어 보기 없음)
     @Query("""
             SELECT i FROM Item i
             WHERE i.status = 'ACTIVE'
-            AND (:category IS NULL OR i.category = :category)
             ORDER BY i.endAt ASC, i.id ASC
             """)
-    Slice<Item> findEndingSoonItems(@Param("category") String category, Pageable pageable);
+    Slice<Item> findEndingSoonItems(Pageable pageable);
 
+    // 인기순 - 입찰자 많은 순, 같으면 찜 많은 순 상위 N개 (이어 보기 없음)
     @Query("""
             SELECT i FROM Item i
             WHERE i.status = 'ACTIVE'
-            AND (:category IS NULL OR i.category = :category)
-            ORDER BY i.createdAt DESC, i.id DESC
+            ORDER BY
+                (SELECT COUNT(DISTINCT b.bidder.id) FROM Bid b WHERE b.item = i) DESC,
+                (SELECT COUNT(w) FROM Wish w WHERE w.item = i) DESC,
+                i.id DESC
             """)
-    Slice<Item> findLatestItems(@Param("category") String category, Pageable pageable);
+    Slice<Item> findPopularItems(Pageable pageable);
 
     @Query("""
             SELECT i FROM Item i
@@ -70,7 +72,7 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
             FROM Item i
             WHERE i.status = 'ACTIVE'
                 AND i.endAt <= :now
-            ORDER BY i.endAt ASC, i.id ASC
+            ORDER BY i.endAt ASC,i.id ASC
             """)
     List<ExpiredItem> findExpiredActiveItems(@Param("now") LocalDateTime now, Pageable pageable);
 

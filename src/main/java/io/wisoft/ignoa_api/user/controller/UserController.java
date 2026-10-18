@@ -3,7 +3,7 @@ package io.wisoft.ignoa_api.user.controller;
 import io.wisoft.ignoa_api.global.common.ApiResponse;
 import io.wisoft.ignoa_api.item.dto.response.ItemPreview;
 import io.wisoft.ignoa_api.item.dto.response.PurchasePreview;
-import io.wisoft.ignoa_api.item.service.ItemQueryService;
+import io.wisoft.ignoa_api.item.service.UserItemQueryService;
 import io.wisoft.ignoa_api.user.dto.request.UpdateUserRequest;
 import io.wisoft.ignoa_api.user.dto.response.MyProfile;
 import io.wisoft.ignoa_api.user.service.UserCommandService;
@@ -31,9 +31,8 @@ public class UserController {
 
     private final UserCommandService userCommandService;
     private final UserQueryService userQueryService;
+    private final UserItemQueryService userItemQueryService;
     private final UserFacade userFacade;
-
-    private final ItemQueryService itemQueryService;
 
     @GetMapping("/email/duplicate")
     public ResponseEntity<ApiResponse<Void>> checkDuplicateEmail(@RequestParam String email) {
@@ -102,7 +101,7 @@ public class UserController {
     public ResponseEntity<ApiResponse<List<ItemPreview>>> getMyItems(
         @AuthenticationPrincipal Long userId
     ) {
-        List<ItemPreview> data = itemQueryService.getMyItems(userId);
+        List<ItemPreview> data = userItemQueryService.getMyItems(userId);
         ApiResponse<List<ItemPreview>> response = ApiResponse.of(data, "내 상품 목록을 조회했습니다.");
         return ResponseEntity.ok(response);
     }
@@ -111,7 +110,7 @@ public class UserController {
     public ResponseEntity<ApiResponse<List<ItemPreview>>> getMyBids(
         @AuthenticationPrincipal Long userId
     ) {
-        List<ItemPreview> data = itemQueryService.getMyBidItems(userId);
+        List<ItemPreview> data = userItemQueryService.getMyBidItems(userId);
         ApiResponse<List<ItemPreview>> response = ApiResponse.of(data, "내 입찰 목록을 조회했습니다.");
         return ResponseEntity.ok(response);
     }
@@ -120,7 +119,7 @@ public class UserController {
     public ResponseEntity<ApiResponse<List<PurchasePreview>>> getMyPurchases(
         @AuthenticationPrincipal Long userId
     ) {
-        List<PurchasePreview> data = itemQueryService.getMyPurchases(userId);
+        List<PurchasePreview> data = userItemQueryService.getMyPurchases(userId);
         ApiResponse<List<PurchasePreview>> response = ApiResponse.of(data, "내 구매 목록을 조회했습니다.");
         return ResponseEntity.ok(response);
     }
