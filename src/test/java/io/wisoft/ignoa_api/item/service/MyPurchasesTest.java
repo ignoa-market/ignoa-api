@@ -24,7 +24,7 @@ import static org.assertj.core.api.Assertions.tuple;
 class MyPurchasesTest extends IntegrationTestSupport {
 
     @Autowired
-    private ItemQueryService itemQueryService;
+    private UserItemQueryService userItemQueryService;
 
     @Autowired
     private UserRepository userRepository;
@@ -65,7 +65,7 @@ class MyPurchasesTest extends IntegrationTestSupport {
         jdbcTemplate.update("UPDATE trades SET status = 'CANCELED' WHERE id = ?", canceled.getId());
 
         // When
-        List<PurchasePreview> purchases = itemQueryService.getMyPurchases(buyer.getId());
+        List<PurchasePreview> purchases = userItemQueryService.getMyPurchases(buyer.getId());
 
         // Then
         assertThat(purchases)
@@ -82,6 +82,6 @@ class MyPurchasesTest extends IntegrationTestSupport {
         Item item = itemRepository.save(newItem(seller));
         tradeRepository.save(Trade.create(item, buyer, TradeType.BUY_NOW, 1_000L, LocalDateTime.now().plusMinutes(30)));
 
-        assertThat(itemQueryService.getMyPurchases(seller.getId())).isEmpty();
+        assertThat(userItemQueryService.getMyPurchases(seller.getId())).isEmpty();
     }
 }

@@ -1,9 +1,9 @@
 package io.wisoft.ignoa_api.item.controller;
 
-import io.wisoft.ignoa_api.global.common.SliceResponse;
+import io.wisoft.ignoa_api.global.common.CursorResponse;
 import io.wisoft.ignoa_api.item.dto.request.ItemBuyNowRequest;
 import io.wisoft.ignoa_api.item.dto.request.ItemCreateRequest;
-import io.wisoft.ignoa_api.item.dto.request.ItemPreviewRequest;
+import io.wisoft.ignoa_api.item.dto.request.ItemPreviewCursorRequest;
 import io.wisoft.ignoa_api.item.dto.request.ItemUpdateRequest;
 import io.wisoft.ignoa_api.item.dto.response.BuyNowResponse;
 import io.wisoft.ignoa_api.item.dto.response.ItemIdResponse;
@@ -34,12 +34,12 @@ public class ItemController {
     private final ItemFacade itemFacade;
 
     @GetMapping
-    public ResponseEntity<ApiResponse<SliceResponse<ItemPreview>>> getItems(
-            @Valid @ModelAttribute ItemPreviewRequest request,
+    public ResponseEntity<ApiResponse<CursorResponse<ItemPreview>>> getItems(
+            @Valid @ModelAttribute ItemPreviewCursorRequest request,
             @AuthenticationPrincipal Long userId
     ) {
-        SliceResponse<ItemPreview> data = itemQueryService.getItems(request, userId);
-        ApiResponse<SliceResponse<ItemPreview>> response = ApiResponse.of(data, "상품 리스트를 조회했습니다.");
+        CursorResponse<ItemPreview> data = itemQueryService.getItems(request, userId);
+        ApiResponse<CursorResponse<ItemPreview>> response = ApiResponse.of(data, "상품 리스트를 조회했습니다.");
         return ResponseEntity.ok(response);
     }
 
