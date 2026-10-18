@@ -7,6 +7,7 @@ public record MyProfile(
         String email,
         String nickname,
         String address,
+        String bio,
         String profileImageUrl
 ) {
     public static MyProfile from(User user, String profileImageUrl) {
@@ -15,6 +16,7 @@ public record MyProfile(
                 user.getEmail(),
                 user.getNickname(),
                 user.getAddress(),
+                user.getBio(),
                 profileImageUrl
         );
     }

@@ -132,6 +132,7 @@ class ItemBuyNowTest extends IntegrationTestSupport {
 
         Item closed = itemRepository.findByIdWithSeller(item.getId()).orElseThrow();
         assertThat(closed.getStatus()).isEqualTo(ItemStatus.BUY_NOW_CLOSED);
+        assertThat(closed.getCurrentPrice()).isEqualTo(item.getBuyNowPrice());
         assertThat(jdbcTemplate.queryForObject(
                 "SELECT highest_bidder_id FROM items WHERE id = ?", Long.class, item.getId()))
                 .isEqualTo(buyer.getId());
