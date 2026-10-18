@@ -1,6 +1,6 @@
 package io.wisoft.ignoa_api.chat.service;
 
-import io.wisoft.ignoa_api.chat.dto.request.ChatMessagePageRequest;
+import io.wisoft.ignoa_api.chat.dto.request.ChatMessageCursorRequest;
 import io.wisoft.ignoa_api.chat.dto.response.ChatMessageResponse;
 import io.wisoft.ignoa_api.chat.entity.ChatMessage;
 import io.wisoft.ignoa_api.chat.repository.ChatMessageRepository;
@@ -130,7 +130,7 @@ class ChatMessageServiceTest extends IntegrationTestSupport {
     void 메시지가_없는_채팅방은_빈_목록을_반환한다() {
         // When
         CursorResponse<ChatMessageResponse> page = chatMessageService.getMessages(
-                chatRoomId, buyer.getId(), new ChatMessagePageRequest(null, null));
+                chatRoomId, buyer.getId(), new ChatMessageCursorRequest(null, null));
 
         // Then
         assertThat(page.content()).isEmpty();
@@ -147,11 +147,11 @@ class ChatMessageServiceTest extends IntegrationTestSupport {
 
         // When
         CursorResponse<ChatMessageResponse> first = chatMessageService.getMessages(
-                chatRoomId, buyer.getId(), new ChatMessagePageRequest(null, 2));
+                chatRoomId, buyer.getId(), new ChatMessageCursorRequest(null, 2));
         CursorResponse<ChatMessageResponse> second = chatMessageService.getMessages(
-                chatRoomId, buyer.getId(), new ChatMessagePageRequest(first.nextCursor(), 2));
+                chatRoomId, buyer.getId(), new ChatMessageCursorRequest(first.nextCursor(), 2));
         CursorResponse<ChatMessageResponse> third = chatMessageService.getMessages(
-                chatRoomId, buyer.getId(), new ChatMessagePageRequest(second.nextCursor(), 2));
+                chatRoomId, buyer.getId(), new ChatMessageCursorRequest(second.nextCursor(), 2));
 
         // Then
         assertThat(first.content()).extracting(ChatMessageResponse::content).containsExactly("메시지5", "메시지4");
@@ -170,7 +170,7 @@ class ChatMessageServiceTest extends IntegrationTestSupport {
 
         // When & Then
         assertThatThrownBy(() -> chatMessageService.getMessages(
-                chatRoomId, other.getId(), new ChatMessagePageRequest(null, null)))
+                chatRoomId, other.getId(), new ChatMessageCursorRequest(null, null)))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.CHAT_ROOM_ACCESS_DENIED);

@@ -17,6 +17,7 @@ public record ItemDetail(
         List<ItemMediaUrls> mediaUrls,
 
         SellerProfile seller,
+        boolean isSeller,
 
         Long startPrice,
         Long currentPrice,
@@ -25,42 +26,21 @@ public record ItemDetail(
         LocalDateTime createdAt,
         LocalDateTime endAt,
 
-        boolean isTopBidder,
-        boolean isBidder,
-        boolean isSeller,
         boolean isWished,
         int wishCount
 ) {
     public static ItemDetail of(
-            Item item,
-            List<ItemMediaUrls> mediaUrls,
-            SellerProfile seller,
-            boolean isTopBidder,
-            boolean isBidder,
-            boolean isSeller,
-            boolean isWished,
-            int wishCount
+            Item item, List<ItemMediaUrls> mediaUrls,
+            SellerProfile seller, boolean isSeller,
+            boolean isWished, int wishCount
     ) {
         return new ItemDetail(
-                item.getId(),
-                item.getTitle(),
-                item.getDescription(),
-                item.getCategory(),
-                item.getBrand(),
+                item.getId(), item.getTitle(), item.getDescription(), item.getCategory(), item.getBrand(),
                 item.getItemCondition(),
-                mediaUrls,
-                seller,
-                item.getStartPrice(),
-                item.getCurrentPrice(),
-                item.getBuyNowPrice(),
-                item.getStatus(),
-                item.getCreatedAt(),
-                item.getEndAt(),
-                isTopBidder,
-                isBidder,
-                isSeller,
-                isWished,
-                wishCount
+                mediaUrls, seller, isSeller,
+                item.getStartPrice(), item.getCurrentPrice(), item.getBuyNowPrice(),
+                item.getStatus(), item.getCreatedAt(), item.getEndAt(),
+                isWished, wishCount
         );
     }
 }

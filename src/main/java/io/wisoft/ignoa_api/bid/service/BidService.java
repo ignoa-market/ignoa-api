@@ -44,7 +44,7 @@ public class BidService {
         }
 
         Slice<Bid> bids = bidRepository.findBidHistory(
-                itemId, request.beforeBidId(), PageRequest.of(0, request.size())
+                itemId, request.cursor(), PageRequest.of(0, request.size())
         );
 
         List<Bid> content = bids.getContent();

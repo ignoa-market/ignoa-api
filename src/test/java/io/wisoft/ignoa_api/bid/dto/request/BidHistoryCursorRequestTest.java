@@ -30,7 +30,7 @@ class BidHistoryCursorRequestTest {
     }
 
     @Test
-    void 기준_입찰_ID가_1_미만이면_검증에_실패한다() {
+    void 커서가_1_미만이면_검증에_실패한다() {
         // When & Then
         assertThat(validator.validate(new BidHistoryCursorRequest(0L, 20))).hasSize(1);
     }

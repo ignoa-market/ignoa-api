@@ -9,15 +9,12 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface BidRepository extends JpaRepository<Bid, Long> {
 
     List<Bid> findByItemId(Long itemId);
 
     boolean existsByItemId(Long itemId);
-
-    Optional<Bid> findTopByBidderIdAndItemIdOrderByPriceDesc(Long bidderId, Long itemId);
 
     @Query("""
             SELECT COUNT(b) > 0
@@ -49,14 +46,14 @@ public interface BidRepository extends JpaRepository<Bid, Long> {
             """, nativeQuery = true)
     int markWinningBid(@Param("itemId") Long itemId);
 
-    // 입찰 내역 - beforeBidId 이전 입찰을 최신순 조회 (현재가보다 높을 때만 저장되므로 ID순 = 가격순)
+    // 입찰 내역 - 커서(입찰 ID) 이전 입찰을 최신순 조회 (현재가보다 높을 때만 저장되므로 ID순 = 가격순)
     @Query("""
             SELECT b
             FROM Bid b
             JOIN FETCH b.bidder
             WHERE b.item.id = :itemId
-                AND (:beforeBidId IS NULL OR b.id < :beforeBidId)
+                AND (:cursor IS NULL OR b.id < :cursor)
             ORDER BY b.id DESC
             """)
-    Slice<Bid> findBidHistory(@Param("itemId") Long itemId, @Param("beforeBidId") Long beforeBidId, Pageable pageable);
+    Slice<Bid> findBidHistory(@Param("itemId") Long itemId, @Param("cursor") Long cursor, Pageable pageable);
 }

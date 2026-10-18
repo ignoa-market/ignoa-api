@@ -1,6 +1,6 @@
 package io.wisoft.ignoa_api.chat.service;
 
-import io.wisoft.ignoa_api.chat.dto.request.ChatMessagePageRequest;
+import io.wisoft.ignoa_api.chat.dto.request.ChatMessageCursorRequest;
 import io.wisoft.ignoa_api.chat.dto.response.ChatMessageResponse;
 import io.wisoft.ignoa_api.chat.entity.ChatMessage;
 import io.wisoft.ignoa_api.chat.entity.ChatRoom;
@@ -53,7 +53,7 @@ public class ChatMessageService {
         return response;
     }
 
-    public CursorResponse<ChatMessageResponse> getMessages(Long chatRoomId, Long userId, ChatMessagePageRequest request) {
+    public CursorResponse<ChatMessageResponse> getMessages(Long chatRoomId, Long userId, ChatMessageCursorRequest request) {
         ChatRoom chatRoom = chatRoomRepository.findByIdWithParticipants(chatRoomId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.CHAT_ROOM_NOT_FOUND));
 
@@ -63,7 +63,7 @@ public class ChatMessageService {
 
         Slice<ChatMessage> messages = chatMessageRepository.findMessages(
                 chatRoomId,
-                request.beforeMessageId(),
+                request.cursor(),
                 PageRequest.of(0, request.size())
         );
 

@@ -20,7 +20,8 @@ import java.time.LocalDateTime;
 @Table(name = "items",
         indexes = {
                 @Index(name = "idx_items_status_created", columnList = "status, created_at"),
-                @Index(name = "idx_items_status_end_at", columnList = "status, end_at")
+                @Index(name = "idx_items_status_end_at", columnList = "status, end_at"),
+                @Index(name = "idx_items_status_id", columnList = "status, id")
         })
 public class Item extends BaseEntity {
 
