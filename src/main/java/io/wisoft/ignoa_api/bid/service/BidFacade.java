@@ -21,11 +21,13 @@ public class BidFacade {
 
     public BidResponse placeBid(Long itemId, Long bidderId, BidCreateRequest request) {
         try {
-            BidResponse response = distributedLock.executeWithLock(
-                    ItemLockKey.of(itemId),
-                    LockOperation.BID,
-                    () -> bidService.placeBid(itemId, bidderId, request)
-            );
+//            BidResponse response = distributedLock.executeWithLock(
+//                    ItemLockKey.of(itemId),
+//                    LockOperation.BID,
+//                    () -> bidService.placeBid(itemId, bidderId, request)
+//            );
+
+            BidResponse response = bidService.placeBid(itemId, bidderId, request);
 
             bidMetrics.countAccepted();
             return response;
