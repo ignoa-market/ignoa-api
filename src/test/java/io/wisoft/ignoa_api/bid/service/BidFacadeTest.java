@@ -6,7 +6,6 @@ import io.wisoft.ignoa_api.bid.dto.response.BidResponse;
 import io.wisoft.ignoa_api.bid.metric.BidMetrics;
 import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
-import io.wisoft.ignoa_api.global.infra.lock.RedissonDistributedLock;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,9 +27,6 @@ class BidFacadeTest {
     private static final BidCreateRequest REQUEST = new BidCreateRequest(1_000L);
 
     @Mock
-    RedissonDistributedLock distributedLock;
-
-    @Mock
     BidService bidService;
 
     SimpleMeterRegistry registry;
@@ -39,7 +35,7 @@ class BidFacadeTest {
     @BeforeEach
     void setUp() {
         registry = new SimpleMeterRegistry();
-        bidFacade = new BidFacade(bidService, new BidMetrics(registry), distributedLock);
+        bidFacade = new BidFacade(bidService, new BidMetrics(registry));
     }
 
     @Test
@@ -54,7 +50,6 @@ class BidFacadeTest {
         // Then
         assertThat(result).isSameAs(response);
         verify(bidService).placeBid(ITEM_ID, BIDDER_ID, REQUEST);
-        verifyNoInteractions(distributedLock);
     }
 
     @Test

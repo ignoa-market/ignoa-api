@@ -7,6 +7,7 @@ import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
 import io.wisoft.ignoa_api.item.entity.Item;
 import io.wisoft.ignoa_api.item.repository.ItemRepository;
+import io.wisoft.ignoa_api.item.repository.ItemCommandRepository;
 import io.wisoft.ignoa_api.support.IntegrationTestSupport;
 import io.wisoft.ignoa_api.user.entity.User;
 import io.wisoft.ignoa_api.user.repository.UserRepository;
@@ -16,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -37,6 +39,7 @@ class BidServiceConcurrencyTest extends IntegrationTestSupport {
 
     @Autowired
     ItemRepository itemRepository;
+    @Autowired ItemCommandRepository itemCommandRepository;
 
     @AfterEach
     void tearDown() {
@@ -56,6 +59,7 @@ class BidServiceConcurrencyTest extends IntegrationTestSupport {
         ExecutorService executor = Executors.newFixedThreadPool(threadCount);
         CountDownLatch startLatch = new CountDownLatch(1);
         CountDownLatch doneLatch = new CountDownLatch(threadCount);
+        ConcurrentLinkedQueue<Throwable> errors = new ConcurrentLinkedQueue<>();
 
         // When
         for (int i = 0; i < threadCount; i++) {
@@ -65,15 +69,18 @@ class BidServiceConcurrencyTest extends IntegrationTestSupport {
                     startLatch.await();
                     bidService.placeBid(item.getId(), bidder.getId(), new BidCreateRequest(bidPrice));
                 } catch (Exception e) {
-                    // 경합에서 밀린 입찰 실패는 예상된 결과 — 최종 상태(최고가 반영)만 검증
+                    errors.add(e);
                 } finally {
                     doneLatch.countDown();
                 }
             });
         }
         startLatch.countDown();
-        doneLatch.await(10, TimeUnit.SECONDS);
-        executor.shutdown();
+        try {
+            assertThat(doneLatch.await(10, TimeUnit.SECONDS)).as("모든 입찰 완료").isTrue();
+        } finally {
+            executor.shutdownNow();
+        }
 
         // Then
         Item finalItem = itemRepository.findById(item.getId()).orElseThrow();
@@ -84,6 +91,60 @@ class BidServiceConcurrencyTest extends IntegrationTestSupport {
 
         assertThat(finalItem.getCurrentPrice()).isEqualTo(2_000L);
         assertThat(finalItem.getCurrentPrice()).isEqualTo(maxSavedBid);
+        assertThat(errors).allSatisfy(error -> {
+            assertThat(error).isInstanceOf(BusinessException.class);
+            assertThat(((BusinessException) error).getErrorCode()).isEqualTo(ErrorCode.BID_CONFLICT);
+        });
+    }
+
+    @Test
+    void 서로_다른_입찰자가_동일한_가격으로_동시_입찰하면_한건만_반영된다() throws InterruptedException {
+        User seller = userRepository.save(newUser("seller@test.com", "판매자"));
+        Item item = itemRepository.save(newItem(seller));
+        int threadCount = 10;
+        var bidders = java.util.stream.IntStream.range(0, threadCount)
+                .mapToObj(i -> userRepository.save(newUser("bidder" + i + "@test.com", "입찰자" + i)))
+                .toList();
+        CountDownLatch ready = new CountDownLatch(threadCount);
+        CountDownLatch start = new CountDownLatch(1);
+        CountDownLatch done = new CountDownLatch(threadCount);
+        AtomicInteger successes = new AtomicInteger();
+        ConcurrentLinkedQueue<Throwable> errors = new ConcurrentLinkedQueue<>();
+        ExecutorService executor = Executors.newFixedThreadPool(threadCount);
+        try {
+            for (User bidder : bidders) {
+                executor.submit(() -> {
+                    try {
+                        ready.countDown();
+                        assertThat(start.await(10, TimeUnit.SECONDS)).isTrue();
+                        bidService.placeBid(item.getId(), bidder.getId(), new BidCreateRequest(2_000L));
+                        successes.incrementAndGet();
+                    } catch (Throwable error) {
+                        errors.add(error);
+                    } finally {
+                        done.countDown();
+                    }
+                });
+            }
+            assertThat(ready.await(10, TimeUnit.SECONDS)).as("모든 입찰자 준비").isTrue();
+            start.countDown();
+            assertThat(done.await(10, TimeUnit.SECONDS)).as("모든 입찰 완료").isTrue();
+        } finally {
+            start.countDown();
+            executor.shutdownNow();
+        }
+
+        assertThat(successes.get()).isEqualTo(1);
+        assertThat(errors).hasSize(threadCount - 1).allSatisfy(error -> {
+            assertThat(error).isInstanceOf(BusinessException.class);
+            assertThat(((BusinessException) error).getErrorCode()).isEqualTo(ErrorCode.BID_CONFLICT);
+        });
+        var bids = bidRepository.findByItemId(item.getId());
+        assertThat(bids).hasSize(1);
+        assertThat(bids.getFirst().getPrice()).isEqualTo(2_000L);
+        Item reloaded = itemRepository.findById(item.getId()).orElseThrow();
+        assertThat(reloaded.getCurrentPrice()).isEqualTo(2_000L);
+        assertThat(reloaded.getHighestBidder().getId()).isEqualTo(bids.getFirst().getBidder().getId());
     }
 
     @Test
@@ -120,11 +181,11 @@ class BidServiceConcurrencyTest extends IntegrationTestSupport {
         long before = item.getCurrentPrice();
         long bidPrice = item.getCurrentPrice() + 1_000L;
 
-        itemRepository.closeIfActive(item.getId(), item.getEndAt().plusSeconds(1));
+        itemCommandRepository.closeIfExpired(item.getId(), item.getEndAt().plusSeconds(1));
         itemRepository.saveAndFlush(item);
 
         // When
-        int updatedRows = itemRepository.raiseCurrentPriceIfHigher(
+        int updatedRows = itemCommandRepository.raiseCurrentPriceIfHigher(
                 item.getId(), bidPrice, bidder, LocalDateTime.now());
 
         // Then

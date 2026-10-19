@@ -57,15 +57,6 @@ spring:
       pool:
         size: 5
 
-### Redisson (분산 락) ###
-ignoa:
-  redis:
-    redisson:
-      connect-timeout: 500ms
-      response-timeout: 500ms
-      retry-attempts: 1
-      retry-delay: 100ms
-
 ### 인증 ###
 jwt:
   secret: ${JWT_SECRET}

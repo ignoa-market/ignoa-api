@@ -11,6 +11,7 @@ import io.wisoft.ignoa_api.item.dto.response.ItemDetail;
 import io.wisoft.ignoa_api.item.dto.response.ItemIdResponse;
 import io.wisoft.ignoa_api.item.entity.Item;
 import io.wisoft.ignoa_api.item.entity.ItemMedia;
+import io.wisoft.ignoa_api.item.repository.ItemCommandRepository;
 import io.wisoft.ignoa_api.item.repository.ItemRepository;
 import io.wisoft.ignoa_api.item.service.dto.UploadedMedia;
 import io.wisoft.ignoa_api.trade.entity.Trade;
@@ -34,10 +35,10 @@ public class ItemCommandService {
     private final ItemQueryService itemQueryService;
     private final UserQueryService userQueryService;
     private final TradeService tradeService;
-
     private final ItemReader itemReader;
 
     private final ItemRepository itemRepository;
+    private final ItemCommandRepository itemCommandRepository;
     private final WishRepository wishRepository;
     private final BidRepository bidRepository;
 
@@ -59,7 +60,7 @@ public class ItemCommandService {
     }
 
     public ItemDetail updateItem(Long itemId, Long userId, ItemUpdateRequest request, List<UploadedMedia> uploadedMedias) {
-        Item item = itemReader.getByIdWithSeller(itemId);
+        Item item = itemReader.getByIdForUpdate(itemId);
 
         if (!item.isSeller(userId)) {
             throw new BusinessException(ErrorCode.ITEM_UPDATE_FORBIDDEN);
@@ -70,7 +71,6 @@ public class ItemCommandService {
         }
 
         validateBuyNowPrice(item, itemId, request.buyNowPrice());
-
         itemMediaService.validateMediaComposition(itemId, request.deleteMediaIds(), uploadedMedias);
 
         item.update(
@@ -94,13 +94,13 @@ public class ItemCommandService {
     }
 
     public ItemIdResponse deleteItem(Long itemId, Long userId) {
-        Item item = itemReader.getByIdWithSeller(itemId);
+        Item item = itemReader.getById(itemId);
 
         if (!item.isSeller(userId)) {
             throw new BusinessException(ErrorCode.ITEM_DELETE_FORBIDDEN);
         }
 
-        int updatedRows = itemRepository.softDeleteIfActive(itemId);
+        int updatedRows = itemCommandRepository.softDeleteIfActive(itemId);
 
         if (updatedRows == 0) {
             throw new BusinessException(ErrorCode.ITEM_DELETE_CONFLICT);

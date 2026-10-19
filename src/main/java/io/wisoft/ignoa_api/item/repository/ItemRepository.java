@@ -2,63 +2,18 @@ package io.wisoft.ignoa_api.item.repository;
 
 import io.wisoft.ignoa_api.item.entity.Item;
 import io.wisoft.ignoa_api.item.entity.enums.ItemStatus;
-import io.wisoft.ignoa_api.user.entity.User;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Slice;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 public interface ItemRepository extends JpaRepository<Item, Long> {
 
-    // 최신순 - 커서(상품 ID)보다 먼저 등록된 상품. 상품 ID는 등록 순서대로 늘어나므로 id 순서 = 등록 순서
-    @Query("""
-            SELECT i FROM Item i
-            WHERE i.status = 'ACTIVE'
-                AND (:cursor IS NULL OR i.id < :cursor)
-            ORDER BY i.id DESC
-            """)
-    Slice<Item> findLatestItems(@Param("cursor") Long cursor, Pageable pageable);
-
-    // 마감 임박 - 마감이 가까운 순 상위 N개 (이어 보기 없음)
-    @Query("""
-            SELECT i FROM Item i
-            WHERE i.status = 'ACTIVE'
-            ORDER BY i.endAt ASC, i.id ASC
-            """)
-    Slice<Item> findEndingSoonItems(Pageable pageable);
-
-    // 인기순 - 입찰자 많은 순, 같으면 찜 많은 순 상위 N개 (이어 보기 없음)
-    @Query("""
-            SELECT i FROM Item i
-            WHERE i.status = 'ACTIVE'
-            ORDER BY
-                (SELECT COUNT(DISTINCT b.bidder.id) FROM Bid b WHERE b.item = i) DESC,
-                (SELECT COUNT(w) FROM Wish w WHERE w.item = i) DESC,
-                i.id DESC
-            """)
-    Slice<Item> findPopularItems(Pageable pageable);
-
-    @Query("""
-            SELECT i FROM Item i
-            WHERE i.seller.id = :sellerId
-            ORDER BY i.createdAt DESC
-            """)
-    List<Item> findItemsBySellerId(@Param("sellerId") Long sellerId);
-
-    @Query("""
-            SELECT DISTINCT i FROM Item i
-            JOIN Bid b ON b.item = i
-            WHERE b.bidder.id = :bidderId
-            ORDER BY i.createdAt DESC
-            """)
-    List<Item> findItemsByBidderId(@Param("bidderId") Long bidderId);
-
+    // 판매자 정보를 포함한 상품 단건 조회
     @Query("""
             SELECT i FROM Item i
             JOIN FETCH i.seller
@@ -66,116 +21,10 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
             """)
     Optional<Item> findByIdWithSeller(@Param("itemId") Long itemId);
 
-    // 경매 마감 - 만료된 상품 조회
-    @Query("""
-            SELECT i.id, i.endAt
-            FROM Item i
-            WHERE i.status = 'ACTIVE'
-                AND i.endAt <= :now
-            ORDER BY i.endAt ASC,i.id ASC
-            """)
-    List<ExpiredItem> findExpiredActiveItems(@Param("now") LocalDateTime now, Pageable pageable);
-
-    // 경매 마감 - 마감되지 않은 만료 상품 수 (밀린 경매 지표)
-    @Query("""
-            SELECT COUNT(i)
-            FROM Item i
-            WHERE i.status = 'ACTIVE'
-                AND i.endAt <= :now
-            """)
-    long countOverdue(@Param("now") LocalDateTime now);
-
-    // 입찰 조건부 UPDATE
-    @Modifying
-    @Query("""
-            UPDATE Item i
-            SET i.currentPrice = :bidPrice,
-                i.highestBidder = :highestBidder,
-                i.version = i.version + 1
-            WHERE i.id = :id
-                AND i.currentPrice < :bidPrice
-                AND i.status IN ('ACTIVE', 'BUY_NOW_PENDING')
-                AND i.endAt > :now
-                AND i.buyNowPrice > :bidPrice
-            """)
-    int raiseCurrentPriceIfHigher(@Param("id") Long id, @Param("bidPrice") Long bidPrice,
-                                  @Param("highestBidder") User highestBidder, @Param("now") LocalDateTime now);
-
-    // 경매 마감 조건부 UPDATE
-    @Modifying
-    @Query("""
-            UPDATE Item i 
-            SET i.status = CASE WHEN i.highestBidder IS NULL THEN 'NO_BID_CLOSED' ELSE 'BID_CLOSED' END,
-                i.version = i.version + 1
-            WHERE i.id = :id
-                AND i.status = 'ACTIVE'                                    
-                AND i.endAt <= :now
-            """)
-    int closeIfActive(@Param("id") Long id, @Param("now") LocalDateTime now);
-
-    // 삭제 조건부 UPDATE
-    @Modifying
-    @Query("""
-            UPDATE Item i
-            SET i.status = 'DELETED',
-                i.version = i.version + 1
-            WHERE i.id = :id
-                AND i.status = 'ACTIVE'
-                AND NOT EXISTS (SELECT 1
-                                FROM Bid b
-                                WHERE b.item.id = :id)
-            """)
-    int softDeleteIfActive(@Param("id") Long id);
-
-    // 마감 연장 조건부 UPDATE
-    @Modifying(clearAutomatically = true)
-    @Query(value = """
-            UPDATE items
-            SET end_at = DATE_ADD(end_at, INTERVAL 1 DAY),
-                extension_count = extension_count + 1
-            WHERE id = :id
-              AND status = 'ACTIVE'
-              AND end_at > :now
-              AND extension_count < 3
-            """, nativeQuery = true)
-    int extendEndAtIfActive(@Param("id") Long id, @Param("now") LocalDateTime now);
-
-    // 즉시 구매 결제 승인 시작 - ACTIVE → BUY_NOW_PENDING (결제 중 잠금)
-    @Modifying
-    @Query("""
-            UPDATE Item i
-            SET i.status = 'BUY_NOW_PENDING',
-                i.version = i.version + 1
-            WHERE i.id = :id
-                AND i.status = 'ACTIVE'
-                AND i.buyNowPrice = :buyNowPrice
-                AND i.endAt > :now
-            """)
-    int reserveBuyNowIfActive(@Param("id") Long id, @Param("buyNowPrice") Long buyNowPrice,
-                              @Param("now") LocalDateTime now);
-
-    // 즉시구매 결제 완료: BUY_NOW_PENDING → BUY_NOW_CLOSED (구매자를 최고 입찰자로, 현재가를 실제 거래가인 즉시구매가로 기록)
-    @Modifying
-    @Query("""
-            UPDATE Item i
-            SET i.status = 'BUY_NOW_CLOSED',
-                i.highestBidder = :buyer,
-                i.currentPrice = i.buyNowPrice,
-                i.version = i.version + 1
-            WHERE i.id = :id
-                AND i.status = 'BUY_NOW_PENDING'
-            """)
-    int completeBuyNowIfPending(@Param("id") Long id, @Param("buyer") User buyer);
-
-    @Modifying
-    @Query("""
-            UPDATE Item i
-            SET i.status = 'ACTIVE',
-                i.version = i.version + 1
-            WHERE i.id = :id
-                AND i.status = 'BUY_NOW_PENDING'
-            """)
-    int cancelBuyNowIfPending(@Param("id") Long id);
-
+    // 판매자별 지정 상태의 상품 존재 여부 확인
     boolean existsBySellerIdAndStatusIn(Long userId, List<ItemStatus> statuses);
+
+    // 상품 수정용 단건 조회 및 비관적 쓰기 잠금
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    Optional<Item> findForUpdateById(Long itemId);
 }

@@ -3,10 +3,13 @@ package io.wisoft.ignoa_api.item.service;
 import io.wisoft.ignoa_api.global.common.CursorResponse;
 import io.wisoft.ignoa_api.global.infra.storage.MediaUrlResolver;
 import io.wisoft.ignoa_api.item.dto.request.ItemPreviewCursorRequest;
-import io.wisoft.ignoa_api.item.dto.response.*;
+import io.wisoft.ignoa_api.item.dto.response.ItemDetail;
+import io.wisoft.ignoa_api.item.dto.response.ItemMediaUrls;
+import io.wisoft.ignoa_api.item.dto.response.ItemPreview;
+import io.wisoft.ignoa_api.item.dto.response.SellerProfile;
 import io.wisoft.ignoa_api.item.entity.Item;
 import io.wisoft.ignoa_api.item.entity.enums.ItemViewType;
-import io.wisoft.ignoa_api.item.repository.ItemRepository;
+import io.wisoft.ignoa_api.item.repository.ItemQueryRepository;
 import io.wisoft.ignoa_api.wish.repository.WishRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -15,7 +18,7 @@ import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -24,11 +27,10 @@ public class ItemQueryService {
 
     private final ItemReader itemReader;
     private final ItemPreviewAssembler itemPreviewAssembler;
-
     private final ItemMediaService itemMediaService;
     private final MediaUrlResolver mediaUrlResolver;
 
-    private final ItemRepository itemRepository;
+    private final ItemQueryRepository itemQueryRepository;
     private final WishRepository wishRepository;
 
     public ItemDetail getItem(Long itemId, Long userId) {
@@ -63,7 +65,7 @@ public class ItemQueryService {
         List<Item> content = items.getContent();
         List<ItemPreview> itemPreviews = itemPreviewAssembler.assemble(userId, content);
 
-        // 인기순·마감 임박은 상위 5개만 보여 주고, 이어 보기는 최신순만 한다
+        // 최신순 목록에만 다음 페이지 제공
         boolean hasNext = viewType == ItemViewType.LATEST && items.hasNext();
         Long nextCursor = hasNext
                 ? content.get(content.size() - 1).getId()
@@ -74,9 +76,9 @@ public class ItemQueryService {
 
     private Slice<Item> getItemsByView(ItemViewType viewType, Long cursor, Pageable pageable) {
         return switch (viewType) {
-            case LATEST -> itemRepository.findLatestItems(cursor, pageable);
-            case POPULAR -> itemRepository.findPopularItems(pageable);
-            case ENDING_SOON -> itemRepository.findEndingSoonItems(pageable);
+            case LATEST -> itemQueryRepository.findLatestItems(cursor, pageable);
+            case POPULAR -> itemQueryRepository.findPopularItems(pageable);
+            case ENDING_SOON -> itemQueryRepository.findEndingSoonItems(pageable);
         };
     }
 }

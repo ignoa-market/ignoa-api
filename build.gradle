@@ -1,7 +1,7 @@
 plugins {
-	id 'java'
-	id 'org.springframework.boot' version '3.5.7'
-	id 'io.spring.dependency-management' version '1.1.7'
+    id 'java'
+    id 'org.springframework.boot' version '3.5.7'
+    id 'io.spring.dependency-management' version '1.1.7'
 }
 
 group = 'io.wisoft'
@@ -9,85 +9,82 @@ version = '0.0.1-SNAPSHOT'
 description = 'Auction-based used-goods marketplace backend API'
 
 java {
-	toolchain {
-		languageVersion = JavaLanguageVersion.of(21)
-	}
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
 }
 
 configurations {
-	compileOnly {
-		extendsFrom annotationProcessor
-	}
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
 }
 
 repositories {
-	mavenCentral()
+    mavenCentral()
 }
 
 dependencies {
-	// 웹, 서버
-	implementation 'org.springframework.boot:spring-boot-starter-web'
-	implementation 'org.springframework.boot:spring-boot-starter-websocket'
+    // 웹, 서버
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-websocket'
 
-	// 데이터
-	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
-	implementation 'org.apache.commons:commons-pool2'
-	implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
-	runtimeOnly 'com.mysql:mysql-connector-j'
+    // 데이터
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    implementation 'org.apache.commons:commons-pool2'
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+    runtimeOnly 'com.mysql:mysql-connector-j'
 
-	// 보안, 인증
-	implementation 'org.springframework.boot:spring-boot-starter-security'
-	implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
-	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
-	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
+    // 보안, 인증
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
 
-	// 유효성 검사
-	implementation 'org.springframework.boot:spring-boot-starter-validation'
-	implementation 'org.apache.tika:tika-core:3.3.2'
+    // 유효성 검사
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.apache.tika:tika-core:3.3.2'
 
-	// 외부 서비스
-	implementation 'software.amazon.awssdk:s3:2.26.12'
-	implementation 'org.springframework.boot:spring-boot-starter-mail'
+    // 외부 서비스
+    implementation 'software.amazon.awssdk:s3:2.26.12'
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
 
-	// Shedlock
-	implementation 'net.javacrumbs.shedlock:shedlock-spring:6.0.2'
-	implementation 'net.javacrumbs.shedlock:shedlock-provider-jdbc-template:6.0.2'
+    // Shedlock
+    implementation 'net.javacrumbs.shedlock:shedlock-spring:6.0.2'
+    implementation 'net.javacrumbs.shedlock:shedlock-provider-jdbc-template:6.0.2'
 
-	// 분산 락
-	implementation 'org.redisson:redisson:4.6.1'
+    // 측정
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'io.micrometer:micrometer-registry-prometheus'
 
-	// 측정
-	implementation 'org.springframework.boot:spring-boot-starter-actuator'
-	implementation 'io.micrometer:micrometer-registry-prometheus'
+    // Sentry 에러 추적
+    implementation 'io.sentry:sentry-spring-boot-starter-jakarta:8.58.0'
+    implementation 'io.sentry:sentry-logback:8.58.0'
 
-	// Sentry 에러 추적
-	implementation 'io.sentry:sentry-spring-boot-starter-jakarta:8.58.0'
-	implementation 'io.sentry:sentry-logback:8.58.0'
+    // AOP
+    implementation 'org.springframework.boot:spring-boot-starter-aop'
 
-	// AOP
-	implementation 'org.springframework.boot:spring-boot-starter-aop'
+    // 개발 편의
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    implementation 'me.paulschwarz:spring-dotenv:4.0.0'
 
-	// 개발 편의
-	compileOnly 'org.projectlombok:lombok'
-	annotationProcessor 'org.projectlombok:lombok'
-	implementation 'me.paulschwarz:spring-dotenv:4.0.0'
+    // 테스트
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.security:spring-security-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
-	// 테스트
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
-	testImplementation 'org.springframework.security:spring-security-test'
-	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-
-	// 테스트 인프라
-	testImplementation 'org.springframework.boot:spring-boot-testcontainers'
-	testImplementation 'org.testcontainers:junit-jupiter'
-	testImplementation 'org.testcontainers:mysql'
+    // 테스트 인프라
+    testImplementation 'org.springframework.boot:spring-boot-testcontainers'
+    testImplementation 'org.testcontainers:junit-jupiter'
+    testImplementation 'org.testcontainers:mysql'
 }
 
 tasks.named('test') {
-	useJUnitPlatform()
+    useJUnitPlatform()
 }
 
 tasks.named('jar') {
-	enabled = false
+    enabled = false
 }

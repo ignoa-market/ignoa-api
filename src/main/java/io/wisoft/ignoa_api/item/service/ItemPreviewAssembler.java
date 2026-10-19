@@ -1,6 +1,5 @@
 package io.wisoft.ignoa_api.item.service;
 
-
 import io.wisoft.ignoa_api.item.dto.response.ItemPreview;
 import io.wisoft.ignoa_api.item.entity.Item;
 import io.wisoft.ignoa_api.wish.repository.WishRepository;
@@ -33,11 +32,11 @@ public class ItemPreviewAssembler {
         // 대표 이미지
         Map<Long, String> mediaUrlMap = itemMediaService.getFirstMediaUrl(itemIds);
 
-        // 찜 수 (찜이 없는 상품은 결과에 없으므로 0)
+        // 상품별 찜 수 집계 (조회 결과에 없는 상품은 0건)
         Map<Long, Long> wishCountMap = wishRepository.countByItemIds(itemIds).stream()
                 .collect(Collectors.toMap(WishCount::getItemId, WishCount::getCount));
 
-        // 내 찜 여부 (비로그인은 조회 X)
+        // 로그인 사용자의 찜 여부 조회
         Set<Long> wishedItemIds = userId == null
                 ? Set.of()
                 : new HashSet<>(wishRepository.findWishedItemIds(userId, itemIds));
