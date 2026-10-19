@@ -6,9 +6,7 @@ import io.wisoft.ignoa_api.bid.dto.response.BidResponse;
 import io.wisoft.ignoa_api.bid.metric.BidMetrics;
 import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
-import io.wisoft.ignoa_api.global.infra.lock.LockOperation;
 import io.wisoft.ignoa_api.global.infra.lock.RedissonDistributedLock;
-import io.wisoft.ignoa_api.item.support.ItemLockKey;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,7 +14,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
-import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowableOfType;
@@ -46,28 +43,25 @@ class BidFacadeTest {
     }
 
     @Test
-    void Redis_락_획득이_타임아웃되면_입찰에_실패한다() {
+    void 입찰은_분산_락_없이_서비스를_직접_호출한다() {
         // Given
-        givenLockThrows(ErrorCode.LOCK_ACQUISITION_FAILED);
+        BidResponse response = new BidResponse(10L, ITEM_ID, BIDDER_ID, 1_000L, LocalDateTime.now());
+        given(bidService.placeBid(ITEM_ID, BIDDER_ID, REQUEST)).willReturn(response);
 
         // When
-        BusinessException exception = catchThrowableOfType(
-                BusinessException.class,
-                () -> bidFacade.placeBid(ITEM_ID, BIDDER_ID, REQUEST)
-        );
+        BidResponse result = bidFacade.placeBid(ITEM_ID, BIDDER_ID, REQUEST);
 
         // Then
-        assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.LOCK_ACQUISITION_FAILED);
-        verify(bidService, never()).placeBid(ITEM_ID, BIDDER_ID, REQUEST);
+        assertThat(result).isSameAs(response);
+        verify(bidService).placeBid(ITEM_ID, BIDDER_ID, REQUEST);
+        verifyNoInteractions(distributedLock);
     }
 
     @Test
     void 입찰이_반영되면_반영_건수만_센다() {
         // Given
         BidResponse response = new BidResponse(10L, ITEM_ID, BIDDER_ID, 1_000L, LocalDateTime.now());
-        given(distributedLock.executeWithLock(
-                eq(ItemLockKey.of(ITEM_ID)), eq(LockOperation.BID), any(Supplier.class)))
-                .willReturn(response);
+        given(bidService.placeBid(ITEM_ID, BIDDER_ID, REQUEST)).willReturn(response);
 
         // When
         BidResponse result = bidFacade.placeBid(ITEM_ID, BIDDER_ID, REQUEST);
@@ -81,7 +75,8 @@ class BidFacadeTest {
     @Test
     void 가격_경합으로_거절되면_거절_건수를_세고_같은_예외를_던진다() {
         // Given
-        givenLockThrows(ErrorCode.BID_CONFLICT);
+        BusinessException expected = new BusinessException(ErrorCode.BID_CONFLICT);
+        given(bidService.placeBid(ITEM_ID, BIDDER_ID, REQUEST)).willThrow(expected);
 
         // When
         BusinessException exception = catchThrowableOfType(
@@ -90,30 +85,27 @@ class BidFacadeTest {
         );
 
         // Then
-        assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.BID_CONFLICT);
+        assertThat(exception).isSameAs(expected);
         assertThat(count("price_conflict")).isEqualTo(1.0);
         assertThat(count("accepted")).isZero();
     }
 
     @Test
-    void 락_획득_실패와_본인_입찰은_입찰_결과로_세지_않는다() {
+    void 본인_입찰은_입찰_결과로_세지_않고_같은_예외를_던진다() {
         // Given
-        givenLockThrows(ErrorCode.LOCK_ACQUISITION_FAILED);
-        catchThrowableOfType(BusinessException.class, () -> bidFacade.placeBid(ITEM_ID, BIDDER_ID, REQUEST));
+        BusinessException expected = new BusinessException(ErrorCode.SELF_BID_NOT_ALLOWED);
+        given(bidService.placeBid(ITEM_ID, BIDDER_ID, REQUEST)).willThrow(expected);
 
-        givenLockThrows(ErrorCode.SELF_BID_NOT_ALLOWED);
-        catchThrowableOfType(BusinessException.class, () -> bidFacade.placeBid(ITEM_ID, BIDDER_ID, REQUEST));
+        // When
+        BusinessException exception = catchThrowableOfType(
+                BusinessException.class,
+                () -> bidFacade.placeBid(ITEM_ID, BIDDER_ID, REQUEST)
+        );
 
         // Then
+        assertThat(exception).isSameAs(expected);
         assertThat(count("accepted")).isZero();
         assertThat(count("price_conflict")).isZero();
-    }
-
-    @SuppressWarnings("unchecked")
-    private void givenLockThrows(ErrorCode errorCode) {
-        given(distributedLock.executeWithLock(
-                eq(ItemLockKey.of(ITEM_ID)), eq(LockOperation.BID), any(Supplier.class)))
-                .willThrow(new BusinessException(errorCode));
     }
 
     private double count(String outcome) {
