@@ -7,10 +7,10 @@ import io.wisoft.ignoa_api.bid.dto.response.BidResponse;
 import io.wisoft.ignoa_api.bid.entity.Bid;
 import io.wisoft.ignoa_api.bid.event.BidPlaceEvent;
 import io.wisoft.ignoa_api.global.common.CursorResponse;
-import io.wisoft.ignoa_api.global.infra.lock.LockOperation;
 import io.wisoft.ignoa_api.item.entity.Item;
 import io.wisoft.ignoa_api.bid.repository.BidRepository;
 import io.wisoft.ignoa_api.item.repository.ItemRepository;
+import io.wisoft.ignoa_api.item.repository.ItemCommandRepository;
 import io.wisoft.ignoa_api.item.service.ItemReader;
 import io.wisoft.ignoa_api.user.entity.User;
 import io.wisoft.ignoa_api.global.exception.BusinessException;
@@ -37,6 +37,7 @@ public class BidService {
 
     private final BidRepository bidRepository;
     private final ItemRepository itemRepository;
+    private final ItemCommandRepository itemCommandRepository;
 
     public CursorResponse<BidHistory> getBids(Long itemId, BidHistoryCursorRequest request) {
         if (!itemRepository.existsById(itemId)) {
@@ -69,7 +70,7 @@ public class BidService {
             throw new BusinessException(ErrorCode.SELF_BID_NOT_ALLOWED);
         }
 
-        int updatedRows = itemRepository.raiseCurrentPriceIfHigher(itemId, bidPrice, bidder, LocalDateTime.now());
+        int updatedRows = itemCommandRepository.raiseCurrentPriceIfHigher(itemId, bidPrice, bidder, LocalDateTime.now());
 
         if (updatedRows == 0) {
             throw new BusinessException(ErrorCode.BID_CONFLICT);

@@ -15,7 +15,6 @@ import io.wisoft.ignoa_api.item.entity.enums.ItemMediaType;
 import io.wisoft.ignoa_api.item.repository.ItemMediaRepository;
 import io.wisoft.ignoa_api.item.repository.ItemRepository;
 import io.wisoft.ignoa_api.item.service.ItemCommandService;
-import io.wisoft.ignoa_api.item.service.ItemFacade;
 import io.wisoft.ignoa_api.support.IntegrationTestSupport;
 import io.wisoft.ignoa_api.trade.payment.dto.PaymentResult;
 import io.wisoft.ignoa_api.trade.repository.TradeRepository;
@@ -49,8 +48,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * 실제 서비스, 트랜잭션, MySQL UPDATE를 사용한다. 테스트 전용 Aspect는 SQL의 now 인자와
@@ -65,7 +66,6 @@ class AuctionCloseConcurrencyIntegrationTest extends IntegrationTestSupport {
     @Autowired AuctionService auctionService;
     @Autowired BidService bidService;
     @Autowired ItemCommandService itemCommandService;
-    @Autowired ItemFacade itemFacade;
     @Autowired TradePaymentService paymentService;
     @Autowired PaymentResultApplier paymentResultApplier;
     @Autowired ItemRepository itemRepository;
@@ -110,7 +110,7 @@ class AuctionCloseConcurrencyIntegrationTest extends IntegrationTestSupport {
     @Test
     void 종료_직전_입찰이_먼저_갱신하면_마감은_그_입찰의_커밋까지_기다려_낙찰을_확정한다() throws Exception {
         Results results = race("raiseCurrentPriceIfHigher", this::bid,
-                "closeIfActive", this::close);
+                "closeIfExpired", this::close);
 
         assertThat(results.first.error).isNull();
         assertThat(results.second.value).isEqualTo(true);
@@ -120,7 +120,7 @@ class AuctionCloseConcurrencyIntegrationTest extends IntegrationTestSupport {
 
     @Test
     void 마감이_먼저_갱신하면_종료_직전_시각을_가진_입찰도_거절한다() throws Exception {
-        Results results = race("closeIfActive", this::close,
+        Results results = race("closeIfExpired", this::close,
                 "raiseCurrentPriceIfHigher", this::bid);
 
         assertClosedFirst(results, ErrorCode.BID_CONFLICT);
@@ -129,8 +129,8 @@ class AuctionCloseConcurrencyIntegrationTest extends IntegrationTestSupport {
 
     @Test
     void 종료_직전_연장이_먼저_갱신하면_이미_조회한_마감_대상도_마감하지_않는다() throws Exception {
-        Results results = race("extendEndAtIfActive", this::extend,
-                "closeIfActive", this::close);
+        Results results = race("extendIfActive", this::extend,
+                "closeIfExpired", this::close);
 
         assertThat(results.first.error).isNull();
         assertThat(results.second.error).isNull();
@@ -145,8 +145,8 @@ class AuctionCloseConcurrencyIntegrationTest extends IntegrationTestSupport {
 
     @Test
     void 마감이_먼저_갱신하면_종료_직전_시각을_가진_연장도_거절한다() throws Exception {
-        Results results = race("closeIfActive", this::close,
-                "extendEndAtIfActive", this::extend);
+        Results results = race("closeIfExpired", this::close,
+                "extendIfActive", this::extend);
 
         assertClosedFirst(results, ErrorCode.AUCTION_EXTEND_CONFLICT);
         assertNoBidClosed();
@@ -157,7 +157,7 @@ class AuctionCloseConcurrencyIntegrationTest extends IntegrationTestSupport {
     @Test
     void 입찰_없는_상품의_삭제가_먼저_갱신하면_마감을_생략한다() throws Exception {
         Results results = race("softDeleteIfActive", this::delete,
-                "closeIfActive", this::close);
+                "closeIfExpired", this::close);
 
         assertThat(results.first.error).isNull();
         assertThat(results.second.error).isNull();
@@ -168,8 +168,8 @@ class AuctionCloseConcurrencyIntegrationTest extends IntegrationTestSupport {
 
     @Test
     void 마감이_먼저_갱신하면_상품_삭제를_거절한다() throws Exception {
-        Results results = race("closeIfActive", this::close,
-                "softDeleteIfActive", this::delete);
+        Results results = race("closeIfExpired", this::close,
+                "findForUpdateById", this::delete);
 
         assertClosedFirst(results, ErrorCode.ITEM_DELETE_CONFLICT);
         assertNoBidClosed();
@@ -179,7 +179,7 @@ class AuctionCloseConcurrencyIntegrationTest extends IntegrationTestSupport {
     void 즉시구매_예약이_먼저_갱신하면_종료_시각에도_대기_상태를_마감하지_않는다() throws Exception {
         Long tradeId = buyNowTrade();
         Results results = race("reserveBuyNowIfActive", () -> reserve(tradeId),
-                "closeIfActive", this::close);
+                "closeIfExpired", this::close);
 
         assertThat(results.first.error).isNull();
         assertThat(results.second.error).isNull();
@@ -192,7 +192,7 @@ class AuctionCloseConcurrencyIntegrationTest extends IntegrationTestSupport {
     @Test
     void 마감이_먼저_갱신하면_즉시구매_예약을_거절하고_거래_승인_시작도_롤백한다() throws Exception {
         Long tradeId = buyNowTrade();
-        Results results = race("closeIfActive", this::close,
+        Results results = race("closeIfExpired", this::close,
                 "reserveBuyNowIfActive", () -> reserve(tradeId));
 
         assertClosedFirst(results, ErrorCode.BUY_NOW_CONFLICT);
@@ -209,7 +209,7 @@ class AuctionCloseConcurrencyIntegrationTest extends IntegrationTestSupport {
         reserve(tradeId);
         Results results = race("completeBuyNowIfPending", () -> paymentResultApplier.apply(tradeId,
                         new PaymentResult(tradeId, "race-order", "DONE", 1_000_000L, endAt, null, null)),
-                "closeIfActive", this::close);
+                "closeIfExpired", this::close);
 
         assertThat(results.first.error).isNull();
         assertThat(results.first.value).isEqualTo(true);
@@ -229,7 +229,7 @@ class AuctionCloseConcurrencyIntegrationTest extends IntegrationTestSupport {
     void 대기_상태에서_마감이_먼저_진입해도_결제_완료는_정상_반영된다() throws Exception {
         Long tradeId = buyNowTrade();
         reserve(tradeId);
-        Results results = race("closeIfActive", this::close,
+        Results results = race("closeIfExpired", this::close,
                 "completeBuyNowIfPending", () -> paymentResultApplier.apply(tradeId,
                         new PaymentResult(tradeId, "race-order", "DONE", 1_000_000L, endAt, null, null)));
 
@@ -250,7 +250,7 @@ class AuctionCloseConcurrencyIntegrationTest extends IntegrationTestSupport {
         reserve(tradeId);
         Results results = race("cancelBuyNowIfPending", () -> paymentResultApplier.apply(tradeId,
                         new PaymentResult(tradeId, "race-order", "FAILED", 1_000_000L, null, "FAILED", "실패")),
-                "closeIfActive", this::close);
+                "closeIfExpired", this::close);
 
         assertThat(results.first.error).isNull();
         assertThat(results.second.error).isNull();
@@ -264,7 +264,7 @@ class AuctionCloseConcurrencyIntegrationTest extends IntegrationTestSupport {
         bid();
         Long tradeId = buyNowTrade();
         reserve(tradeId);
-        Results results = race("closeIfActive", this::close,
+        Results results = race("closeIfExpired", this::close,
                 "cancelBuyNowIfPending", () -> paymentResultApplier.apply(tradeId,
                         new PaymentResult(tradeId, "race-order", "FAILED", 1_000_000L, null, "FAILED", "실패")));
 
@@ -278,32 +278,9 @@ class AuctionCloseConcurrencyIntegrationTest extends IntegrationTestSupport {
     }
 
     @Test
-    void 수정이_활성_상태를_확인한_뒤_마감되면_낙관적_락으로_수정을_롤백한다() throws Exception {
-        mediaRepository.save(ItemMedia.from(item, "race/image.jpg", ItemMediaType.IMAGE));
-        // 검증이 끝난 수정 트랜잭션은 아직 상품 UPDATE 전이므로 마감이 먼저 커밋할 수 있다.
-        interleaving.arm("validateMediaComposition", "closeIfActive");
-        try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
-            Future<Outcome> update = executor.submit(() -> outcome(() -> itemFacade.updateItem(item.getId(), seller.getId(),
-                    new ItemUpdateRequest("변경된 제목", null, null, null, null, null, List.of()), List.of())));
-            try {
-                await(interleaving.firstReached);
-                assertThat(executor.submit(this::close).get(10, TimeUnit.SECONDS)).isTrue();
-            } finally {
-                interleaving.release.countDown();
-            }
-            assertError(update.get(10, TimeUnit.SECONDS), ErrorCode.ITEM_CONFLICT);
-        }
-        interleaving.disarm();
-        assertThat(jdbc.queryForObject("SELECT title FROM items WHERE id = ?", String.class, item.getId()))
-                .isEqualTo("테스트 상품");
-        assertThat(mediaRepository.count()).isEqualTo(1);
-        assertNoBidClosed();
-    }
-
-    @Test
     void 수정이_먼저_행을_갱신하면_마감도_커밋_후_정상_처리한다() throws Exception {
         mediaRepository.save(ItemMedia.from(item, "race/image.jpg", ItemMediaType.IMAGE));
-        interleaving.arm("unused", "closeIfActive");
+        interleaving.arm("unused", "closeIfExpired");
         try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
             Future<Outcome> update = executor.submit(() -> outcome(() ->
                     new TransactionTemplate(transactionManager).execute(status -> {
@@ -333,6 +310,248 @@ class AuctionCloseConcurrencyIntegrationTest extends IntegrationTestSupport {
         assertNoBidClosed();
     }
 
+    @Test
+    void 입찰_UPDATE_후_기록_저장_전에_삭제가_진입해도_입찰_커밋_후_삭제를_거절한다() throws Exception {
+        Results results = race("raiseCurrentPriceIfHigher", this::bid,
+                "findForUpdateById", this::delete);
+
+        assertThat(results.first.error).isNull();
+        assertError(results.second, ErrorCode.ITEM_DELETE_CONFLICT);
+        assertActiveBid();
+        assertNoSettlement();
+    }
+
+    @Test
+    void 삭제가_먼저_갱신하면_삭제_전_상품을_읽은_입찰도_반영되지_않는다() throws Exception {
+        Results results = race("softDeleteIfActive", this::delete,
+                "raiseCurrentPriceIfHigher", this::bid);
+
+        assertThat(results.first.error).isNull();
+        assertError(results.second, ErrorCode.BID_CONFLICT);
+        assertThat(status()).isEqualTo("DELETED");
+        assertThat(count("bids", "1 = 1")).isZero();
+        assertThat(currentPrice()).isEqualTo(1_000L);
+        assertThat(highestBidderId()).isNull();
+        assertNoSettlement();
+    }
+
+    @Test
+    void 입찰이_먼저_갱신해도_연장은_입찰_가격과_최고입찰자를_보존한다() throws Exception {
+        Results results = race("raiseCurrentPriceIfHigher", this::bid,
+                "extendIfActive", this::extend);
+
+        assertBothSucceeded(results);
+        assertActiveBid();
+        assertExtended();
+    }
+
+    @Test
+    void 연장이_먼저_갱신해도_입찰은_연장된_종료시각을_보존한다() throws Exception {
+        Results results = race("extendIfActive", this::extend,
+                "raiseCurrentPriceIfHigher", this::bid);
+
+        assertBothSucceeded(results);
+        assertActiveBid();
+        assertExtended();
+    }
+
+    @Test
+    void 입찰이_먼저_갱신해도_즉시구매_예약은_기존_입찰을_보존한다() throws Exception {
+        Long tradeId = buyNowTrade();
+        Results results = race("raiseCurrentPriceIfHigher", this::bid,
+                "reserveBuyNowIfActive", () -> reserve(tradeId));
+
+        assertBothSucceeded(results);
+        assertThat(status()).isEqualTo("BUY_NOW_PENDING");
+        assertBidPriceAndRecord();
+        assertTradeStatus(tradeId, "CONFIRMING");
+    }
+
+    @Test
+    void 즉시구매_예약이_먼저_갱신해도_결제대기_중_입찰은_허용한다() throws Exception {
+        Long tradeId = buyNowTrade();
+        Results results = race("reserveBuyNowIfActive", () -> reserve(tradeId),
+                "raiseCurrentPriceIfHigher", this::bid);
+
+        assertBothSucceeded(results);
+        assertThat(status()).isEqualTo("BUY_NOW_PENDING");
+        assertBidPriceAndRecord();
+        assertTradeStatus(tradeId, "CONFIRMING");
+    }
+
+    @Test
+    void 입찰이_먼저_갱신하면_즉시구매_결제완료가_입찰을_패찰처리하고_거래가를_확정한다() throws Exception {
+        Long tradeId = buyNowTrade();
+        reserve(tradeId);
+        Results results = race("raiseCurrentPriceIfHigher", this::bid,
+                "completeBuyNowIfPending", () -> completePayment(tradeId));
+
+        assertBothSucceeded(results);
+        assertBuyNowCompleted(tradeId);
+        assertThat(jdbc.queryForList("SELECT status FROM bids WHERE item_id = ?", String.class, item.getId()))
+                .containsExactly("LOST");
+        assertThat(count("bids", "price = 2000")).isEqualTo(1);
+    }
+
+    @Test
+    void 즉시구매_결제완료가_먼저_갱신하면_입찰은_거절되고_추가_입찰기록이_없다() throws Exception {
+        Long tradeId = buyNowTrade();
+        reserve(tradeId);
+        Results results = race("completeBuyNowIfPending", () -> completePayment(tradeId),
+                "raiseCurrentPriceIfHigher", this::bid);
+
+        assertThat(results.first.error).isNull();
+        assertThat(results.first.value).isEqualTo(true);
+        assertError(results.second, ErrorCode.BID_CONFLICT);
+        assertBuyNowCompleted(tradeId);
+        assertThat(count("bids", "1 = 1")).isZero();
+    }
+
+    @Test
+    void 수정이_먼저_갱신하면_대기하던_입찰은_변경된_즉시구매가_조건으로_거절한다() throws Exception {
+        mediaRepository.save(ItemMedia.from(item, "race/image.jpg", ItemMediaType.IMAGE));
+        interleaving.arm("unused", "raiseCurrentPriceIfHigher");
+        try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
+            Future<Outcome> update = executor.submit(() -> outcome(() ->
+                    new TransactionTemplate(transactionManager).execute(tx -> {
+                        itemCommandService.updateItem(item.getId(), seller.getId(),
+                                new ItemUpdateRequest("변경된 제목", null, null, null, null, 1_500L, List.of()), List.of());
+                        entityManager.flush();
+                        interleaving.firstReached.countDown();
+                        try { await(interleaving.release); }
+                        catch (InterruptedException e) { Thread.currentThread().interrupt(); throw new IllegalStateException(e); }
+                        return null;
+                    })));
+            Future<Outcome> bid;
+            try {
+                await(interleaving.firstReached);
+                bid = executor.submit(() -> outcome(this::bid));
+                await(interleaving.secondEntered);
+            } finally {
+                interleaving.release.countDown();
+            }
+            assertThat(update.get(10, TimeUnit.SECONDS).error).isNull();
+            assertError(bid.get(10, TimeUnit.SECONDS), ErrorCode.BID_CONFLICT);
+        } finally {
+            interleaving.disarm();
+        }
+        assertThat(status()).isEqualTo("ACTIVE");
+        assertThat(currentPrice()).isEqualTo(1_000L);
+        assertThat(highestBidderId()).isNull();
+        assertThat(count("bids", "1 = 1")).isZero();
+        assertThat(jdbc.queryForObject("SELECT buy_now_price FROM items WHERE id = ?", Long.class, item.getId()))
+                .isEqualTo(1_500L);
+    }
+
+    @Test
+    void 입찰이_먼저_갱신하면_수정은_커밋을_기다린_뒤_입찰가와_입찰자를_보존한다() throws Exception {
+        mediaRepository.save(ItemMedia.from(item, "race/image.jpg", ItemMediaType.IMAGE));
+        Results results = race("raiseCurrentPriceIfHigher", this::bid,
+                "findForUpdateById", () -> itemCommandService.updateItem(item.getId(), seller.getId(),
+                        new ItemUpdateRequest("변경된 제목", null, null, null, null, null, List.of()), List.of()));
+
+        assertBothSucceeded(results);
+        assertActiveBid();
+        assertNoSettlement();
+        assertThat(jdbc.queryForObject("SELECT title FROM items WHERE id = ?", String.class, item.getId()))
+                .isEqualTo("변경된 제목");
+        assertThat(jdbc.queryForObject("SELECT buy_now_price FROM items WHERE id = ?", Long.class, item.getId()))
+                .isEqualTo(1_000_000L);
+    }
+
+    @Test
+    void 입찰이_먼저_갱신하면_대기하던_즉시구매가_수정은_입찰_내역을_확인하고_거절한다() throws Exception {
+        mediaRepository.save(ItemMedia.from(item, "race/image.jpg", ItemMediaType.IMAGE));
+        Results results = race("raiseCurrentPriceIfHigher", this::bid,
+                "findForUpdateById", () -> itemCommandService.updateItem(item.getId(), seller.getId(),
+                        new ItemUpdateRequest("변경된 제목", null, null, null, null, 2_000_000L, List.of()), List.of()));
+
+        assertThat(results.first.error).isNull();
+        assertError(results.second, ErrorCode.BUY_NOW_PRICE_CHANGED_NOT_ALLOWED);
+        assertActiveBid();
+        assertThat(jdbc.queryForObject("SELECT title FROM items WHERE id = ?", String.class, item.getId()))
+                .isEqualTo("테스트 상품");
+        assertThat(jdbc.queryForObject("SELECT buy_now_price FROM items WHERE id = ?", Long.class, item.getId()))
+                .isEqualTo(1_000_000L);
+        assertThat(mediaRepository.count()).isEqualTo(1);
+    }
+
+    @Test
+    void 마감이_먼저_갱신하면_대기하던_수정은_마감_상태를_확인하고_거절한다() throws Exception {
+        mediaRepository.save(ItemMedia.from(item, "race/image.jpg", ItemMediaType.IMAGE));
+        Results results = race("closeIfExpired", this::close,
+                "findForUpdateById", () -> itemCommandService.updateItem(item.getId(), seller.getId(),
+                        new ItemUpdateRequest("변경된 제목", null, null, null, null, null, List.of()), List.of()));
+
+        assertThat(results.first.error).isNull();
+        assertThat(results.first.value).isEqualTo(true);
+        assertError(results.second, ErrorCode.AUCTION_ALREADY_CLOSED);
+        assertNoBidClosed();
+        assertThat(jdbc.queryForObject("SELECT title FROM items WHERE id = ?", String.class, item.getId()))
+                .isEqualTo("테스트 상품");
+    }
+
+    @Test
+    void 즉시구매_예약이_먼저_갱신하면_대기하던_수정은_결제_대기_상태를_확인하고_거절한다() throws Exception {
+        mediaRepository.save(ItemMedia.from(item, "race/image.jpg", ItemMediaType.IMAGE));
+        Long tradeId = buyNowTrade();
+        Results results = race("reserveBuyNowIfActive", () -> reserve(tradeId),
+                "findForUpdateById", () -> itemCommandService.updateItem(item.getId(), seller.getId(),
+                        new ItemUpdateRequest("변경된 제목", null, null, null, null, null, List.of()), List.of()));
+
+        assertThat(results.first.error).isNull();
+        assertError(results.second, ErrorCode.AUCTION_ALREADY_CLOSED);
+        assertThat(status()).isEqualTo("BUY_NOW_PENDING");
+        assertThat(jdbc.queryForObject("SELECT title FROM items WHERE id = ?", String.class, item.getId()))
+                .isEqualTo("테스트 상품");
+    }
+
+    private boolean completePayment(Long tradeId) {
+        return paymentResultApplier.apply(tradeId,
+                new PaymentResult(tradeId, "race-order", "DONE", 1_000_000L, endAt, null, null));
+    }
+
+    private void assertBothSucceeded(Results results) {
+        assertThat(results.first.error).isNull();
+        assertThat(results.second.error).isNull();
+    }
+
+    private long currentPrice() {
+        return jdbc.queryForObject("SELECT current_price FROM items WHERE id = ?", Long.class, item.getId());
+    }
+
+    private Long highestBidderId() {
+        return jdbc.queryForObject("SELECT highest_bidder_id FROM items WHERE id = ?", Long.class, item.getId());
+    }
+
+    private void assertActiveBid() {
+        assertThat(status()).isEqualTo("ACTIVE");
+        assertBidPriceAndRecord();
+    }
+
+    private void assertBidPriceAndRecord() {
+        assertThat(currentPrice()).isEqualTo(2_000L);
+        assertThat(highestBidderId()).isEqualTo(bidder.getId());
+        assertThat(count("bids", "1 = 1")).isEqualTo(1);
+        assertThat(count("bids", "price = 2000 AND bidder_id = " + bidder.getId())).isEqualTo(1);
+    }
+
+    private void assertExtended() {
+        assertThat(jdbc.queryForObject("SELECT end_at FROM items WHERE id = ?", LocalDateTime.class, item.getId()))
+                .isEqualTo(endAt.plusDays(1));
+        assertThat(jdbc.queryForObject("SELECT extension_count FROM items WHERE id = ?", Integer.class, item.getId()))
+                .isEqualTo(1);
+    }
+
+    private void assertBuyNowCompleted(Long tradeId) {
+        assertThat(status()).isEqualTo("BUY_NOW_CLOSED");
+        assertThat(currentPrice()).isEqualTo(1_000_000L);
+        assertThat(highestBidderId()).isEqualTo(buyer.getId());
+        assertTradeStatus(tradeId, "PAID");
+        assertThat(count("trades", "type = 'AUCTION'")).isZero();
+        assertThat(count("chat_rooms", "buyer_id = " + buyer.getId())).isEqualTo(1);
+    }
+
     private Results race(String firstMethod, Callable<?> first, String secondMethod, Callable<?> second) throws Exception {
         interleaving.arm(firstMethod, secondMethod);
         try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
@@ -342,6 +561,10 @@ class AuctionCloseConcurrencyIntegrationTest extends IntegrationTestSupport {
                 await(interleaving.firstReached);
                 secondFuture = executor.submit(() -> outcome(second));
                 await(interleaving.secondEntered);
+                if (secondMethod.equals("findForUpdateById")) {
+                    assertThatThrownBy(() -> secondFuture.get(100, TimeUnit.MILLISECONDS))
+                            .isInstanceOf(TimeoutException.class);
+                }
             } finally {
                 interleaving.release.countDown();
             }
@@ -453,7 +676,8 @@ class AuctionCloseConcurrencyIntegrationTest extends IntegrationTestSupport {
         void disarm() { firstMethod = null; secondMethod = null; }
         void reset() { disarm(); endAt = null; }
 
-        @Around("execution(* io.wisoft.ignoa_api.item.repository.ItemRepository.*(..)) || " +
+        @Around("execution(* io.wisoft.ignoa_api.item.repository.ItemCommandRepository.*(..)) || " +
+                "execution(* io.wisoft.ignoa_api.item.repository.ItemRepository.findForUpdateById(..)) || " +
                 "execution(* io.wisoft.ignoa_api.item.service.ItemMediaService.validateMediaComposition(..))")
         Object intercept(ProceedingJoinPoint joinPoint) throws Throwable {
             String method = joinPoint.getSignature().getName();
@@ -462,7 +686,7 @@ class AuctionCloseConcurrencyIntegrationTest extends IntegrationTestSupport {
             if (endAt != null) {
                 for (int i = 0; i < args.length; i++) {
                     if (args[i] instanceof LocalDateTime) {
-                        args[i] = method.equals("closeIfActive") ? endAt : endAt.minusNanos(1_000);
+                        args[i] = method.equals("closeIfExpired") ? endAt : endAt.minusNanos(1_000);
                     }
                 }
             }

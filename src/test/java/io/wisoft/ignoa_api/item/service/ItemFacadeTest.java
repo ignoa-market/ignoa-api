@@ -6,7 +6,6 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
-import io.wisoft.ignoa_api.global.infra.lock.RedissonDistributedLock;
 import io.wisoft.ignoa_api.global.infra.storage.StorageUploadResult;
 import io.wisoft.ignoa_api.global.infra.storage.StorageService;
 import io.wisoft.ignoa_api.global.outbox.service.OutboxAppender;
@@ -36,9 +35,6 @@ import static org.mockito.Mockito.doThrow;
 
 @ExtendWith(MockitoExtension.class)
 class ItemFacadeTest {
-
-    @Mock
-    RedissonDistributedLock redissonDistributedLock;
 
     @Mock
     ItemCommandService itemCommandService;
@@ -109,7 +105,7 @@ class ItemFacadeTest {
     void 수정_보상_Outbox_적재_실패_로그에는_itemId를_남긴다() {
         given(storageService.upload(any(MultipartFile.class), any()))
                 .willReturn(new StorageUploadResult("items/test.jpg", "image/jpeg"));
-        given(redissonDistributedLock.executeWithLock(anyString(), any(), any()))
+        given(itemCommandService.updateItem(eq(9L), eq(7L), any(), any()))
                 .willThrow(new IllegalStateException("상품 수정 실패"));
         doThrow(new IllegalStateException("Outbox 저장 실패"))
                 .when(outboxAppender).saveForCompensation(anyString(), anyString(), anyString(), any());

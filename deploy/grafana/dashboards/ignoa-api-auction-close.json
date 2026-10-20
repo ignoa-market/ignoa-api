@@ -1,10 +1,10 @@
 {
   "uid": "ignoa-api-auction-close",
-  "title": "ignoa-api / 경매 마감",
+  "title": "ignoa-api / 경매",
   "tags": [
     "ignoa",
     "api",
-    "auction-close"
+    "auction"
   ],
   "timezone": "browser",
   "schemaVersion": 39,
@@ -15,6 +15,427 @@
   "refresh": "1m",
   "editable": true,
   "panels": [
+    {
+      "type": "row",
+      "title": "요청·오류",
+      "id": 102,
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "상품 기능별 요청량 (초당)",
+      "description": "상품 등록·목록·상세·수정·삭제, 입찰·연장·즉시구매 API의 완료 요청 수. HTTP 상태 전체 포함. 자동 마감은 위의 마감 건수로 확인.",
+      "id": 15,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "eg0q0rxkuivwgc"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "min": 0,
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 10,
+            "showPoints": "never",
+            "spanNulls": false
+          },
+          "noValue": "수집 안 됨"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "eg0q0rxkuivwgc"
+          },
+          "refId": "A",
+          "expr": "sum by (method, uri) (rate(http_server_requests_seconds_count{application=\"ignoa-api\", uri=~\"/api/items|/api/items/[^/]+|/api/items/[^/]+/(bids|extend|buy-now)\", method=~\"GET|POST|PATCH|DELETE\"}[$__rate_interval]))",
+          "range": true,
+          "legendFormat": "{{method}} {{uri}}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "상품 기능별 서버 오류 (초당)",
+      "description": "상품·경매 API의 HTTP 5xx 응답 수. 요청 지표가 있는 기능에서 5xx가 없으면 0. 자동 마감 실패는 위의 결과별 마감 건수로 확인.",
+      "id": 16,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "eg0q0rxkuivwgc"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "min": 0,
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 10,
+            "showPoints": "never",
+            "spanNulls": false
+          },
+          "noValue": "수집 안 됨"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "eg0q0rxkuivwgc"
+          },
+          "refId": "A",
+          "expr": "sum by (method, uri) (rate(http_server_requests_seconds_count{application=\"ignoa-api\", uri=~\"/api/items|/api/items/[^/]+|/api/items/[^/]+/(bids|extend|buy-now)\", method=~\"GET|POST|PATCH|DELETE\", status=~\"5..\"}[$__rate_interval])) or (0 * sum by (method, uri) (rate(http_server_requests_seconds_count{application=\"ignoa-api\", uri=~\"/api/items|/api/items/[^/]+|/api/items/[^/]+/(bids|extend|buy-now)\", method=~\"GET|POST|PATCH|DELETE\"}[$__rate_interval])))",
+          "range": true,
+          "legendFormat": "{{method}} {{uri}}"
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "입찰·상품",
+      "id": 100,
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 9
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "입찰 처리 결과 (초당)",
+      "description": "accepted: 반영, price_conflict: BID_CONFLICT로 거절. 두 결과만 집계하므로 전체 HTTP 요청 수·5xx와 함께 확인. price_conflict에는 가격뿐 아니라 상태·마감 조건 불충족도 포함.",
+      "id": 11,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "eg0q0rxkuivwgc"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 10
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "suffix: RPS",
+          "min": 0,
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 10,
+            "showPoints": "never",
+            "spanNulls": 300000
+          },
+          "noValue": "수집 안 됨"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "accepted"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "green"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "price_conflict"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "orange"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "eg0q0rxkuivwgc"
+          },
+          "refId": "A",
+          "expr": "sum by (outcome) (rate(bid_place_total{application=\"ignoa-api\"}[$__rate_interval]))",
+          "range": true,
+          "legendFormat": "{{outcome}}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "상품 조회 응답 시간 p95 / p99",
+      "description": "GET 상품 목록·상세 API의 전체 응답 기준. 입찰·수정 부하가 조회에 미치는 영향 확인.",
+      "id": 12,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "eg0q0rxkuivwgc"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 10
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "min": 0,
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 10,
+            "showPoints": "never",
+            "spanNulls": false
+          },
+          "noValue": "최근 조회 없음"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "eg0q0rxkuivwgc"
+          },
+          "refId": "A",
+          "expr": "histogram_quantile(0.95, sum by (le, uri) (rate(http_server_requests_seconds_bucket{application=\"ignoa-api\", uri=~\"/api/items|/api/items/[^/]+\", method=\"GET\"}[$__rate_interval])))",
+          "range": true,
+          "legendFormat": "{{uri}} p95"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "eg0q0rxkuivwgc"
+          },
+          "refId": "B",
+          "expr": "histogram_quantile(0.99, sum by (le, uri) (rate(http_server_requests_seconds_bucket{application=\"ignoa-api\", uri=~\"/api/items|/api/items/[^/]+\", method=\"GET\"}[$__rate_interval])))",
+          "range": true,
+          "legendFormat": "{{uri}} p99"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "입찰 응답 시간 p95 / p99",
+      "description": "POST /api/items/{itemId}/bids의 전체 응답 기준. 오류 응답과 DB 처리·대기를 포함한 HTTP 처리 시간. DB 락 대기 시간만을 나타내는 지표는 아님.",
+      "id": 13,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "eg0q0rxkuivwgc"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 18
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "min": 0,
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 10,
+            "showPoints": "never",
+            "spanNulls": false
+          },
+          "noValue": "최근 입찰 없음"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "eg0q0rxkuivwgc"
+          },
+          "refId": "B",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(http_server_requests_seconds_bucket{application=\"ignoa-api\", uri=\"/api/items/{itemId}/bids\", method=\"POST\"}[$__rate_interval])))",
+          "range": true,
+          "legendFormat": "p95"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "eg0q0rxkuivwgc"
+          },
+          "refId": "C",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(http_server_requests_seconds_bucket{application=\"ignoa-api\", uri=\"/api/items/{itemId}/bids\", method=\"POST\"}[$__rate_interval])))",
+          "range": true,
+          "legendFormat": "p99"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "상품 수정 응답 시간 p95 / p99",
+      "description": "PATCH /api/items/{itemId}의 전체 응답 기준. 파일 업로드·검증·DB 락 대기·저장을 포함하므로 DB 락 대기 시간과 구분.",
+      "id": 14,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "eg0q0rxkuivwgc"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 18
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "min": 0,
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 10,
+            "showPoints": "never",
+            "spanNulls": false
+          },
+          "noValue": "최근 수정 없음"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "eg0q0rxkuivwgc"
+          },
+          "refId": "B",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(http_server_requests_seconds_bucket{application=\"ignoa-api\", uri=\"/api/items/{itemId}\", method=\"PATCH\"}[$__rate_interval])))",
+          "range": true,
+          "legendFormat": "p95"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "eg0q0rxkuivwgc"
+          },
+          "refId": "C",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(http_server_requests_seconds_bucket{application=\"ignoa-api\", uri=\"/api/items/{itemId}\", method=\"PATCH\"}[$__rate_interval])))",
+          "range": true,
+          "legendFormat": "p99"
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "경매 마감",
+      "id": 101,
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 26
+      }
+    },
     {
       "type": "timeseries",
       "title": "마감 지연 (Polling 대기 포함)",
@@ -28,7 +449,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 0
+        "y": 27
       },
       "fieldConfig": {
         "defaults": {
@@ -117,178 +538,6 @@
     },
     {
       "type": "timeseries",
-      "title": "밀린 경매 수",
-      "description": "종료됐지만 아직 마감되지 않은 경매 수. 계속 오르면 마감이 밀리는 중",
-      "id": 3,
-      "datasource": {
-        "type": "prometheus",
-        "uid": "eg0q0rxkuivwgc"
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 8,
-        "x": 8,
-        "y": 8
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "min": 0,
-          "custom": {
-            "drawStyle": "line",
-            "lineWidth": 1,
-            "fillOpacity": 10,
-            "showPoints": "never",
-            "spanNulls": true
-          },
-          "noValue": "수집 안 됨",
-          "decimals": 0
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "eg0q0rxkuivwgc"
-          },
-          "refId": "A",
-          "expr": "auction_close_backlog{application=\"ignoa-api\"}",
-          "range": true,
-          "legendFormat": "backlog"
-        }
-      ]
-    },
-    {
-      "type": "timeseries",
-      "title": "초당 마감 건수 (결과별)",
-      "description": "skipped: 이미 마감됐거나 조건 불충족, failed: 다음 실행에서 재시도",
-      "id": 4,
-      "datasource": {
-        "type": "prometheus",
-        "uid": "eg0q0rxkuivwgc"
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 8,
-        "x": 16,
-        "y": 8
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "min": 0,
-          "custom": {
-            "drawStyle": "line",
-            "lineWidth": 1,
-            "fillOpacity": 10,
-            "showPoints": "never",
-            "spanNulls": 300000
-          },
-          "noValue": "최근 마감 없음"
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "eg0q0rxkuivwgc"
-          },
-          "refId": "A",
-          "expr": "sum by (outcome) (rate(auction_close_items_total{application=\"ignoa-api\"}[$__rate_interval])) > 0",
-          "range": true,
-          "legendFormat": "{{outcome}}"
-        }
-      ]
-    },
-    {
-      "type": "timeseries",
-      "title": "배치 1회 처리 시간 (최대 1,000건)",
-      "description": "배치 1회(최대 1,000건)에 걸린 시간. 처리 건수에 따라 달라짐",
-      "id": 5,
-      "datasource": {
-        "type": "prometheus",
-        "uid": "eg0q0rxkuivwgc"
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 8,
-        "x": 0,
-        "y": 8
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "s",
-          "min": 0,
-          "custom": {
-            "drawStyle": "line",
-            "lineWidth": 1,
-            "fillOpacity": 10,
-            "showPoints": "never",
-            "spanNulls": true
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "eg0q0rxkuivwgc"
-          },
-          "refId": "A",
-          "expr": "sum(rate(auction_close_job_duration_seconds_sum{application=\"ignoa-api\"}[$__rate_interval])) / sum(rate(auction_close_job_duration_seconds_count{application=\"ignoa-api\"}[$__rate_interval]))",
-          "range": true,
-          "legendFormat": "avg"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "eg0q0rxkuivwgc"
-          },
-          "refId": "B",
-          "expr": "max(auction_close_job_duration_seconds_max{application=\"ignoa-api\"})",
-          "range": true,
-          "legendFormat": "max"
-        }
-      ]
-    },
-    {
-      "type": "timeseries",
       "title": "경매 1건 마감 처리 시간",
       "description": "경매 1건의 마감 트랜잭션 시간. 평소 수십 ms",
       "id": 7,
@@ -300,7 +549,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 0
+        "y": 27
       },
       "fieldConfig": {
         "defaults": {
@@ -358,6 +607,178 @@
           "expr": "histogram_quantile(0.99, sum by (le) (rate(auction_close_item_duration_seconds_bucket{application=\"ignoa-api\"}[$__rate_interval]))) > 0",
           "range": true,
           "legendFormat": "p99"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "배치 1회 처리 시간 (최대 1,000건)",
+      "description": "배치 1회(최대 1,000건)에 걸린 시간. 처리 건수에 따라 달라짐",
+      "id": 5,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "eg0q0rxkuivwgc"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 35
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "min": 0,
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 10,
+            "showPoints": "never",
+            "spanNulls": true
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "eg0q0rxkuivwgc"
+          },
+          "refId": "A",
+          "expr": "sum(rate(auction_close_job_duration_seconds_sum{application=\"ignoa-api\"}[$__rate_interval])) / sum(rate(auction_close_job_duration_seconds_count{application=\"ignoa-api\"}[$__rate_interval]))",
+          "range": true,
+          "legendFormat": "avg"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "eg0q0rxkuivwgc"
+          },
+          "refId": "B",
+          "expr": "max(auction_close_job_duration_seconds_max{application=\"ignoa-api\"})",
+          "range": true,
+          "legendFormat": "max"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "밀린 경매 수",
+      "description": "종료됐지만 아직 마감되지 않은 경매 수. 계속 오르면 마감이 밀리는 중",
+      "id": 3,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "eg0q0rxkuivwgc"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 35
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 10,
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "noValue": "수집 안 됨",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "eg0q0rxkuivwgc"
+          },
+          "refId": "A",
+          "expr": "auction_close_backlog{application=\"ignoa-api\"}",
+          "range": true,
+          "legendFormat": "backlog"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "초당 마감 건수 (결과별)",
+      "description": "skipped: 이미 마감됐거나 조건 불충족, failed: 다음 실행에서 재시도",
+      "id": 4,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "eg0q0rxkuivwgc"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 35
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 10,
+            "showPoints": "never",
+            "spanNulls": 300000
+          },
+          "noValue": "최근 마감 없음"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "eg0q0rxkuivwgc"
+          },
+          "refId": "A",
+          "expr": "sum by (outcome) (rate(auction_close_items_total{application=\"ignoa-api\"}[$__rate_interval])) > 0",
+          "range": true,
+          "legendFormat": "{{outcome}}"
         }
       ]
     }

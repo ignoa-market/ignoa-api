@@ -816,17 +816,9 @@
       "targetBlank": false
     },
     {
-      "title": "ignoa-api / 경매 마감",
+      "title": "ignoa-api / 경매",
       "type": "link",
       "url": "/d/ignoa-api-auction-close",
-      "keepTime": true,
-      "icon": "dashboard",
-      "targetBlank": false
-    },
-    {
-      "title": "ignoa-api / 입찰",
-      "type": "link",
-      "url": "/d/ignoa-api-bid",
       "keepTime": true,
       "icon": "dashboard",
       "targetBlank": false

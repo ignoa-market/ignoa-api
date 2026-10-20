@@ -6,7 +6,7 @@ import io.wisoft.ignoa_api.chat.service.ChatRoomService;
 import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
 import io.wisoft.ignoa_api.item.entity.Item;
-import io.wisoft.ignoa_api.item.repository.ItemRepository;
+import io.wisoft.ignoa_api.item.repository.ItemCommandRepository;
 import io.wisoft.ignoa_api.item.service.ItemReader;
 import io.wisoft.ignoa_api.trade.entity.Trade;
 import io.wisoft.ignoa_api.trade.service.TradeService;
@@ -28,11 +28,11 @@ public class AuctionService {
     private final ChatRoomService chatRoomService;
     private final TradeService tradeService;
     private final ItemReader itemReader;
-    private final ItemRepository itemRepository;
+    private final ItemCommandRepository itemCommandRepository;
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public boolean closeAuction(Long itemId) {
-        int updatedRows = itemRepository.closeIfActive(itemId, LocalDateTime.now());
+        int updatedRows = itemCommandRepository.closeIfExpired(itemId, LocalDateTime.now());
 
         if (updatedRows == 0) {
             log.debug("경매 마감 생략: itemId={}, reason=마감 조건 불충족", itemId);
@@ -65,7 +65,7 @@ public class AuctionService {
             throw new BusinessException(ErrorCode.ITEM_EXTEND_FORBIDDEN);
         }
 
-        int updatedRows = itemRepository.extendEndAtIfActive(itemId, LocalDateTime.now());
+        int updatedRows = itemCommandRepository.extendIfActive(itemId, LocalDateTime.now());
 
         if (updatedRows == 0) {
             throw new BusinessException(ErrorCode.AUCTION_EXTEND_CONFLICT);

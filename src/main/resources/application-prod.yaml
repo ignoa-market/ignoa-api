@@ -41,18 +41,13 @@ management:
     distribution:
       percentiles-histogram:
         http.server.requests: true
-        lock.hold.time: true
-        lock.acquire.wait: true
         hikaricp.connections.acquire: true
         auction.close.lag: true
         auction.close.item.duration: true
       maximum-expected-value:
-        lock.hold.time: 3s
-        lock.acquire.wait: 3s
         auction.close.lag: 5m
         auction.close.item.duration: 3s
       slo:
-        lock.acquire.wait: 250ms, 500ms, 1s
         auction.close.lag: 10s
 
 sentry:

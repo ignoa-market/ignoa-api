@@ -72,16 +72,12 @@ public class Item extends BaseEntity {
     @Column(nullable = false)
     private int extensionCount;
 
-    @Version
-    private Long version;
-
-
-    public static Item create(User seller, String title, String description, String category,ItemCondition itemCondition, String brand, Long startPrice, Long buyNowPrice, LocalDateTime endAt) {
+    public static Item create(User seller, String title, String description, String category, ItemCondition itemCondition, String brand, Long startPrice, Long buyNowPrice, LocalDateTime endAt) {
         return new Item(
                 null, seller, null,
                 title, description, category, itemCondition,
                 startPrice, startPrice, buyNowPrice,
-                brand, ItemStatus.ACTIVE, endAt, 0, null
+                brand, ItemStatus.ACTIVE, endAt, 0
         );
     }
 

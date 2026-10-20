@@ -5,6 +5,7 @@ import io.wisoft.ignoa_api.wish.repository.dto.WishCount;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -19,7 +20,12 @@ public interface WishRepository extends JpaRepository<Wish, Long> {
 
     boolean existsByUserIdAndItemId(Long userId, Long itemId);
 
-    void deleteAllByItemId(Long itemId);
+    @Modifying
+    @Query("""
+            DELETE FROM Wish w
+            WHERE w.item.id = :itemId
+            """)
+    void deleteAllByItemId(@Param("itemId") Long itemId);
 
     void deleteAllByUserId(Long userId);
 

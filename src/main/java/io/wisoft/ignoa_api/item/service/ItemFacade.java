@@ -2,8 +2,6 @@ package io.wisoft.ignoa_api.item.service;
 
 import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
-import io.wisoft.ignoa_api.global.infra.lock.LockOperation;
-import io.wisoft.ignoa_api.global.infra.lock.RedissonDistributedLock;
 import io.wisoft.ignoa_api.global.infra.storage.ObjectKeyPrefix;
 import io.wisoft.ignoa_api.global.infra.storage.StorageService;
 import io.wisoft.ignoa_api.global.infra.storage.StorageUploadResult;
@@ -17,7 +15,6 @@ import io.wisoft.ignoa_api.item.dto.response.ItemDetail;
 import io.wisoft.ignoa_api.item.dto.response.ItemIdResponse;
 import io.wisoft.ignoa_api.item.entity.enums.ItemMediaType;
 import io.wisoft.ignoa_api.item.service.dto.UploadedMedia;
-import io.wisoft.ignoa_api.item.support.ItemLockKey;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
@@ -36,7 +33,6 @@ public class ItemFacade {
 
     private final StorageService storageService;
     private final ItemCommandService itemCommandService;
-    private final RedissonDistributedLock distributedLock;
     private final OutboxAppender outboxAppender;
 
     public ItemIdResponse createItem(Long sellerId, ItemCreateRequest request, List<MultipartFile> files) {
@@ -54,7 +50,33 @@ public class ItemFacade {
         }
     }
 
-    // 업로드 전에 미디어 구성을 검증 (동영상은 최대 1개, 이미지는 최소 1장)
+    public ItemDetail updateItem(Long itemId, Long userId, ItemUpdateRequest request, List<MultipartFile> files) {
+        List<UploadedMedia> uploadedMedias = new ArrayList<>();
+
+        try {
+            uploadFiles(files, uploadedMedias);
+            return itemCommandService.updateItem(itemId, userId, request, uploadedMedias);
+
+        } catch (ObjectOptimisticLockingFailureException e) {
+            log.debug("상품 수정 충돌: itemId={}, reason=낙관적 락 충돌", itemId);
+            compensateAll(itemId.toString(), "itemId", uploadedMedias);
+            throw new BusinessException(ErrorCode.ITEM_CONFLICT);
+
+        } catch (RuntimeException e) {
+            compensateAll(itemId.toString(), "itemId", uploadedMedias);
+            throw e;
+        }
+    }
+
+    public ItemIdResponse deleteItem(Long itemId, Long userId) {
+        return itemCommandService.deleteItem(itemId, userId);
+    }
+
+    public BuyNowResponse buyNowItem(Long itemId, Long buyerId, ItemBuyNowRequest request) {
+        return itemCommandService.buyNowItem(itemId, buyerId, request);
+    }
+
+    // 업로드 전 미디어 구성 검증 (동영상 최대 1개, 이미지 최소 1장)
     private void validateMediaComposition(List<MultipartFile> files) {
         List<ItemMediaType> mediaTypes = files.stream()
                 .map(file -> ItemMediaType.from(storageService.detectContentType(file)))
@@ -69,42 +91,9 @@ public class ItemFacade {
         }
     }
 
-    public ItemDetail updateItem(Long itemId, Long userId, ItemUpdateRequest request, List<MultipartFile> files) {
-        List<UploadedMedia> uploadedMedias = new ArrayList<>();
-
-        try {
-            uploadFiles(files, uploadedMedias);
-
-            return distributedLock.executeWithLock(
-                    ItemLockKey.of(itemId),
-                    LockOperation.UPDATE,
-                    () -> itemCommandService.updateItem(itemId, userId, request, uploadedMedias)
-            );
-        } catch (ObjectOptimisticLockingFailureException e) {
-            log.debug("상품 수정 충돌: itemId={}, reason=낙관적 락 충돌", itemId);
-            compensateAll(itemId.toString(), "itemId", uploadedMedias);
-            throw new BusinessException(ErrorCode.ITEM_CONFLICT);
-
-        } catch (RuntimeException e) {
-            compensateAll(itemId.toString(), "itemId", uploadedMedias);
-            throw e;
-        }
-    }
-
-    public ItemIdResponse deleteItem(Long itemId, Long userId) {
-        return distributedLock.executeWithLock(
-                ItemLockKey.of(itemId),
-                LockOperation.DELETE,
-                () -> itemCommandService.deleteItem(itemId, userId));
-    }
-
-    public BuyNowResponse buyNowItem(Long itemId, Long buyerId, ItemBuyNowRequest request) {
-        return itemCommandService.buyNowItem(itemId, buyerId, request);
-    }
-
-    // 전달된 파일을 스토리지에 업로드하고 업로드 결과를 수집한다.
+    // 스토리지 파일 업로드 및 결과 수집
     private void uploadFiles(List<MultipartFile> files, List<UploadedMedia> uploadedMedias) {
-        // 상품 수정 시 미디어 변경이 없을 수 있으므로 빈 파일 목록은 처리하지 않는다.
+        // 미디어 변경 없는 수정 요청은 업로드 생략
         if (CollectionUtils.isEmpty(files)) {
             return;
         }
@@ -127,7 +116,7 @@ public class ItemFacade {
         }
     }
 
-    // DB 작업 실패 시, S3에 업로드된 미디어의 삭제를 보상 Outbox에 등록
+    // DB 작업 실패 시 업로드 파일 삭제를 위한 보상 Outbox 등록
     private void compensate(String aggregateId, String identifierName, UploadedMedia uploadedMedia) {
         try {
             outboxAppender.saveForCompensation(

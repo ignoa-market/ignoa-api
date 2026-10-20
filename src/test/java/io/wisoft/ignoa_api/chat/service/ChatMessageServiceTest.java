@@ -10,6 +10,7 @@ import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
 import io.wisoft.ignoa_api.item.entity.Item;
 import io.wisoft.ignoa_api.item.repository.ItemRepository;
+import io.wisoft.ignoa_api.item.repository.ItemCommandRepository;
 import io.wisoft.ignoa_api.support.IntegrationTestSupport;
 import io.wisoft.ignoa_api.user.entity.User;
 import io.wisoft.ignoa_api.user.repository.UserRepository;
@@ -39,6 +40,7 @@ class ChatMessageServiceTest extends IntegrationTestSupport {
 
     @Autowired
     ItemRepository itemRepository;
+    @Autowired ItemCommandRepository itemCommandRepository;
 
     @Autowired
     UserRepository userRepository;
@@ -117,7 +119,7 @@ class ChatMessageServiceTest extends IntegrationTestSupport {
     @Test
     void 상품이_삭제된_채팅방에는_메시지를_보낼_수_없다() {
         // Given
-        transactionTemplate.executeWithoutResult(status -> itemRepository.softDeleteIfActive(item.getId()));
+        transactionTemplate.executeWithoutResult(status -> itemCommandRepository.softDeleteIfActive(item.getId()));
 
         // When & Then
         assertThatThrownBy(() -> chatMessageService.sendMessage(chatRoomId, buyer.getId(), "삭제 후 메시지"))
