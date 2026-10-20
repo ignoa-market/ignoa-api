@@ -12,6 +12,7 @@ import io.wisoft.ignoa_api.trade.service.PaymentResultApplier;
 import io.wisoft.ignoa_api.trade.service.TradePaymentService;
 import io.wisoft.ignoa_api.item.entity.Item;
 import io.wisoft.ignoa_api.item.repository.ItemRepository;
+import io.wisoft.ignoa_api.item.repository.ItemCommandRepository;
 import io.wisoft.ignoa_api.item.service.ItemCommandService;
 import io.wisoft.ignoa_api.support.IntegrationTestSupport;
 import io.wisoft.ignoa_api.user.entity.User;
@@ -47,6 +48,7 @@ class ChatRoomServiceTest extends IntegrationTestSupport {
 
     @Autowired
     ItemRepository itemRepository;
+    @Autowired ItemCommandRepository itemCommandRepository;
 
     @Autowired
     UserRepository userRepository;
@@ -222,7 +224,7 @@ class ChatRoomServiceTest extends IntegrationTestSupport {
         Long chatRoomId = chatRoomService.openChatRoom(buyer.getId(), item.getId()).chatRoomId();
 
         // When
-        transactionTemplate.executeWithoutResult(status -> itemRepository.softDeleteIfActive(item.getId()));
+        transactionTemplate.executeWithoutResult(status -> itemCommandRepository.softDeleteIfActive(item.getId()));
 
         // Then
         assertThat(chatRoomService.getChatRooms(buyer.getId())).isEmpty();
@@ -284,7 +286,7 @@ class ChatRoomServiceTest extends IntegrationTestSupport {
         User buyer = userRepository.save(newUser("buyer@test.com", "구매자"));
         Item item = itemRepository.save(newItem(seller));
         chatRoomService.openChatRoom(buyer.getId(), item.getId());
-        transactionTemplate.executeWithoutResult(status -> itemRepository.softDeleteIfActive(item.getId()));
+        transactionTemplate.executeWithoutResult(status -> itemCommandRepository.softDeleteIfActive(item.getId()));
 
         // When & Then
         assertThatThrownBy(() -> chatRoomService.checkMyChatRoom(item.getId(), buyer.getId()))

@@ -22,4 +22,9 @@ public class ItemReader {
         return itemRepository.findByIdWithSeller(itemId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ITEM_NOT_FOUND));
     }
+
+    public Item getByIdForUpdate(Long itemId) {
+        return itemRepository.findForUpdateById(itemId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.ITEM_NOT_FOUND));
+    }
 }

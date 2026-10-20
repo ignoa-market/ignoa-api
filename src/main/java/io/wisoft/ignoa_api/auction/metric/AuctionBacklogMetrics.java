@@ -3,7 +3,7 @@ package io.wisoft.ignoa_api.auction.metric;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.binder.MeterBinder;
-import io.wisoft.ignoa_api.item.repository.ItemRepository;
+import io.wisoft.ignoa_api.item.repository.ItemQueryRepository;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -11,10 +11,10 @@ import java.time.LocalDateTime;
 @Component
 public class AuctionBacklogMetrics implements MeterBinder {
 
-    private final ItemRepository itemRepository;
+    private final ItemQueryRepository itemQueryRepository;
 
-    public AuctionBacklogMetrics(ItemRepository itemRepository) {
-        this.itemRepository = itemRepository;
+    public AuctionBacklogMetrics(ItemQueryRepository itemQueryRepository) {
+        this.itemQueryRepository = itemQueryRepository;
     }
 
     @Override
@@ -25,6 +25,6 @@ public class AuctionBacklogMetrics implements MeterBinder {
     }
 
     private long countOverdue() {
-        return itemRepository.countOverdue(LocalDateTime.now());
+        return itemQueryRepository.countExpiredActiveItems(LocalDateTime.now());
     }
 }

@@ -6,7 +6,6 @@ import io.wisoft.ignoa_api.bid.dto.response.BidResponse;
 import io.wisoft.ignoa_api.bid.metric.BidMetrics;
 import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
-import io.wisoft.ignoa_api.global.infra.lock.RedissonDistributedLock;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,7 +17,6 @@ import java.time.LocalDateTime;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowableOfType;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class BidFacadeTest {
@@ -26,9 +24,6 @@ class BidFacadeTest {
     private static final Long ITEM_ID = 1L;
     private static final Long BIDDER_ID = 2L;
     private static final BidCreateRequest REQUEST = new BidCreateRequest(1_000L);
-
-    @Mock
-    RedissonDistributedLock distributedLock;
 
     @Mock
     BidService bidService;
@@ -39,22 +34,7 @@ class BidFacadeTest {
     @BeforeEach
     void setUp() {
         registry = new SimpleMeterRegistry();
-        bidFacade = new BidFacade(bidService, new BidMetrics(registry), distributedLock);
-    }
-
-    @Test
-    void 입찰은_분산_락_없이_서비스를_직접_호출한다() {
-        // Given
-        BidResponse response = new BidResponse(10L, ITEM_ID, BIDDER_ID, 1_000L, LocalDateTime.now());
-        given(bidService.placeBid(ITEM_ID, BIDDER_ID, REQUEST)).willReturn(response);
-
-        // When
-        BidResponse result = bidFacade.placeBid(ITEM_ID, BIDDER_ID, REQUEST);
-
-        // Then
-        assertThat(result).isSameAs(response);
-        verify(bidService).placeBid(ITEM_ID, BIDDER_ID, REQUEST);
-        verifyNoInteractions(distributedLock);
+        bidFacade = new BidFacade(bidService, new BidMetrics(registry));
     }
 
     @Test

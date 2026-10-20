@@ -3,8 +3,8 @@ package io.wisoft.ignoa_api.auction.scheduler;
 import io.micrometer.core.instrument.Timer;
 import io.wisoft.ignoa_api.auction.metric.AuctionCloseMetrics;
 import io.wisoft.ignoa_api.auction.service.AuctionFacade;
-import io.wisoft.ignoa_api.item.repository.ExpiredItem;
-import io.wisoft.ignoa_api.item.repository.ItemRepository;
+import io.wisoft.ignoa_api.item.repository.dto.ExpiredItem;
+import io.wisoft.ignoa_api.item.repository.ItemQueryRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -25,7 +25,7 @@ public class AuctionCloseJob {
     private static final int BATCH_SIZE = 1_000;
 
     private final AuctionFacade auctionFacade;
-    private final ItemRepository itemRepository;
+    private final ItemQueryRepository itemQueryRepository;
     private final AuctionCloseMetrics auctionCloseMetrics;
     private final Executor auctionCloseExecutor;
 
@@ -35,7 +35,7 @@ public class AuctionCloseJob {
         int targetCount = 0;
 
         try {
-            List<ExpiredItem> expiredItems = itemRepository.findExpiredActiveItems(
+            List<ExpiredItem> expiredItems = itemQueryRepository.findExpiredActiveItems(
                     LocalDateTime.now(),
                     PageRequest.of(0, BATCH_SIZE)
             );

@@ -1,4 +1,4 @@
-package io.wisoft.ignoa_api.item.repository;
+package io.wisoft.ignoa_api.item.repository.dto;
 
 import java.time.LocalDateTime;
 
