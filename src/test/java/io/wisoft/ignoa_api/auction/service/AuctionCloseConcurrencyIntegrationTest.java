@@ -169,7 +169,7 @@ class AuctionCloseConcurrencyIntegrationTest extends IntegrationTestSupport {
     @Test
     void 마감이_먼저_갱신하면_상품_삭제를_거절한다() throws Exception {
         Results results = race("closeIfExpired", this::close,
-                "softDeleteIfActive", this::delete);
+                "findForUpdateById", this::delete);
 
         assertClosedFirst(results, ErrorCode.ITEM_DELETE_CONFLICT);
         assertNoBidClosed();
@@ -313,7 +313,7 @@ class AuctionCloseConcurrencyIntegrationTest extends IntegrationTestSupport {
     @Test
     void 입찰_UPDATE_후_기록_저장_전에_삭제가_진입해도_입찰_커밋_후_삭제를_거절한다() throws Exception {
         Results results = race("raiseCurrentPriceIfHigher", this::bid,
-                "softDeleteIfActive", this::delete);
+                "findForUpdateById", this::delete);
 
         assertThat(results.first.error).isNull();
         assertError(results.second, ErrorCode.ITEM_DELETE_CONFLICT);

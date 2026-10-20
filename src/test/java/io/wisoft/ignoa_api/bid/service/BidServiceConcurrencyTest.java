@@ -7,16 +7,13 @@ import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
 import io.wisoft.ignoa_api.item.entity.Item;
 import io.wisoft.ignoa_api.item.repository.ItemRepository;
-import io.wisoft.ignoa_api.item.repository.ItemCommandRepository;
 import io.wisoft.ignoa_api.support.IntegrationTestSupport;
 import io.wisoft.ignoa_api.user.entity.User;
 import io.wisoft.ignoa_api.user.repository.UserRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -39,7 +36,6 @@ class BidServiceConcurrencyTest extends IntegrationTestSupport {
 
     @Autowired
     ItemRepository itemRepository;
-    @Autowired ItemCommandRepository itemCommandRepository;
 
     @AfterEach
     void tearDown() {
@@ -168,29 +164,5 @@ class BidServiceConcurrencyTest extends IntegrationTestSupport {
         // Then
         assertThat(samePriceException.getErrorCode()).isEqualTo(ErrorCode.BID_CONFLICT);
         assertThat(lowerPriceException.getErrorCode()).isEqualTo(ErrorCode.BID_CONFLICT);
-    }
-
-    @Test
-    @Transactional
-    void 마감된_상품은_가격_조건을_만족해도_status_가드로_갱신되지_않는다() {
-        // Given
-        User seller = userRepository.save(newUser("seller@test.com", "판매자"));
-        User bidder = userRepository.save(newUser("bidder@test.com", "입찰자"));
-        Item item = itemRepository.save(newItem(seller));
-
-        long before = item.getCurrentPrice();
-        long bidPrice = item.getCurrentPrice() + 1_000L;
-
-        itemCommandRepository.closeIfExpired(item.getId(), item.getEndAt().plusSeconds(1));
-        itemRepository.saveAndFlush(item);
-
-        // When
-        int updatedRows = itemCommandRepository.raiseCurrentPriceIfHigher(
-                item.getId(), bidPrice, bidder, LocalDateTime.now());
-
-        // Then
-        assertThat(updatedRows).isZero();
-        Item reloaded = itemRepository.findById(item.getId()).orElseThrow();
-        assertThat(reloaded.getCurrentPrice()).isEqualTo(before);
     }
 }

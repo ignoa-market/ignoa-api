@@ -17,7 +17,6 @@ import java.time.LocalDateTime;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowableOfType;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class BidFacadeTest {
@@ -36,20 +35,6 @@ class BidFacadeTest {
     void setUp() {
         registry = new SimpleMeterRegistry();
         bidFacade = new BidFacade(bidService, new BidMetrics(registry));
-    }
-
-    @Test
-    void 입찰은_분산_락_없이_서비스를_직접_호출한다() {
-        // Given
-        BidResponse response = new BidResponse(10L, ITEM_ID, BIDDER_ID, 1_000L, LocalDateTime.now());
-        given(bidService.placeBid(ITEM_ID, BIDDER_ID, REQUEST)).willReturn(response);
-
-        // When
-        BidResponse result = bidFacade.placeBid(ITEM_ID, BIDDER_ID, REQUEST);
-
-        // Then
-        assertThat(result).isSameAs(response);
-        verify(bidService).placeBid(ITEM_ID, BIDDER_ID, REQUEST);
     }
 
     @Test

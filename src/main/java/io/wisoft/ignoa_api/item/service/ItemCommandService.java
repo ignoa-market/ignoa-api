@@ -94,7 +94,7 @@ public class ItemCommandService {
     }
 
     public ItemIdResponse deleteItem(Long itemId, Long userId) {
-        Item item = itemReader.getById(itemId);
+        Item item = itemReader.getByIdForUpdate(itemId);
 
         if (!item.isSeller(userId)) {
             throw new BusinessException(ErrorCode.ITEM_DELETE_FORBIDDEN);

@@ -89,27 +89,24 @@ class ItemMutationConcurrencyIntegrationTest extends IntegrationTestSupport {
     }
 
     @Test
-    void 단독_삭제도_상품과_미디어를_함께_삭제한다() {
+    void 상품_삭제시_미디어와_찜을_정리하고_파일_삭제_Outbox를_등록한다() {
         delete();
         assertDeleted();
-    }
-
-    @Test
-    void 상품_삭제시_찜도_정리한다() {
-        delete();
-        assertThat(wishes.count()).isZero();
-        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM outbox WHERE aggregate_type = 'ITEM' " +
-                        "AND aggregate_id = ? AND event_type = 'DELETE_ITEM_MEDIA'", Long.class, item.getId().toString()))
-                .isEqualTo(1);
+        assertThat(jdbc.queryForList("SELECT payload FROM outbox WHERE aggregate_type = 'ITEM' " +
+                        "AND aggregate_id = ? AND event_type = 'DELETE_ITEM_MEDIA'", String.class, item.getId().toString()))
+                .containsExactly("mutation/image.jpg");
     }
 
     @Test
     void 미디어_추가_후_대기하던_삭제가_상품과_미디어를_정리한다() throws Exception {
         Pair pair = holdWriteThen(
                 () -> changeMedia(List.of(), new UploadedMedia("mutation/new.jpg", ItemMediaType.IMAGE)),
-                "softDeleteIfActive", this::delete);
+                "findForUpdateById", this::delete);
         assertSuccess(pair);
         assertDeleted();
+        assertThat(jdbc.queryForList("SELECT payload FROM outbox WHERE aggregate_type = 'ITEM' " +
+                        "AND aggregate_id = ? AND event_type = 'DELETE_ITEM_MEDIA'", String.class, item.getId().toString()))
+                .containsExactlyInAnyOrder("mutation/image.jpg", "mutation/new.jpg");
     }
 
     @Test
@@ -140,7 +137,7 @@ class ItemMutationConcurrencyIntegrationTest extends IntegrationTestSupport {
 
     @Test
     void 수정이_먼저_행을_갱신하면_삭제는_커밋_후_정상_처리된다() throws Exception {
-        Pair pair = holdWriteThen(this::update, "softDeleteIfActive", this::delete);
+        Pair pair = holdWriteThen(this::update, "findForUpdateById", this::delete);
         assertSuccess(pair);
         assertDeleted();
         assertThat(title()).isEqualTo("변경된 제목");
@@ -171,7 +168,7 @@ class ItemMutationConcurrencyIntegrationTest extends IntegrationTestSupport {
 
     @Test
     void 연장이_먼저_갱신해도_입찰없는_상품은_삭제할_수_있다() throws Exception {
-        Pair pair = holdWriteThen(this::extend, "softDeleteIfActive", this::delete);
+        Pair pair = holdWriteThen(this::extend, "findForUpdateById", this::delete);
         assertSuccess(pair);
         assertDeleted();
         assertExtension(1);
@@ -187,10 +184,10 @@ class ItemMutationConcurrencyIntegrationTest extends IntegrationTestSupport {
     }
 
     @Test
-    void 두_삭제가_같은_활성_상품을_읽어도_한번만_삭제된다() throws Exception {
-        Pair pair = holdWriteThen(this::delete, "softDeleteIfActive", this::delete);
+    void 동시_삭제는_한번만_성공하고_후속_요청은_없는_상품으로_거절된다() throws Exception {
+        Pair pair = holdWriteThen(this::delete, "findForUpdateById", this::delete);
         assertThat(pair.first.error).isNull();
-        assertBusinessError(pair.second, ErrorCode.ITEM_DELETE_CONFLICT);
+        assertBusinessError(pair.second, ErrorCode.ITEM_NOT_FOUND);
         assertDeleted();
     }
 
