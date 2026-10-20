@@ -53,7 +53,7 @@ class AuthControllerTest {
     void Redis_장애로_로그아웃이_실패해도_RT_쿠키는_만료된다() throws Exception {
         // Given
         willThrow(new RedisConnectionFailureException("Redis 연결 실패"))
-                .given(authService).logout(anyString(), anyString());
+                .given(authService).logout(anyString());
 
         // When & Then
         mockMvc.perform(post("/api/auth/logout")

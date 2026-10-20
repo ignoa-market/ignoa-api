@@ -1,19 +1,16 @@
 package io.wisoft.ignoa_api.chat;
 
 import io.wisoft.ignoa_api.auth.jwt.JwtTokenProvider;
-import io.wisoft.ignoa_api.auth.service.TokenBlacklistService;
 import io.wisoft.ignoa_api.chat.repository.ChatMessageRepository;
 import io.wisoft.ignoa_api.chat.repository.ChatRoomRepository;
 import io.wisoft.ignoa_api.chat.service.ChatMessageService;
 import io.wisoft.ignoa_api.chat.service.ChatRoomService;
-import io.wisoft.ignoa_api.global.infra.redis.RedisInfrastructureException;
 import io.wisoft.ignoa_api.item.entity.Item;
 import io.wisoft.ignoa_api.item.repository.ItemRepository;
 import io.wisoft.ignoa_api.support.IntegrationTestSupport;
 import io.wisoft.ignoa_api.user.entity.User;
 import io.wisoft.ignoa_api.user.repository.UserRepository;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -24,7 +21,6 @@ import org.springframework.messaging.simp.stomp.StompFrameHandler;
 import org.springframework.messaging.simp.stomp.StompHeaders;
 import org.springframework.messaging.simp.stomp.StompSession;
 import org.springframework.messaging.simp.stomp.StompSessionHandlerAdapter;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.web.socket.WebSocketHttpHeaders;
 import org.springframework.web.socket.client.standard.StandardWebSocketClient;
 import org.springframework.web.socket.messaging.WebSocketStompClient;
@@ -38,9 +34,6 @@ import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.BDDMockito.given;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class ChatWebSocketIntegrationTest extends IntegrationTestSupport {
@@ -49,9 +42,6 @@ class ChatWebSocketIntegrationTest extends IntegrationTestSupport {
 
     @LocalServerPort
     int port;
-
-    @MockitoBean
-    TokenBlacklistService tokenBlacklistService;
 
     @Autowired
     JwtTokenProvider jwtTokenProvider;
@@ -76,11 +66,6 @@ class ChatWebSocketIntegrationTest extends IntegrationTestSupport {
 
     @Autowired
     JdbcTemplate jdbcTemplate;
-
-    @BeforeEach
-    void setUp() {
-        given(tokenBlacklistService.isBlacklisted(anyString())).willReturn(false);
-    }
 
     @AfterEach
     void tearDown() {
@@ -142,29 +127,6 @@ class ChatWebSocketIntegrationTest extends IntegrationTestSupport {
         assertThatThrownBy(() -> connect("Bearer invalid.token.value"))
                 .isInstanceOf(ExecutionException.class);
         assertThatThrownBy(() -> connect("Token " + jwtTokenProvider.createAccessToken(1L)))
-                .isInstanceOf(ExecutionException.class);
-    }
-
-    @Test
-    void 로그아웃된_토큰이면_연결을_거절한다() {
-        // Given
-        String token = jwtTokenProvider.createAccessToken(1L);
-        given(tokenBlacklistService.isBlacklisted(eq(token))).willReturn(true);
-
-        // When & Then
-        assertThatThrownBy(() -> connect("Bearer " + token))
-                .isInstanceOf(ExecutionException.class);
-    }
-
-    @Test
-    void Redis_장애로_토큰을_확인할_수_없으면_연결을_거절한다() {
-        // Given
-        String token = jwtTokenProvider.createAccessToken(1L);
-        given(tokenBlacklistService.isBlacklisted(eq(token)))
-                .willThrow(new RedisInfrastructureException("Redis 명령 시간 초과", null));
-
-        // When & Then
-        assertThatThrownBy(() -> connect("Bearer " + token))
                 .isInstanceOf(ExecutionException.class);
     }
 
