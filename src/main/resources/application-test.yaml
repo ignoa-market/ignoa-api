@@ -17,7 +17,7 @@ cloud:
 
 jwt:
   secret: /xsxPBY6BegTjo46rEByxF0QHep3lC+uSXQPwCR6KLHxgXA//Fa47P519CstOXvfbh2Lv1/NHSZ+hDtU10qjww==
-  access-expiration: 3600000
+  access-expiration: 900000
   refresh-expiration: 604800000
 
 oauth:

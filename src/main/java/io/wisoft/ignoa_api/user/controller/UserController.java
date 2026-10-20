@@ -85,11 +85,10 @@ public class UserController {
     @DeleteMapping("/me")
     public ResponseEntity<ApiResponse<Void>> deleteMe(
             @AuthenticationPrincipal Long userId,
-            @RequestHeader("Authorization") String authHeader,
             @CookieValue("refresh_token") String refreshToken,
             HttpServletResponse response
     ) {
-        userFacade.deleteMe(userId, authHeader.substring(7), refreshToken);
+        userFacade.deleteMe(userId, refreshToken);
 
         ResponseCookie clearCookie = createClearRefreshTokenCookie();
         response.addHeader(HttpHeaders.SET_COOKIE, clearCookie.toString());
