@@ -43,12 +43,23 @@ public class TradeController {
         return ResponseEntity.ok(response);
     }
 
+    // 채팅방에서 낙찰자의 결제 대상 거래 조회
     @GetMapping("/items/{itemId}/trades/me")
-    public ResponseEntity<ApiResponse<MyTradeResponse>> getMyTrade(
+    public ResponseEntity<ApiResponse<MyTradeResponse>> getMyAuctionTrade(
             @PathVariable Long itemId,
             @AuthenticationPrincipal Long userId
     ) {
-        MyTradeResponse data = tradeService.getMyTrade(itemId, userId);
+        MyTradeResponse data = tradeService.getMyAuctionTrade(itemId, userId);
+        ApiResponse<MyTradeResponse> response = ApiResponse.of(data, "낙찰 거래를 조회했습니다.");
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/trades/{tradeId}")
+    public ResponseEntity<ApiResponse<MyTradeResponse>> getTrade(
+            @PathVariable Long tradeId,
+            @AuthenticationPrincipal Long userId
+    ) {
+        MyTradeResponse data = tradeService.getTrade(tradeId, userId);
         ApiResponse<MyTradeResponse> response = ApiResponse.of(data, "거래를 조회했습니다.");
         return ResponseEntity.ok(response);
     }
