@@ -81,7 +81,7 @@ public interface TradeRepository extends JpaRepository<Trade, Long> {
                 AND t.status IN ('PAYMENT_PENDING', 'PAYMENT_CONFIRMING', 'PAID')
             ORDER BY t.id DESC
             """)
-    List<Trade> findPurchasesOfBuyer(@Param("buyerId") Long buyerId);
+    List<Trade> findPurchasesByBuyerId(@Param("buyerId") Long buyerId);
 
     @Query("""
             SELECT COUNT(t) > 0

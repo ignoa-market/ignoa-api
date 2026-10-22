@@ -25,7 +25,7 @@ public class TradeReader {
                 .orElseThrow(() -> new BusinessException(ErrorCode.TRADE_NOT_FOUND));
     }
 
-    public List<Trade> findPurchasesOfBuyer(Long buyerId) {
-        return tradeRepository.findPurchasesOfBuyer(buyerId);
+    public List<Trade> findPurchasesByBuyerId(Long buyerId) {
+        return tradeRepository.findPurchasesByBuyerId(buyerId);
     }
 }
