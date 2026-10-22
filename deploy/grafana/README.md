@@ -22,6 +22,7 @@
 | `ignoa / 개요` | 서비스가 정상인가? | api·payment 수집 상태(UP/DOWN), 응답별 요청 수(2xx·4xx·5xx), 5xx 비율, 응답 시간(p50·p95·p99) |
 | `ignoa-api / 자원` | 무엇이 부족한가? | CPU·Heap·GC, DB 커넥션 상태·획득 시간·timeout, Tomcat·JVM 스레드 |
 | `ignoa-api / 경매` | 입찰·상품 처리가 정상이고 제때 마감되는가? | 입찰 결과·조회/입찰/수정 응답 시간, 마감 지연·1건/배치 처리 시간·밀린 경매 수·결과별 마감 건수, 상품 기능별 요청량·5xx (11개 패널) |
+| `ignoa / 결제·거래` | 결제 준비·승인 요청이 느리거나 오류가 발생하는가? | 결제 API 요청량·HTTP 오류, 준비·승인 API p50·p95·p99 (3개 패널) |
 
 통합 경매 화면은 기존 마감 대시보드 UID(`ignoa-api-auction-close`)와 밀린 경매 수 패널 ID(`3`)를 유지해 알림 링크를 보존한다. 이전 상품 경매 주소(`ignoa-api-bid`)는 통합 화면으로 이동하는 안내만 표시한다.
 
@@ -32,6 +33,18 @@
 수정에 사용하는 DB 비관적 락의 대기·보유 시간은 현재 별도로 수집하지 않는다. 수정 응답 시간에는 파일 업로드와 검증도 포함되며, HikariCP 획득 시간은 DB 커넥션을 빌리기까지의 시간이다. 둘 다 DB 행 잠금 대기 시간 자체로 해석하지 않는다. 수정·입찰 동시 부하에서는 경매 대시보드의 API별 응답 시간·5xx와 자원 대시보드의 커넥션 pending·timeout을 함께 보고, 행 잠금 원인 확인이 필요하면 DB 지표·트레이스·로그를 추가로 확인한다.
 
 저장소의 Alloy 기본 수집 간격은 60초다. 부하 테스트에서 서버 설정을 15초로 바꿨다면 Grafana 데이터 소스의 수집 간격 설정도 실제 값과 맞춰 `$__rate_interval`을 사용한다. 수집 사이의 순간적인 pending 최댓값은 누락될 수 있다. 테스트 전에는 개요 대시보드의 수집 상태와 배포 시각도 확인한다.
+
+### 결제·거래 대시보드 적용
+
+`dashboards/ignoa-payment-trade.json`을 Grafana의 Dashboards → New → Import에서 가져온다. UID는 `ignoa-payment-trade`이며 Prometheus 데이터 소스 UID는 기존과 같은 `eg0q0rxkuivwgc`다. 다른 Grafana 환경이라면 데이터 소스 UID를 맞춘다. 개요·자원·경매 화면에도 이동 링크를 추가했다.
+
+패널은 결제 API 요청량·HTTP 오류, 준비 API p50·p95·p99, 승인 API p50·p95·p99의 3개다. HTTP 패널은 기존 `http.server.requests` 히스토그램을 사용한다. HTTP 200도 결제 성공을 보장하지 않으며, UNKNOWN 이후의 콜백·복구 대기는 API 응답 시간에 포함되지 않는다. 트래픽이 적은 시간의 p99는 요청량과 함께 해석한다.
+
+메인 서버와 결제 서버의 구현·설정 변경 없이 기존 HTTP 지표를 사용한다. 대시보드 전용 DB 조회나 지표 계측 코드는 추가하지 않는다.
+
+JSON만으로 Grafana Cloud에 자동 적용되지 않는다. 로컬 검증은 `python3 deploy/grafana/tests/validate-payment-dashboard.py`로 실행하며 Docker와 `prom/prometheus:v3.12.0` 이미지를 사용한다. 패널 배치와 PromQL 문법을 확인한다. Cloud의 실제 렌더링과 운영 지표 노출은 별도로 확인한다.
+
+### 자원 패널 임계값
 
 자원 대시보드 상단 카드는 위험 수준에 따라 색이 바뀐다.
 

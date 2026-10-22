@@ -51,7 +51,7 @@ class UserWithdrawTradeTest extends IntegrationTestSupport {
         Item item = itemRepository.save(newItem(seller, LocalDateTime.now().minusMinutes(1)));
         tradeRepository.save(Trade.create(
                 item, buyer, TradeType.AUCTION, 1_000L, LocalDateTime.now().plusDays(1)));
-        jdbcTemplate.update("UPDATE items SET status = 'BID_CLOSED' WHERE id = ?", item.getId());
+        jdbcTemplate.update("UPDATE items SET status = 'AUCTION_AWARDED' WHERE id = ?", item.getId());
 
         // When & Then
         assertThatThrownBy(() -> userCommandService.withdraw(buyer.getId()))

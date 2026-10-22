@@ -50,7 +50,7 @@ class AuctionBacklogMetricsIntegrationTest extends IntegrationTestSupport {
         itemRepository.save(newItem(seller, LocalDateTime.now().minusMinutes(1)));
         itemRepository.save(newItem(seller, LocalDateTime.now().plusDays(1)));
         Item closedItem = itemRepository.save(newItem(seller, LocalDateTime.now().minusMinutes(3)));
-        jdbcTemplate.update("UPDATE items SET status = 'NO_BID_CLOSED' WHERE id = ?", closedItem.getId());
+        jdbcTemplate.update("UPDATE items SET status = 'AUCTION_UNSOLD' WHERE id = ?", closedItem.getId());
 
         // When
         Gauge backlog = meterRegistry.get("auction.close.backlog").gauge();

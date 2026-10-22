@@ -103,7 +103,7 @@ class ItemBuyNowTest extends IntegrationTestSupport {
         tradePaymentService.startConfirm(firstTradeId, first.getId(), "IGN-first");
 
         // Then
-        assertThat(statusOf(item)).isEqualTo(ItemStatus.BUY_NOW_PENDING);
+        assertThat(statusOf(item)).isEqualTo(ItemStatus.BUY_NOW_RESERVED);
         assertThatThrownBy(() -> tradePaymentService.startConfirm(secondTradeId, second.getId(), "IGN-second"))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
@@ -131,7 +131,7 @@ class ItemBuyNowTest extends IntegrationTestSupport {
         assertThat(tradeStatusOf(tradeId)).isEqualTo(TradeStatus.PAID);
 
         Item closed = itemRepository.findByIdWithSeller(item.getId()).orElseThrow();
-        assertThat(closed.getStatus()).isEqualTo(ItemStatus.BUY_NOW_CLOSED);
+        assertThat(closed.getStatus()).isEqualTo(ItemStatus.BUY_NOW_SOLD);
         assertThat(closed.getCurrentPrice()).isEqualTo(item.getBuyNowPrice());
         assertThat(jdbcTemplate.queryForObject(
                 "SELECT highest_bidder_id FROM items WHERE id = ?", Long.class, item.getId()))
@@ -191,7 +191,7 @@ class ItemBuyNowTest extends IntegrationTestSupport {
 
         // Then
         Item reloaded = itemRepository.findById(item.getId()).orElseThrow();
-        assertThat(reloaded.getStatus()).isEqualTo(ItemStatus.BUY_NOW_PENDING);
+        assertThat(reloaded.getStatus()).isEqualTo(ItemStatus.BUY_NOW_RESERVED);
         assertThat(reloaded.getCurrentPrice()).isEqualTo(2_000L);
     }
 

@@ -22,7 +22,6 @@ public class TradePaymentService {
 
     private final ItemBuyNowService itemBuyNowService;
     private final TradeReader tradeReader;
-
     private final TradeRepository tradeRepository;
 
     public PaymentPrepareRequest validatePrepare(Long tradeId, Long buyerId) {

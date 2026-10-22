@@ -13,7 +13,7 @@ public class TradeResolveScheduler {
 
     private final TradeResolveJob tradeResolveJob;
 
-    @Scheduled(fixedDelay = 300_000L)
+    @Scheduled(fixedDelay = 60_000L)
     @SchedulerLock(name = "tradeResolveScheduler")
     public void run() {
         log.debug("결제 결과 미확정 거래 재확인 스케줄러 시작");

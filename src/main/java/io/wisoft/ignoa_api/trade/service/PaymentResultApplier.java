@@ -52,10 +52,9 @@ public class PaymentResultApplier {
 
         if (paidRow == 0) {
             log.debug(
-                    "결제 완료 반영 생략: tradeId={}, orderId={}, currentOrderId={}, reason=승인 진행 상태 아님 또는 주문 ID 불일치",
+                    "결제 완료 반영 생략: tradeId={}, orderId={}, reason=거래 상태 또는 주문번호 조건 불일치",
                     trade.getId(),
-                    result.orderId(),
-                    trade.getConfirmingOrderId()
+                    result.orderId()
             );
             return false;
         }
@@ -84,10 +83,9 @@ public class PaymentResultApplier {
 
         if (failedRow == 0) {
             log.debug(
-                    "결제 실패 반영 생략: tradeId={}, orderId={}, currentOrderId={}, reason=승인 진행 상태 아님 또는 주문 ID 불일치",
+                    "결제 실패 반영 생략: tradeId={}, orderId={}, reason=거래 상태 또는 주문번호 조건 불일치",
                     trade.getId(),
-                    result.orderId(),
-                    trade.getConfirmingOrderId()
+                    result.orderId()
             );
             return false;
         }

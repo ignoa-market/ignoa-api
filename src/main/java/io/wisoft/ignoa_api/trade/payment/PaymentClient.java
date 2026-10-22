@@ -50,7 +50,7 @@ public class PaymentClient {
 
             return response.data();
 
-        } catch (HttpClientErrorException e) {
+        } catch (HttpClientErrorException e) { // 외부 API 호출 결과가 HTTP 4xx일 때 발생하는 예외
             log.debug(
                     "결제 서버의 승인 요청 거절: tradeId={}, orderId={}, httpStatus={}",
                     request.tradeId(),
@@ -60,7 +60,7 @@ public class PaymentClient {
 
             throw new BusinessException(ErrorCode.PAYMENT_CONFIRM_REJECTED);
 
-        } catch (RestClientException e) {
+        } catch (RestClientException e) { // 나머지 호출 오류: 결제 결과 미확정
             log.warn(
                     "결제 승인 결과 미확인: tradeId={}, orderId={}, errorType={}, action=결제 결과 재확인 대기",
                     request.tradeId(),
@@ -68,6 +68,7 @@ public class PaymentClient {
                     e.getClass().getSimpleName()
             );
 
+            // 결제 성공 여부를 알 수 없어 콜백이나 상태 조회로 결과 확인 대기
             return PaymentResult.unknown(request);
         }
     }

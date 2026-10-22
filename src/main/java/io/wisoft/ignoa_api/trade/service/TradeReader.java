@@ -20,7 +20,12 @@ public class TradeReader {
                 .orElseThrow(() -> new BusinessException(ErrorCode.TRADE_NOT_FOUND));
     }
 
-    public List<Trade> findPurchasesOfBuyer(Long buyerId) {
-        return tradeRepository.findPurchasesOfBuyer(buyerId);
+    public Trade getAuctionTrade(Long itemId, Long userId) {
+        return tradeRepository.findAuctionTrade(itemId, userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.TRADE_NOT_FOUND));
+    }
+
+    public List<Trade> findPurchasesByBuyerId(Long buyerId) {
+        return tradeRepository.findPurchasesByBuyerId(buyerId);
     }
 }

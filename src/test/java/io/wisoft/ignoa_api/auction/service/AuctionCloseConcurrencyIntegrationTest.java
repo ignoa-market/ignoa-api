@@ -184,8 +184,8 @@ class AuctionCloseConcurrencyIntegrationTest extends IntegrationTestSupport {
         assertThat(results.first.error).isNull();
         assertThat(results.second.error).isNull();
         assertThat(results.second.value).isEqualTo(false);
-        assertThat(status()).isEqualTo("BUY_NOW_PENDING");
-        assertTradeStatus(tradeId, "CONFIRMING");
+        assertThat(status()).isEqualTo("BUY_NOW_RESERVED");
+        assertTradeStatus(tradeId, "PAYMENT_CONFIRMING");
         assertNoSettlement();
     }
 
@@ -207,7 +207,7 @@ class AuctionCloseConcurrencyIntegrationTest extends IntegrationTestSupport {
         bid();
         Long tradeId = buyNowTrade();
         reserve(tradeId);
-        Results results = race("completeBuyNowIfPending", () -> paymentResultApplier.apply(tradeId,
+        Results results = race("completeBuyNowIfReserved", () -> paymentResultApplier.apply(tradeId,
                         new PaymentResult(tradeId, "race-order", "DONE", 1_000_000L, endAt, null, null)),
                 "closeIfExpired", this::close);
 
@@ -215,7 +215,7 @@ class AuctionCloseConcurrencyIntegrationTest extends IntegrationTestSupport {
         assertThat(results.first.value).isEqualTo(true);
         assertThat(results.second.error).isNull();
         assertThat(results.second.value).isEqualTo(false);
-        assertThat(status()).isEqualTo("BUY_NOW_CLOSED");
+        assertThat(status()).isEqualTo("BUY_NOW_SOLD");
         assertTradeStatus(tradeId, "PAID");
         assertThat(jdbc.queryForObject("SELECT highest_bidder_id FROM items WHERE id = ?", Long.class, item.getId()))
                 .isEqualTo(buyer.getId());
@@ -230,14 +230,14 @@ class AuctionCloseConcurrencyIntegrationTest extends IntegrationTestSupport {
         Long tradeId = buyNowTrade();
         reserve(tradeId);
         Results results = race("closeIfExpired", this::close,
-                "completeBuyNowIfPending", () -> paymentResultApplier.apply(tradeId,
+                "completeBuyNowIfReserved", () -> paymentResultApplier.apply(tradeId,
                         new PaymentResult(tradeId, "race-order", "DONE", 1_000_000L, endAt, null, null)));
 
         assertThat(results.first.error).isNull();
         assertThat(results.first.value).isEqualTo(false);
         assertThat(results.second.error).isNull();
         assertThat(results.second.value).isEqualTo(true);
-        assertThat(status()).isEqualTo("BUY_NOW_CLOSED");
+        assertThat(status()).isEqualTo("BUY_NOW_SOLD");
         assertTradeStatus(tradeId, "PAID");
         assertThat(count("trades", "type = 'AUCTION'")).isZero();
         assertThat(count("chat_rooms", "buyer_id = " + buyer.getId())).isEqualTo(1);
@@ -248,7 +248,7 @@ class AuctionCloseConcurrencyIntegrationTest extends IntegrationTestSupport {
         bid();
         Long tradeId = buyNowTrade();
         reserve(tradeId);
-        Results results = race("cancelBuyNowIfPending", () -> paymentResultApplier.apply(tradeId,
+        Results results = race("cancelBuyNowIfReserved", () -> paymentResultApplier.apply(tradeId,
                         new PaymentResult(tradeId, "race-order", "FAILED", 1_000_000L, null, "FAILED", "실패")),
                 "closeIfExpired", this::close);
 
@@ -265,7 +265,7 @@ class AuctionCloseConcurrencyIntegrationTest extends IntegrationTestSupport {
         Long tradeId = buyNowTrade();
         reserve(tradeId);
         Results results = race("closeIfExpired", this::close,
-                "cancelBuyNowIfPending", () -> paymentResultApplier.apply(tradeId,
+                "cancelBuyNowIfReserved", () -> paymentResultApplier.apply(tradeId,
                         new PaymentResult(tradeId, "race-order", "FAILED", 1_000_000L, null, "FAILED", "실패")));
 
         assertThat(results.first.error).isNull();
@@ -362,9 +362,9 @@ class AuctionCloseConcurrencyIntegrationTest extends IntegrationTestSupport {
                 "reserveBuyNowIfActive", () -> reserve(tradeId));
 
         assertBothSucceeded(results);
-        assertThat(status()).isEqualTo("BUY_NOW_PENDING");
+        assertThat(status()).isEqualTo("BUY_NOW_RESERVED");
         assertBidPriceAndRecord();
-        assertTradeStatus(tradeId, "CONFIRMING");
+        assertTradeStatus(tradeId, "PAYMENT_CONFIRMING");
     }
 
     @Test
@@ -374,9 +374,9 @@ class AuctionCloseConcurrencyIntegrationTest extends IntegrationTestSupport {
                 "raiseCurrentPriceIfHigher", this::bid);
 
         assertBothSucceeded(results);
-        assertThat(status()).isEqualTo("BUY_NOW_PENDING");
+        assertThat(status()).isEqualTo("BUY_NOW_RESERVED");
         assertBidPriceAndRecord();
-        assertTradeStatus(tradeId, "CONFIRMING");
+        assertTradeStatus(tradeId, "PAYMENT_CONFIRMING");
     }
 
     @Test
@@ -384,7 +384,7 @@ class AuctionCloseConcurrencyIntegrationTest extends IntegrationTestSupport {
         Long tradeId = buyNowTrade();
         reserve(tradeId);
         Results results = race("raiseCurrentPriceIfHigher", this::bid,
-                "completeBuyNowIfPending", () -> completePayment(tradeId));
+                "completeBuyNowIfReserved", () -> completePayment(tradeId));
 
         assertBothSucceeded(results);
         assertBuyNowCompleted(tradeId);
@@ -397,7 +397,7 @@ class AuctionCloseConcurrencyIntegrationTest extends IntegrationTestSupport {
     void 즉시구매_결제완료가_먼저_갱신하면_입찰은_거절되고_추가_입찰기록이_없다() throws Exception {
         Long tradeId = buyNowTrade();
         reserve(tradeId);
-        Results results = race("completeBuyNowIfPending", () -> completePayment(tradeId),
+        Results results = race("completeBuyNowIfReserved", () -> completePayment(tradeId),
                 "raiseCurrentPriceIfHigher", this::bid);
 
         assertThat(results.first.error).isNull();
@@ -501,7 +501,7 @@ class AuctionCloseConcurrencyIntegrationTest extends IntegrationTestSupport {
 
         assertThat(results.first.error).isNull();
         assertError(results.second, ErrorCode.AUCTION_ALREADY_CLOSED);
-        assertThat(status()).isEqualTo("BUY_NOW_PENDING");
+        assertThat(status()).isEqualTo("BUY_NOW_RESERVED");
         assertThat(jdbc.queryForObject("SELECT title FROM items WHERE id = ?", String.class, item.getId()))
                 .isEqualTo("테스트 상품");
     }
@@ -544,7 +544,7 @@ class AuctionCloseConcurrencyIntegrationTest extends IntegrationTestSupport {
     }
 
     private void assertBuyNowCompleted(Long tradeId) {
-        assertThat(status()).isEqualTo("BUY_NOW_CLOSED");
+        assertThat(status()).isEqualTo("BUY_NOW_SOLD");
         assertThat(currentPrice()).isEqualTo(1_000_000L);
         assertThat(highestBidderId()).isEqualTo(buyer.getId());
         assertTradeStatus(tradeId, "PAID");
@@ -605,13 +605,13 @@ class AuctionCloseConcurrencyIntegrationTest extends IntegrationTestSupport {
     }
 
     private void assertNoBidClosed() {
-        assertThat(status()).isEqualTo("NO_BID_CLOSED");
+        assertThat(status()).isEqualTo("AUCTION_UNSOLD");
         assertThat(bidRepository.count()).isZero();
         assertNoSettlement();
     }
 
     private void assertAuctionWinner() {
-        assertThat(status()).isEqualTo("BID_CLOSED");
+        assertThat(status()).isEqualTo("AUCTION_AWARDED");
         assertThat(jdbc.queryForObject("SELECT current_price FROM items WHERE id = ?", Long.class, item.getId())).isEqualTo(2_000L);
         assertThat(jdbc.queryForObject("SELECT highest_bidder_id FROM items WHERE id = ?", Long.class, item.getId()))
                 .isEqualTo(bidder.getId());

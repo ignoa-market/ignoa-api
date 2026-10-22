@@ -805,6 +805,14 @@
       "keepTime": true,
       "icon": "dashboard",
       "targetBlank": false
+    },
+    {
+      "title": "ignoa / 결제·거래",
+      "type": "link",
+      "url": "/d/ignoa-payment-trade",
+      "keepTime": true,
+      "icon": "dashboard",
+      "targetBlank": false
     }
   ]
 }
