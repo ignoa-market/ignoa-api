@@ -207,7 +207,7 @@ class AuctionCloseConcurrencyIntegrationTest extends IntegrationTestSupport {
         bid();
         Long tradeId = buyNowTrade();
         reserve(tradeId);
-        Results results = race("completeBuyNowIfPending", () -> paymentResultApplier.apply(tradeId,
+        Results results = race("completeBuyNowIfReserved", () -> paymentResultApplier.apply(tradeId,
                         new PaymentResult(tradeId, "race-order", "DONE", 1_000_000L, endAt, null, null)),
                 "closeIfExpired", this::close);
 
@@ -230,7 +230,7 @@ class AuctionCloseConcurrencyIntegrationTest extends IntegrationTestSupport {
         Long tradeId = buyNowTrade();
         reserve(tradeId);
         Results results = race("closeIfExpired", this::close,
-                "completeBuyNowIfPending", () -> paymentResultApplier.apply(tradeId,
+                "completeBuyNowIfReserved", () -> paymentResultApplier.apply(tradeId,
                         new PaymentResult(tradeId, "race-order", "DONE", 1_000_000L, endAt, null, null)));
 
         assertThat(results.first.error).isNull();
@@ -248,7 +248,7 @@ class AuctionCloseConcurrencyIntegrationTest extends IntegrationTestSupport {
         bid();
         Long tradeId = buyNowTrade();
         reserve(tradeId);
-        Results results = race("cancelBuyNowIfPending", () -> paymentResultApplier.apply(tradeId,
+        Results results = race("cancelBuyNowIfReserved", () -> paymentResultApplier.apply(tradeId,
                         new PaymentResult(tradeId, "race-order", "FAILED", 1_000_000L, null, "FAILED", "실패")),
                 "closeIfExpired", this::close);
 
@@ -265,7 +265,7 @@ class AuctionCloseConcurrencyIntegrationTest extends IntegrationTestSupport {
         Long tradeId = buyNowTrade();
         reserve(tradeId);
         Results results = race("closeIfExpired", this::close,
-                "cancelBuyNowIfPending", () -> paymentResultApplier.apply(tradeId,
+                "cancelBuyNowIfReserved", () -> paymentResultApplier.apply(tradeId,
                         new PaymentResult(tradeId, "race-order", "FAILED", 1_000_000L, null, "FAILED", "실패")));
 
         assertThat(results.first.error).isNull();
@@ -384,7 +384,7 @@ class AuctionCloseConcurrencyIntegrationTest extends IntegrationTestSupport {
         Long tradeId = buyNowTrade();
         reserve(tradeId);
         Results results = race("raiseCurrentPriceIfHigher", this::bid,
-                "completeBuyNowIfPending", () -> completePayment(tradeId));
+                "completeBuyNowIfReserved", () -> completePayment(tradeId));
 
         assertBothSucceeded(results);
         assertBuyNowCompleted(tradeId);
@@ -397,7 +397,7 @@ class AuctionCloseConcurrencyIntegrationTest extends IntegrationTestSupport {
     void 즉시구매_결제완료가_먼저_갱신하면_입찰은_거절되고_추가_입찰기록이_없다() throws Exception {
         Long tradeId = buyNowTrade();
         reserve(tradeId);
-        Results results = race("completeBuyNowIfPending", () -> completePayment(tradeId),
+        Results results = race("completeBuyNowIfReserved", () -> completePayment(tradeId),
                 "raiseCurrentPriceIfHigher", this::bid);
 
         assertThat(results.first.error).isNull();
