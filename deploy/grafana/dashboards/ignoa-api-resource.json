@@ -631,6 +631,10 @@
       "fieldConfig": {
         "defaults": {
           "unit": "reqps",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "red"
+          },
           "custom": {
             "drawStyle": "line",
             "lineWidth": 1,
