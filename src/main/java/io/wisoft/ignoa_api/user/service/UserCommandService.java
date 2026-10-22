@@ -97,7 +97,7 @@ public class UserCommandService {
     public void withdraw(Long userId) {
         User user = userQueryService.findById(userId);
 
-        if (itemRepository.existsBySellerIdAndStatusIn(userId, List.of(ItemStatus.ACTIVE, ItemStatus.BUY_NOW_PENDING))) {
+        if (itemRepository.existsBySellerIdAndStatusIn(userId, List.of(ItemStatus.ACTIVE, ItemStatus.BUY_NOW_RESERVED))) {
             throw new BusinessException(ErrorCode.HAS_ACTIVE_AUCTION);
         }
 

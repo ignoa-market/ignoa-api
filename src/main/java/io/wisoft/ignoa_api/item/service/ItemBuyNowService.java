@@ -33,8 +33,7 @@ public class ItemBuyNowService {
     }
 
     public void complete(Long itemId, User buyer) {
-        if (itemCommandRepository.completeBuyNowIfPending(itemId, buyer) == 0) {
-            // 결제 완료 후 상품 마감 실패 시 수동 상태 확인 필요
+        if (itemCommandRepository.completeBuyNowIfReserved(itemId, buyer) == 0) {
             log.error(
                     "즉시구매 상품 마감 실패: itemId={}, buyerId={}, action=상품 상태 수동 확인",
                     itemId,
@@ -43,19 +42,19 @@ public class ItemBuyNowService {
             return;
         }
 
-        int lostBids = bidRepository.markLosingBids(itemId);
+        int lostBidCount = bidRepository.markLosingBids(itemId);
         chatRoomService.createChatRoom(itemId);
 
         log.debug(
                 "즉시구매 상품 마감 완료: itemId={}, buyerId={}, lostBids={}",
                 itemId,
                 buyer.getId(),
-                lostBids
+                lostBidCount
         );
     }
 
     public void cancel(Long itemId) {
-        if (itemCommandRepository.cancelBuyNowIfPending(itemId) == 0) {
+        if (itemCommandRepository.cancelBuyNowIfReserved(itemId) == 0) {
             log.debug("즉시구매 예약 해제 생략: itemId={}, reason=결제 대기 상태 아님", itemId);
             return;
         }

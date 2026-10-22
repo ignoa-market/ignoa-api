@@ -48,8 +48,8 @@ class ItemConditionalUpdateIntegrationTest extends IntegrationTestSupport {
             case DELETE -> itemCommandRepository.softDeleteIfActive(item.getId());
             case EXTEND -> itemCommandRepository.extendIfActive(item.getId(), item.getEndAt().minusDays(1));
             case RESERVE -> itemCommandRepository.reserveBuyNowIfActive(item.getId(), item.getBuyNowPrice(), item.getEndAt().minusDays(1));
-            case COMPLETE -> itemCommandRepository.completeBuyNowIfPending(item.getId(), buyer);
-            case CANCEL -> itemCommandRepository.cancelBuyNowIfPending(item.getId());
+            case COMPLETE -> itemCommandRepository.completeBuyNowIfReserved(item.getId(), buyer);
+            case CANCEL -> itemCommandRepository.cancelBuyNowIfReserved(item.getId());
         };
     }
 
