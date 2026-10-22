@@ -631,6 +631,10 @@
       "fieldConfig": {
         "defaults": {
           "unit": "reqps",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "red"
+          },
           "custom": {
             "drawStyle": "line",
             "lineWidth": 1,
@@ -828,5 +832,15 @@
   },
   "annotations": {
     "list": []
-  }
+  },
+  "links": [
+    {
+      "title": "ignoa / 결제·거래",
+      "type": "link",
+      "url": "/d/ignoa-payment-trade",
+      "keepTime": true,
+      "icon": "dashboard",
+      "targetBlank": false
+    }
+  ]
 }

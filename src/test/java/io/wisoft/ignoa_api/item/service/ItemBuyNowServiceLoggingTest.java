@@ -44,7 +44,7 @@ class ItemBuyNowServiceLoggingTest {
         BidRepository bidRepository = mock(BidRepository.class);
         User buyer = mock(User.class);
         when(buyer.getId()).thenReturn(2L);
-        when(itemCommandRepository.completeBuyNowIfPending(1L, buyer)).thenReturn(1);
+        when(itemCommandRepository.completeBuyNowIfReserved(1L, buyer)).thenReturn(1);
         try (LogCapture logs = new LogCapture()) {
             new ItemBuyNowService(itemCommandRepository, bidRepository, mock(ChatRoomService.class))
                     .complete(1L, buyer);
@@ -59,7 +59,7 @@ class ItemBuyNowServiceLoggingTest {
     @Test
     void 예약_해제와_해제_생략은_개별_DEBUG로_기록한다() {
         ItemCommandRepository itemCommandRepository = mock(ItemCommandRepository.class);
-        when(itemCommandRepository.cancelBuyNowIfPending(1L)).thenReturn(1);
+        when(itemCommandRepository.cancelBuyNowIfReserved(1L)).thenReturn(1);
         ItemBuyNowService service = new ItemBuyNowService(
                 itemCommandRepository, mock(BidRepository.class), mock(ChatRoomService.class));
 

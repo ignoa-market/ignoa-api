@@ -27,7 +27,6 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final RefreshTokenService refreshTokenService;
     private final EmailService emailService;
-    private final TokenBlacklistService tokenBlacklistService;
 
     @Transactional
     public AuthTokens signup(SignupRequest request) {
@@ -84,12 +83,9 @@ public class AuthService {
         return new AuthTokens(userId, accessToken, refreshToken);
     }
 
-    public void logout(String accessToken, String refreshToken) {
+    public void logout(String refreshToken) {
         jwtTokenProvider.parseRefreshToken(refreshToken);
-
-        // 수명이 긴 RT를 먼저 폐기해, 블랙리스트 등록이 실패해도 RT는 남지 않게 한다.
         refreshTokenService.delete(refreshToken);
-        tokenBlacklistService.blacklist(accessToken);
     }
 
     public AuthTokens refresh(String token) {

@@ -34,19 +34,23 @@ public class UserItemQueryService {
     }
 
     public List<PurchasePreview> getMyPurchases(Long userId) {
-        List<Trade> trades = tradeReader.findPurchasesOfBuyer(userId);
-        // 상품별 미리보기 중복 생성 방지 및 거래별 매핑
-        List<Item> items = trades.stream().map(Trade::getItem).distinct().toList();
-        Map<Long, ItemPreview> previewByItemId = itemPreviewAssembler.assemble(userId, items).stream()
-                .collect(Collectors.toMap(ItemPreview::itemId, preview -> preview));
+        List<Trade> trades = tradeReader.findPurchasesByBuyerId(userId);
+
+        List<Item> items = trades.stream()
+                .map(Trade::getItem)
+                .distinct()
+                .toList();
+
+        Map<Long, ItemPreview> itemPreviewMap = itemPreviewAssembler.assemble(userId, items).stream()
+                .collect(Collectors.toMap(
+                        ItemPreview::itemId,
+                        preview -> preview
+                ));
 
         return trades.stream()
-                .map(trade -> new PurchasePreview(
-                        trade.getId(),
-                        trade.getType(),
-                        trade.getStatus(),
-                        previewByItemId.get(trade.getItem().getId())
-                ))
-                .toList();
+                .map(trade -> PurchasePreview.from(
+                        trade,
+                        itemPreviewMap.get(trade.getItem().getId())
+                )).toList();
     }
 }

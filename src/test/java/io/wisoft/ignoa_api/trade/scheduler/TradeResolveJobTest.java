@@ -80,7 +80,7 @@ class TradeResolveJobTest extends IntegrationTestSupport {
 
         // Then
         assertThat(tradeStatusOf(f.tradeId)).isEqualTo(TradeStatus.PAID);
-        assertThat(itemStatusOf(f.itemId)).isEqualTo(ItemStatus.BUY_NOW_CLOSED);
+        assertThat(itemStatusOf(f.itemId)).isEqualTo(ItemStatus.BUY_NOW_SOLD);
     }
 
     @Test
@@ -121,22 +121,22 @@ class TradeResolveJobTest extends IntegrationTestSupport {
         tradeResolveJob.resolve();
 
         // Then
-        assertThat(tradeStatusOf(f.tradeId)).isEqualTo(TradeStatus.CONFIRMING);
-        assertThat(itemStatusOf(f.itemId)).isEqualTo(ItemStatus.BUY_NOW_PENDING);
+        assertThat(tradeStatusOf(f.tradeId)).isEqualTo(TradeStatus.PAYMENT_CONFIRMING);
+        assertThat(itemStatusOf(f.itemId)).isEqualTo(ItemStatus.BUY_NOW_RESERVED);
     }
 
     @Test
-    void 승인을_시작한_지_10분이_안된_거래는_조회하지_않는다() {
+    void 승인을_시작한_지_3분이_안된_거래는_조회하지_않는다() {
         // Given
         Fixture f = buyNowTrade("first@test.com", "IGN-recent");
-        backdateConfirmStart(f.tradeId, 5);
+        backdateConfirmStart(f.tradeId, 2);
 
         // When
         tradeResolveJob.resolve();
 
         // Then
         verify(paymentClient, never()).getPayment(anyString());
-        assertThat(tradeStatusOf(f.tradeId)).isEqualTo(TradeStatus.CONFIRMING);
+        assertThat(tradeStatusOf(f.tradeId)).isEqualTo(TradeStatus.PAYMENT_CONFIRMING);
     }
 
     @Test
@@ -151,7 +151,7 @@ class TradeResolveJobTest extends IntegrationTestSupport {
         tradeResolveJob.resolve();
 
         // Then
-        assertThat(tradeStatusOf(broken.tradeId)).isEqualTo(TradeStatus.CONFIRMING);
+        assertThat(tradeStatusOf(broken.tradeId)).isEqualTo(TradeStatus.PAYMENT_CONFIRMING);
         assertThat(tradeStatusOf(done.tradeId)).isEqualTo(TradeStatus.PAID);
     }
 

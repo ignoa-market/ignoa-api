@@ -5,7 +5,6 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import io.wisoft.ignoa_api.auth.service.RefreshTokenService;
-import io.wisoft.ignoa_api.auth.service.TokenBlacklistService;
 import io.wisoft.ignoa_api.global.infra.storage.MediaUrlResolver;
 import io.wisoft.ignoa_api.global.infra.storage.StorageService;
 import io.wisoft.ignoa_api.global.infra.storage.StorageUploadResult;
@@ -29,9 +28,8 @@ class UserFacadeLoggingTest {
         UserCommandService commandService = mock(UserCommandService.class);
         StorageService storageService = mock(StorageService.class);
         OutboxAppender outboxAppender = mock(OutboxAppender.class);
-        UserFacade facade = new UserFacade(commandService, storageService,
-                mock(MediaUrlResolver.class), outboxAppender,
-                mock(RefreshTokenService.class), mock(TokenBlacklistService.class));
+        UserFacade facade = new UserFacade(commandService, mock(RefreshTokenService.class),
+                storageService, mock(MediaUrlResolver.class), outboxAppender);
         MockMultipartFile file = new MockMultipartFile("image", "test.jpg", "image/jpeg", new byte[]{1});
 
         when(storageService.upload(any(), any()))

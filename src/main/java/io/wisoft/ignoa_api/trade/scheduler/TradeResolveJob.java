@@ -1,8 +1,11 @@
 package io.wisoft.ignoa_api.trade.scheduler;
 
 import io.wisoft.ignoa_api.trade.entity.Trade;
+import io.wisoft.ignoa_api.trade.payment.PaymentClient;
+import io.wisoft.ignoa_api.trade.payment.dto.PaymentResult;
 import io.wisoft.ignoa_api.trade.repository.TradeRepository;
-import io.wisoft.ignoa_api.trade.service.TradeFacade;
+import io.wisoft.ignoa_api.trade.service.PaymentResultApplier;
+import io.wisoft.ignoa_api.trade.service.TradePaymentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -18,10 +21,12 @@ import java.util.concurrent.TimeUnit;
 @RequiredArgsConstructor
 public class TradeResolveJob {
 
-    private static final Duration STUCK_THRESHOLD = Duration.ofMinutes(10);
+    private static final Duration STUCK_THRESHOLD = Duration.ofMinutes(3);
     private static final int BATCH_SIZE = 100;
 
-    private final TradeFacade tradeFacade;
+    private final PaymentClient paymentClient;
+    private final PaymentResultApplier paymentResultApplier;
+    private final TradePaymentService tradePaymentService;
     private final TradeRepository tradeRepository;
 
     public void resolve() {
@@ -39,7 +44,7 @@ public class TradeResolveJob {
         int failedCount = 0;
 
         for (Trade trade : stuckTrades) {
-            if (!resolveOne(trade)) {
+            if (!resolveTrade(trade)) {
                 failedCount++;
             }
         }
@@ -62,9 +67,16 @@ public class TradeResolveJob {
         }
     }
 
-    private boolean resolveOne(Trade trade) {
+    private boolean resolveTrade(Trade trade) {
         try {
-            tradeFacade.resolveStuck(trade);
+            PaymentResult result = paymentClient.getPayment(trade.getConfirmingOrderId());
+
+            if ("READY".equals(result.status())) {
+                tradePaymentService.cancelConfirm(trade.getId(), trade.getConfirmingOrderId());
+            } else {
+                paymentResultApplier.apply(trade.getId(), result);
+            }
+
             return true;
 
         } catch (Exception e) {

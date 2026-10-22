@@ -20,7 +20,7 @@ public interface BidRepository extends JpaRepository<Bid, Long> {
             SELECT COUNT(b) > 0
             FROM Bid b 
             WHERE b.bidder.id = :userId
-                AND b.item.status IN ('ACTIVE', 'BUY_NOW_PENDING')
+                AND b.item.status IN ('ACTIVE', 'BUY_NOW_RESERVED')
             """)
     boolean existsByBidderIdAndItemActive(@Param("userId") Long userId);
 

@@ -94,7 +94,7 @@ class AuctionCloseJobIntegrationTest extends IntegrationTestSupport {
         Item closedItem = itemRepository.findById(expiredItem.getId()).orElseThrow();
         Item unchangedItem = itemRepository.findById(activeItem.getId()).orElseThrow();
 
-        assertThat(closedItem.getStatus()).isEqualTo(ItemStatus.NO_BID_CLOSED);
+        assertThat(closedItem.getStatus()).isEqualTo(ItemStatus.AUCTION_UNSOLD);
         assertThat(unchangedItem.getStatus()).isEqualTo(ItemStatus.ACTIVE);
         assertThat(chatRoomRepository.count()).isZero();
     }
@@ -121,7 +121,7 @@ class AuctionCloseJobIntegrationTest extends IntegrationTestSupport {
                 .collect(Collectors.toMap(Bid::getPrice, Bid::getStatus));
         List<ChatRoom> chatRooms = chatRoomRepository.findAll();
 
-        assertThat(closedItem.getStatus()).isEqualTo(ItemStatus.BID_CLOSED);
+        assertThat(closedItem.getStatus()).isEqualTo(ItemStatus.AUCTION_AWARDED);
         assertThat(closedItem.getHighestBidder().getId()).isEqualTo(winningBidder.getId());
         assertThat(statusByPrice)
                 .hasSize(2)
@@ -180,7 +180,7 @@ class AuctionCloseJobIntegrationTest extends IntegrationTestSupport {
 
         assertThat(unexpectedErrors).isEmpty();
         assertThat(closedCount.get()).isEqualTo(1);
-        assertThat(closedItem.getStatus()).isEqualTo(ItemStatus.BID_CLOSED);
+        assertThat(closedItem.getStatus()).isEqualTo(ItemStatus.AUCTION_AWARDED);
         assertThat(statusByPrice)
                 .hasSize(2)
                 .containsEntry(1_500L, BidStatus.LOST)

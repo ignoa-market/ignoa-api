@@ -21,7 +21,11 @@ public class PaymentCallbackController {
             @PathVariable Long tradeId,
             @RequestBody PaymentResult result
     ) {
-        log.debug("결제 결과 콜백 수신: tradeId={}, orderId={}, status={}", tradeId, result.orderId(), result.status());
+        log.debug("결제 결과 콜백 수신: tradeId={}, orderId={}, status={}",
+                tradeId,
+                result.orderId(),
+                result.status()
+        );
         paymentResultApplier.apply(tradeId, result);
         return ResponseEntity.ok().build();
     }

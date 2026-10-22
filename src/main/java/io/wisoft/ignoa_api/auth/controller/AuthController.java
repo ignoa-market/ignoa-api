@@ -70,12 +70,12 @@ public class AuthController {
             @CookieValue("refresh_token") String refreshToken,
             HttpServletResponse response
     ) {
-        String accessToken = extractAccessToken(authHeader);
+        extractAccessToken(authHeader);
 
         ResponseCookie clearCookie = createClearRefreshTokenCookie();
         response.addHeader(HttpHeaders.SET_COOKIE, clearCookie.toString());
 
-        authService.logout(accessToken, refreshToken);
+        authService.logout(refreshToken);
 
         return ResponseEntity.ok(ApiResponse.of(null, "로그아웃이 완료되었습니다."));
     }

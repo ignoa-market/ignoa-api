@@ -19,7 +19,7 @@ public interface ItemCommandRepository extends JpaRepository<Item, Long> {
                 i.highestBidder = :highestBidder
             WHERE i.id = :id
                 AND i.currentPrice < :bidPrice
-                AND i.status IN ('ACTIVE', 'BUY_NOW_PENDING')
+                AND i.status IN ('ACTIVE', 'BUY_NOW_RESERVED')
                 AND i.endAt > :now
                 AND i.buyNowPrice > :bidPrice
             """)
@@ -30,7 +30,7 @@ public interface ItemCommandRepository extends JpaRepository<Item, Long> {
     @Modifying
     @Query("""
             UPDATE Item i
-            SET i.status = CASE WHEN i.highestBidder IS NULL THEN 'NO_BID_CLOSED' ELSE 'BID_CLOSED' END
+            SET i.status = CASE WHEN i.highestBidder IS NULL THEN 'AUCTION_UNSOLD' ELSE 'AUCTION_AWARDED' END
             WHERE i.id = :id
                 AND i.status = 'ACTIVE'
                 AND i.endAt <= :now
@@ -67,7 +67,7 @@ public interface ItemCommandRepository extends JpaRepository<Item, Long> {
     @Modifying
     @Query("""
             UPDATE Item i
-            SET i.status = 'BUY_NOW_PENDING'
+            SET i.status = 'BUY_NOW_RESERVED'
             WHERE i.id = :id
                 AND i.status = 'ACTIVE'
                 AND i.buyNowPrice = :buyNowPrice
@@ -80,13 +80,13 @@ public interface ItemCommandRepository extends JpaRepository<Item, Long> {
     @Modifying
     @Query("""
             UPDATE Item i
-            SET i.status = 'BUY_NOW_CLOSED',
+            SET i.status = 'BUY_NOW_SOLD',
                 i.highestBidder = :buyer,
                 i.currentPrice = i.buyNowPrice
             WHERE i.id = :id
-                AND i.status = 'BUY_NOW_PENDING'
+                AND i.status = 'BUY_NOW_RESERVED'
             """)
-    int completeBuyNowIfPending(@Param("id") Long id, @Param("buyer") User buyer);
+    int completeBuyNowIfReserved(@Param("id") Long id, @Param("buyer") User buyer);
 
     // 즉시구매 취소 (결제 대기 상태에서 진행 중으로 복구)
     @Modifying
@@ -94,7 +94,7 @@ public interface ItemCommandRepository extends JpaRepository<Item, Long> {
             UPDATE Item i
             SET i.status = 'ACTIVE'
             WHERE i.id = :id
-                AND i.status = 'BUY_NOW_PENDING'
+                AND i.status = 'BUY_NOW_RESERVED'
             """)
-    int cancelBuyNowIfPending(@Param("id") Long id);
+    int cancelBuyNowIfReserved(@Param("id") Long id);
 }

@@ -26,6 +26,7 @@ public class TradeService {
     private static final Duration AUCTION_PAYMENT_DEADLINE = Duration.ofHours(24);
     private static final Duration BUY_NOW_PAYMENT_DEADLINE = Duration.ofMinutes(30);
 
+    private final TradeReader tradeReader;
     private final ItemReader itemReader;
     private final TradeRepository tradeRepository;
 
@@ -88,9 +89,18 @@ public class TradeService {
         }
     }
 
-    public MyTradeResponse getMyTrade(Long itemId, Long userId) {
-        Trade trade = tradeRepository.findRecentTradeOfBuyer(itemId, userId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.TRADE_NOT_FOUND));
+    public MyTradeResponse getMyAuctionTrade(Long itemId, Long userId) {
+        return MyTradeResponse.from(
+                tradeReader.getAuctionTrade(itemId, userId)
+        );
+    }
+
+    public MyTradeResponse getTrade(Long tradeId, Long userId) {
+        Trade trade = tradeReader.getById(tradeId);
+
+        if (!trade.isBuyer(userId)) {
+            throw new BusinessException(ErrorCode.TRADE_ACCESS_DENIED);
+        }
 
         return MyTradeResponse.from(trade);
     }

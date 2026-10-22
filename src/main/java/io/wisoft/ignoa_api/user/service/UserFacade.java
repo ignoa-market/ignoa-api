@@ -1,7 +1,6 @@
 package io.wisoft.ignoa_api.user.service;
 
 import io.wisoft.ignoa_api.auth.service.RefreshTokenService;
-import io.wisoft.ignoa_api.auth.service.TokenBlacklistService;
 import io.wisoft.ignoa_api.global.infra.storage.MediaUrlResolver;
 import io.wisoft.ignoa_api.global.infra.storage.ObjectKeyPrefix;
 import io.wisoft.ignoa_api.global.infra.storage.StorageService;
@@ -23,13 +22,11 @@ import org.springframework.web.multipart.MultipartFile;
 public class UserFacade {
 
     private final UserCommandService userCommandService;
+    private final RefreshTokenService refreshTokenService;
 
     private final StorageService storageService;
     private final MediaUrlResolver mediaUrlResolver;
     private final OutboxAppender outboxAppender;
-
-    private final RefreshTokenService refreshTokenService;
-    private final TokenBlacklistService tokenBlacklistService;
 
     public MyProfile updateProfileImage(Long userId, MultipartFile image) {
         StorageUploadResult uploadResult = storageService.upload(image, ObjectKeyPrefix.PROFILES);
@@ -64,9 +61,8 @@ public class UserFacade {
         }
     }
 
-    public void deleteMe(Long userId, String accessToken, String refreshToken) {
+    public void deleteMe(Long userId, String refreshToken) {
         userCommandService.withdraw(userId);
-        tokenBlacklistService.blacklist(accessToken);
         refreshTokenService.delete(refreshToken);
     }
 

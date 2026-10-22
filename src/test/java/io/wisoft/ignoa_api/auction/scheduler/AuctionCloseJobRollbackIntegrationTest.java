@@ -94,7 +94,7 @@ class AuctionCloseJobRollbackIntegrationTest extends IntegrationTestSupport {
                 .singleElement()
                 .extracting(Bid::getStatus)
                 .isEqualTo(BidStatus.ACTIVE);
-        assertThat(closedNoBidItem.getStatus()).isEqualTo(ItemStatus.NO_BID_CLOSED);
+        assertThat(closedNoBidItem.getStatus()).isEqualTo(ItemStatus.AUCTION_UNSOLD);
 
         // When: 다음 실행에서 롤백된 경매를 다시 처리한다.
         auctionCloseJob.closeExpiredAuctions();
@@ -102,7 +102,7 @@ class AuctionCloseJobRollbackIntegrationTest extends IntegrationTestSupport {
         // Then
         Item retriedItem = itemRepository.findById(retryItem.getId()).orElseThrow();
 
-        assertThat(retriedItem.getStatus()).isEqualTo(ItemStatus.BID_CLOSED);
+        assertThat(retriedItem.getStatus()).isEqualTo(ItemStatus.AUCTION_AWARDED);
         assertThat(bidRepository.findByItemId(retryItem.getId()))
                 .singleElement()
                 .extracting(Bid::getStatus)
