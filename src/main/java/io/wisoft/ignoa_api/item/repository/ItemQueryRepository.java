@@ -35,8 +35,8 @@ public interface ItemQueryRepository extends Repository<Item, Long> {
             SELECT i FROM Item i
             WHERE i.status = 'ACTIVE'
             ORDER BY
-                (SELECT COUNT(DISTINCT b.bidder.id) FROM Bid b WHERE b.item = i) DESC,
-                (SELECT COUNT(w) FROM Wish w WHERE w.item = i) DESC,
+                i.bidderCount DESC,
+                i.wishCount DESC,
                 i.id DESC
             """)
     Slice<Item> findPopularItems(Pageable pageable);

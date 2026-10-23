@@ -4,6 +4,7 @@ import io.wisoft.ignoa_api.global.common.SliceResponse;
 import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
 import io.wisoft.ignoa_api.item.entity.Item;
+import io.wisoft.ignoa_api.item.repository.ItemCommandRepository;
 import io.wisoft.ignoa_api.item.service.ItemMediaService;
 import io.wisoft.ignoa_api.item.service.ItemReader;
 import io.wisoft.ignoa_api.user.service.UserQueryService;
@@ -32,6 +33,7 @@ public class WishService {
     private final ItemMediaService itemMediaService;
     private final ItemReader itemReader;
     private final WishRepository wishRepository;
+    private final ItemCommandRepository itemCommandRepository;
 
     @Transactional
     public void addWish(Long itemId, Long userId) {
@@ -43,14 +45,18 @@ public class WishService {
         }
 
         wishRepository.save(Wish.create(user, item));
+        itemCommandRepository.increaseWishCount(itemId);
     }
 
     @Transactional
     public void removeWish(Long itemId, Long userId) {
-        Wish wish = wishRepository.findByUserIdAndItemId(userId, itemId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.WISH_NOT_FOUND));
+        int deletedRows = wishRepository.deleteByItemIdAndUserId(itemId, userId);
 
-        wishRepository.delete(wish);
+        if (deletedRows == 0) {
+            throw new BusinessException(ErrorCode.WISH_NOT_FOUND);
+        }
+
+        itemCommandRepository.decreaseWishCount(itemId);
     }
 
     public SliceResponse<WishPreview> getWishes(Long userId, WishPreviewRequest request) {

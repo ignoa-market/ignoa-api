@@ -10,7 +10,11 @@ import lombok.*;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-@Table(name = "bids")
+@Table(name = "bids",
+        indexes = {
+                // 입찰자 수 증가 시 첫 입찰 여부 확인
+                @Index(name = "idx_bids_item_id_bidder_id", columnList = "item_id, bidder_id")
+        })
 public class Bid extends BaseEntity {
 
     @Id

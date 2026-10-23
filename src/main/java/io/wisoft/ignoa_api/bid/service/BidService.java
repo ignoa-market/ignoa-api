@@ -76,8 +76,11 @@ public class BidService {
             throw new BusinessException(ErrorCode.BID_CONFLICT);
         }
 
+        itemCommandRepository.increaseBidderCountIfFirstBid(itemId, bidderId);
+
         Bid bid = Bid.place(item, bidder, bidPrice);
         bidRepository.save(bid);
+
         eventPublisher.publishEvent(BidPlaceEvent.of(bid, item, bidder));
 
         return BidResponse.from(bid);
