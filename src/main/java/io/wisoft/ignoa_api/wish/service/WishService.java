@@ -44,19 +44,19 @@ public class WishService {
             throw new BusinessException(ErrorCode.WISH_ALREADY_EXISTS);
         }
 
-        wishRepository.save(Wish.create(user, item));
         itemCommandRepository.increaseWishCount(itemId);
+        wishRepository.save(Wish.create(user, item));
     }
 
     @Transactional
     public void removeWish(Long itemId, Long userId) {
+        itemCommandRepository.decreaseWishCount(itemId);
+
         int deletedRows = wishRepository.deleteByItemIdAndUserId(itemId, userId);
 
         if (deletedRows == 0) {
             throw new BusinessException(ErrorCode.WISH_NOT_FOUND);
         }
-
-        itemCommandRepository.decreaseWishCount(itemId);
     }
 
     public SliceResponse<WishPreview> getWishes(Long userId, WishPreviewRequest request) {
