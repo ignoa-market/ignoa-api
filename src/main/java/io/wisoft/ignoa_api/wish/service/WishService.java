@@ -13,7 +13,6 @@ import io.wisoft.ignoa_api.wish.dto.response.WishPreview;
 import io.wisoft.ignoa_api.wish.entity.Wish;
 import io.wisoft.ignoa_api.wish.repository.WishRepository;
 import io.wisoft.ignoa_api.user.entity.User;
-import io.wisoft.ignoa_api.wish.repository.dto.WishCount;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
@@ -22,7 +21,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -60,32 +58,29 @@ public class WishService {
     }
 
     public SliceResponse<WishPreview> getWishes(Long userId, WishPreviewRequest request) {
-        Slice<Wish> wishSlice = wishRepository
-                .findByUserIdWithItem(userId, PageRequest.of(request.page(), request.size()));
+        PageRequest pageable = PageRequest.of(request.page(), request.size());
 
-        if (wishSlice.isEmpty()) {
-            return SliceResponse.of(List.of(), wishSlice.hasNext());
+        // 찜 목록 조회 (Offset 방식, 찜이 많아지면 Cursor 방식으로 개선)
+        Slice<Wish> wishes = wishRepository.findByUserIdWithItem(userId, pageable);
+
+        if (wishes.isEmpty()) {
+            return SliceResponse.of(List.of(), wishes.hasNext());
         }
 
-        List<Long> itemIds = wishSlice.getContent().stream()
+        List<Long> itemIds = wishes.getContent().stream()
                 .map(wish -> wish.getItem().getId())
                 .toList();
 
         Map<Long, String> mediaUrlMap = itemMediaService.getFirstMediaUrl(itemIds);
-        Map<Long, Long> wishCountMap = wishRepository.countByItemIds(itemIds).stream()
-                .collect(Collectors.toMap(
-                        WishCount::getItemId,
-                        WishCount::getCount
-                ));
 
-        List<WishPreview> wishPreview = wishSlice.getContent().stream()
+        List<WishPreview> wishPreview = wishes.getContent().stream()
                 .map(wish -> WishPreview.from(
                         wish,
                         mediaUrlMap.get(wish.getItem().getId()),
-                        wishCountMap.get(wish.getItem().getId()).intValue(),
+                        wish.getItem().getWishCount(),
                         wish.getItem().getStatus()
                 )).toList();
 
-        return SliceResponse.of(wishPreview, wishSlice.hasNext());
+        return SliceResponse.of(wishPreview, wishes.hasNext());
     }
 }
