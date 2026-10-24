@@ -1,7 +1,6 @@
 package io.wisoft.ignoa_api.wish.repository;
 
 import io.wisoft.ignoa_api.wish.entity.Wish;
-import io.wisoft.ignoa_api.wish.repository.dto.WishCount;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -13,9 +12,9 @@ import java.util.List;
 
 public interface WishRepository extends JpaRepository<Wish, Long> {
 
-    int countByItemId(Long itemId);
-
     boolean existsByUserIdAndItemId(Long userId, Long itemId);
+
+    void deleteAllByUserId(Long userId);
 
     @Modifying
     @Query("""
@@ -24,21 +23,16 @@ public interface WishRepository extends JpaRepository<Wish, Long> {
             """)
     void deleteAllByItemId(@Param("itemId") Long itemId);
 
-    void deleteAllByUserId(Long userId);
-
-    @Query("SELECT w " +
-            "FROM Wish w JOIN FETCH w.item i " +
-            "WHERE w.user.id = :userId " +
-            "ORDER BY w.createdAt DESC")
-    Slice<Wish> findByUserIdWithItem(@Param("userId") Long userId, Pageable pageable);
-
     @Query("""
-            SELECT w.item.id itemId, COUNT(w) count
-            FROM Wish w 
-            WHERE w.item.id IN :itemIds 
-            GROUP BY w.item.id
+            SELECT w
+            FROM Wish w
+                JOIN FETCH w.item i
+            WHERE w.user.id = :userId
+                AND (:cursor IS NULL OR w.id < :cursor)
+            ORDER BY w.id DESC
             """)
-    List<WishCount> countByItemIds(@Param("itemIds") List<Long> itemIds);
+    Slice<Wish> findByUserIdWithItem(@Param("userId") Long userId, @Param("cursor") Long cursor,
+                                     Pageable pageable);
 
     @Query("""
             SELECT w.item.id

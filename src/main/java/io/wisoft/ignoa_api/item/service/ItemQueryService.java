@@ -48,12 +48,11 @@ public class ItemQueryService {
         // 상품 이미지
         List<ItemMediaUrls> mediaUrls = itemMediaService.getMediaUrls(itemId);
 
-        // 찜 (개수, 여부)
-        int wishCount = wishRepository.countByItemId(itemId);
+        // 찜 (여부)
         boolean isWished = userId != null
                 && wishRepository.existsByUserIdAndItemId(userId, itemId);
 
-        return ItemDetail.of(item, mediaUrls, sellerProfile, isSeller, isWished, wishCount);
+        return ItemDetail.of(item, mediaUrls, sellerProfile, isSeller, isWished, item.getWishCount());
     }
 
     public CursorResponse<ItemPreview> getItems(ItemPreviewCursorRequest request, Long userId) {

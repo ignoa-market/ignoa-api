@@ -1,6 +1,6 @@
 package io.wisoft.ignoa_api.wish.service;
 
-import io.wisoft.ignoa_api.global.common.SliceResponse;
+import io.wisoft.ignoa_api.global.common.CursorResponse;
 import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
 import io.wisoft.ignoa_api.item.entity.Item;
@@ -8,12 +8,11 @@ import io.wisoft.ignoa_api.item.repository.ItemCommandRepository;
 import io.wisoft.ignoa_api.item.service.ItemMediaService;
 import io.wisoft.ignoa_api.item.service.ItemReader;
 import io.wisoft.ignoa_api.user.service.UserQueryService;
-import io.wisoft.ignoa_api.wish.dto.request.WishPreviewRequest;
+import io.wisoft.ignoa_api.wish.dto.request.MyWishCursorRequest;
 import io.wisoft.ignoa_api.wish.dto.response.WishPreview;
 import io.wisoft.ignoa_api.wish.entity.Wish;
 import io.wisoft.ignoa_api.wish.repository.WishRepository;
 import io.wisoft.ignoa_api.user.entity.User;
-import io.wisoft.ignoa_api.wish.repository.dto.WishCount;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
@@ -22,12 +21,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class WishService {
+
+    private static final int PAGE_SIZE = 20;
 
     private final UserQueryService userQueryService;
     private final ItemMediaService itemMediaService;
@@ -59,33 +59,34 @@ public class WishService {
         }
     }
 
-    public SliceResponse<WishPreview> getWishes(Long userId, WishPreviewRequest request) {
-        Slice<Wish> wishSlice = wishRepository
-                .findByUserIdWithItem(userId, PageRequest.of(request.page(), request.size()));
+    public CursorResponse<WishPreview> getWishes(Long userId, MyWishCursorRequest request) {
+        Slice<Wish> wishes = wishRepository.findByUserIdWithItem(
+                userId, request.cursor(), PageRequest.of(0, PAGE_SIZE)
+        );
 
-        if (wishSlice.isEmpty()) {
-            return SliceResponse.of(List.of(), wishSlice.hasNext());
+        if (wishes.isEmpty()) {
+            return CursorResponse.of(List.of(), null, false);
         }
 
-        List<Long> itemIds = wishSlice.getContent().stream()
+        List<Wish> content = wishes.getContent();
+        List<Long> itemIds = content.stream()
                 .map(wish -> wish.getItem().getId())
                 .toList();
 
         Map<Long, String> mediaUrlMap = itemMediaService.getFirstMediaUrl(itemIds);
-        Map<Long, Long> wishCountMap = wishRepository.countByItemIds(itemIds).stream()
-                .collect(Collectors.toMap(
-                        WishCount::getItemId,
-                        WishCount::getCount
-                ));
 
-        List<WishPreview> wishPreview = wishSlice.getContent().stream()
+        List<WishPreview> wishPreview = content.stream()
                 .map(wish -> WishPreview.from(
                         wish,
                         mediaUrlMap.get(wish.getItem().getId()),
-                        wishCountMap.get(wish.getItem().getId()).intValue(),
+                        wish.getItem().getWishCount(),
                         wish.getItem().getStatus()
                 )).toList();
 
-        return SliceResponse.of(wishPreview, wishSlice.hasNext());
+        Long nextCursor = wishes.hasNext()
+                ? content.getLast().getId()
+                : null;
+
+        return CursorResponse.of(wishPreview, nextCursor, wishes.hasNext());
     }
 }
