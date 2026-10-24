@@ -19,9 +19,6 @@ import java.time.LocalDateTime;
 @SQLRestriction("status <> 'DELETED'")
 @Table(name = "items",
         indexes = {
-                // 사용 쿼리 미확인 (최신순이 id 정렬로 바뀐 뒤 남은 인덱스로 추정)
-                @Index(name = "idx_items_status_created", columnList = "status, created_at"),
-
                 // 마감 임박순 목록, 만료 경매 조회·집계 (자동 마감)
                 @Index(name = "idx_items_status_end_at", columnList = "status, end_at"),
 
