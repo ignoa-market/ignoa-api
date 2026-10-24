@@ -10,11 +10,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface WishRepository extends JpaRepository<Wish, Long> {
-
-    Optional<Wish> findByUserIdAndItemId(Long userId, Long itemId);
 
     int countByItemId(Long itemId);
 
@@ -50,4 +47,13 @@ public interface WishRepository extends JpaRepository<Wish, Long> {
             AND w.user.id = :userId
             """)
     List<Long> findWishedItemIds(@Param("userId") Long userId, @Param("itemIds") List<Long> itemIds);
+
+    // 사용자·상품별 찜 삭제
+    @Modifying
+    @Query("""
+            DELETE FROM Wish w
+            WHERE w.item.id = :itemId
+                AND w.user.id = :userId
+            """)
+    int deleteByItemIdAndUserId(@Param("itemId") Long itemId, @Param("userId") Long userId);
 }
