@@ -1,8 +1,8 @@
 package io.wisoft.ignoa_api.wish.controller;
 
 import io.wisoft.ignoa_api.global.common.ApiResponse;
-import io.wisoft.ignoa_api.global.common.SliceResponse;
-import io.wisoft.ignoa_api.wish.dto.request.WishPreviewRequest;
+import io.wisoft.ignoa_api.global.common.CursorResponse;
+import io.wisoft.ignoa_api.wish.dto.request.MyWishCursorRequest;
 import io.wisoft.ignoa_api.wish.dto.response.WishPreview;
 import io.wisoft.ignoa_api.wish.service.WishService;
 import jakarta.validation.Valid;
@@ -40,12 +40,12 @@ public class WishController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<SliceResponse<WishPreview>>> getWishes(
-            @Valid @ModelAttribute WishPreviewRequest request,
+    public ResponseEntity<ApiResponse<CursorResponse<WishPreview>>> getWishes(
+            @Valid @ModelAttribute MyWishCursorRequest request,
             @AuthenticationPrincipal Long userId
     ) {
-        SliceResponse<WishPreview> data = wishService.getWishes(userId, request);
-        ApiResponse<SliceResponse<WishPreview>> response = ApiResponse.of(data, "찜 목록을 조회했습니다.");
+        CursorResponse<WishPreview> data = wishService.getWishes(userId, request);
+        ApiResponse<CursorResponse<WishPreview>> response = ApiResponse.of(data, "찜 목록을 조회했습니다.");
         return ResponseEntity.ok(response);
     }
 }

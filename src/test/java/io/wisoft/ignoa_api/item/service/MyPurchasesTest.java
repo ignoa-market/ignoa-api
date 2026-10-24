@@ -8,6 +8,7 @@ import io.wisoft.ignoa_api.trade.entity.Trade;
 import io.wisoft.ignoa_api.trade.entity.enums.TradeStatus;
 import io.wisoft.ignoa_api.trade.entity.enums.TradeType;
 import io.wisoft.ignoa_api.trade.repository.TradeRepository;
+import io.wisoft.ignoa_api.user.dto.request.MyPurchaseCursorRequest;
 import io.wisoft.ignoa_api.user.entity.User;
 import io.wisoft.ignoa_api.user.repository.UserRepository;
 import org.junit.jupiter.api.AfterEach;
@@ -65,7 +66,9 @@ class MyPurchasesTest extends IntegrationTestSupport {
         jdbcTemplate.update("UPDATE trades SET status = 'CANCELED' WHERE id = ?", canceled.getId());
 
         // When
-        List<PurchasePreview> purchases = userItemQueryService.getMyPurchases(buyer.getId());
+        List<PurchasePreview> purchases = userItemQueryService
+                .getMyPurchases(buyer.getId(), new MyPurchaseCursorRequest(null))
+                .content();
 
         // Then
         assertThat(purchases)
@@ -82,6 +85,8 @@ class MyPurchasesTest extends IntegrationTestSupport {
         Item item = itemRepository.save(newItem(seller));
         tradeRepository.save(Trade.create(item, buyer, TradeType.BUY_NOW, 1_000L, LocalDateTime.now().plusMinutes(30)));
 
-        assertThat(userItemQueryService.getMyPurchases(seller.getId())).isEmpty();
+        assertThat(userItemQueryService
+                .getMyPurchases(seller.getId(), new MyPurchaseCursorRequest(null))
+                .content()).isEmpty();
     }
 }

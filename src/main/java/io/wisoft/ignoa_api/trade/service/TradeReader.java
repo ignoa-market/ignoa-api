@@ -5,9 +5,10 @@ import io.wisoft.ignoa_api.global.exception.ErrorCode;
 import io.wisoft.ignoa_api.trade.entity.Trade;
 import io.wisoft.ignoa_api.trade.repository.TradeRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
 
 @Component
 @RequiredArgsConstructor
@@ -25,7 +26,7 @@ public class TradeReader {
                 .orElseThrow(() -> new BusinessException(ErrorCode.TRADE_NOT_FOUND));
     }
 
-    public List<Trade> findPurchasesByBuyerId(Long buyerId) {
-        return tradeRepository.findPurchasesByBuyerId(buyerId);
+    public Slice<Trade> findBuyerPurchases(Long buyerId, Long cursor, Pageable pageable) {
+        return tradeRepository.findBuyerPurchases(buyerId, cursor, pageable);
     }
 }

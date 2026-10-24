@@ -1,6 +1,6 @@
 package io.wisoft.ignoa_api.wish.service;
 
-import io.wisoft.ignoa_api.global.common.SliceResponse;
+import io.wisoft.ignoa_api.global.common.CursorResponse;
 import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
 import io.wisoft.ignoa_api.item.entity.Item;
@@ -8,7 +8,7 @@ import io.wisoft.ignoa_api.item.repository.ItemCommandRepository;
 import io.wisoft.ignoa_api.item.service.ItemMediaService;
 import io.wisoft.ignoa_api.item.service.ItemReader;
 import io.wisoft.ignoa_api.user.service.UserQueryService;
-import io.wisoft.ignoa_api.wish.dto.request.WishPreviewRequest;
+import io.wisoft.ignoa_api.wish.dto.request.MyWishCursorRequest;
 import io.wisoft.ignoa_api.wish.dto.response.WishPreview;
 import io.wisoft.ignoa_api.wish.entity.Wish;
 import io.wisoft.ignoa_api.wish.repository.WishRepository;
@@ -26,6 +26,8 @@ import java.util.Map;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class WishService {
+
+    private static final int PAGE_SIZE = 20;
 
     private final UserQueryService userQueryService;
     private final ItemMediaService itemMediaService;
@@ -57,23 +59,23 @@ public class WishService {
         }
     }
 
-    public SliceResponse<WishPreview> getWishes(Long userId, WishPreviewRequest request) {
-        PageRequest pageable = PageRequest.of(request.page(), request.size());
-
-        // 찜 목록 조회 (Offset 방식, 찜이 많아지면 Cursor 방식으로 개선)
-        Slice<Wish> wishes = wishRepository.findByUserIdWithItem(userId, pageable);
+    public CursorResponse<WishPreview> getWishes(Long userId, MyWishCursorRequest request) {
+        Slice<Wish> wishes = wishRepository.findByUserIdWithItem(
+                userId, request.cursor(), PageRequest.of(0, PAGE_SIZE)
+        );
 
         if (wishes.isEmpty()) {
-            return SliceResponse.of(List.of(), wishes.hasNext());
+            return CursorResponse.of(List.of(), null, false);
         }
 
-        List<Long> itemIds = wishes.getContent().stream()
+        List<Wish> content = wishes.getContent();
+        List<Long> itemIds = content.stream()
                 .map(wish -> wish.getItem().getId())
                 .toList();
 
         Map<Long, String> mediaUrlMap = itemMediaService.getFirstMediaUrl(itemIds);
 
-        List<WishPreview> wishPreview = wishes.getContent().stream()
+        List<WishPreview> wishPreview = content.stream()
                 .map(wish -> WishPreview.from(
                         wish,
                         mediaUrlMap.get(wish.getItem().getId()),
@@ -81,6 +83,10 @@ public class WishService {
                         wish.getItem().getStatus()
                 )).toList();
 
-        return SliceResponse.of(wishPreview, wishes.hasNext());
+        Long nextCursor = wishes.hasNext()
+                ? content.getLast().getId()
+                : null;
+
+        return CursorResponse.of(wishPreview, nextCursor, wishes.hasNext());
     }
 }

@@ -1,6 +1,7 @@
 package io.wisoft.ignoa_api.bid.repository;
 
 import io.wisoft.ignoa_api.bid.entity.Bid;
+import io.wisoft.ignoa_api.bid.repository.dto.MyBidItem;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -56,4 +57,17 @@ public interface BidRepository extends JpaRepository<Bid, Long> {
             ORDER BY b.id DESC
             """)
     Slice<Bid> findBidHistory(@Param("itemId") Long itemId, @Param("cursor") Long cursor, Pageable pageable);
+
+    // 입찰자별 입찰 진행 중 입찰 상품 조회 (상품별 마지막 입찰 ID 기준, 최근 입찰 순)
+    @Query("""
+            SELECT b.item.id, MAX(b.id)
+            FROM Bid b
+            WHERE b.bidder.id = :userId
+                AND b.item.status IN ('ACTIVE', 'BUY_NOW_RESERVED')
+            GROUP BY b.item.id
+            HAVING (:cursor IS NULL OR MAX(b.id) < :cursor)
+            ORDER BY MAX(b.id) DESC
+            """)
+    Slice<MyBidItem> findBidderItems(@Param("userId") Long userId, @Param("cursor") Long cursor,
+                                     Pageable pageable);
 }

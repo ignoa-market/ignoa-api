@@ -28,9 +28,11 @@ public interface WishRepository extends JpaRepository<Wish, Long> {
             FROM Wish w
                 JOIN FETCH w.item i
             WHERE w.user.id = :userId
+                AND (:cursor IS NULL OR w.id < :cursor)
             ORDER BY w.id DESC
             """)
-    Slice<Wish> findByUserIdWithItem(@Param("userId") Long userId, Pageable pageable);
+    Slice<Wish> findByUserIdWithItem(@Param("userId") Long userId, @Param("cursor") Long cursor,
+                                     Pageable pageable);
 
     @Query("""
             SELECT w.item.id
