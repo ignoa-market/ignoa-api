@@ -60,6 +60,6 @@ AGENTS.md
 .superpowers
 docs
 
-# Scripts
-/k6/
-/scripts
+# Perf
+/perf/k6/k6.env
+/perf/results/
