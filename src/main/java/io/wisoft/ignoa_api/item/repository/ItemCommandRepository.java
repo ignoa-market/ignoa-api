@@ -97,4 +97,49 @@ public interface ItemCommandRepository extends JpaRepository<Item, Long> {
                 AND i.status = 'BUY_NOW_RESERVED'
             """)
     int cancelBuyNowIfReserved(@Param("id") Long id);
+
+    // 입찰자 수 증가 (해당 상품에 이 입찰자의 기존 입찰이 없을 때만)
+    @Modifying
+    @Query("""
+            UPDATE Item i
+            SET i.bidderCount = i.bidderCount + 1
+            WHERE i.id = :id
+                AND NOT EXISTS (
+                            SELECT b.id
+                            FROM Bid b
+                            WHERE b.item.id = :id
+                                AND b.bidder.id = :bidderId
+                )
+            """)
+    void increaseBidderCountIfFirstBid(@Param("id") Long id, @Param("bidderId") Long bidderId);
+
+    // 찜 수 증가
+    @Modifying
+    @Query("""
+            UPDATE Item i
+            SET i.wishCount = i.wishCount + 1
+            WHERE i.id = :id
+            """)
+    void increaseWishCount(@Param("id") Long id);
+
+    // 찜 수 감소
+    @Modifying
+    @Query("""
+            UPDATE Item i
+            SET i.wishCount = i.wishCount - 1
+            WHERE i.id = :id
+            """)
+    void decreaseWishCount(@Param("id") Long id);
+
+    // 사용자가 찜한 상품들의 찜 수 감소 (탈퇴 회원 파기 시)
+    @Modifying
+    @Query("""
+            UPDATE Item i
+            SET i.wishCount = i.wishCount - 1
+            WHERE i.id IN (
+                        SELECT w.item.id FROM Wish w
+                        WHERE w.user.id = :userId
+                        )
+            """)
+    void decreaseWishCounts(@Param("userId") Long userId);
 }

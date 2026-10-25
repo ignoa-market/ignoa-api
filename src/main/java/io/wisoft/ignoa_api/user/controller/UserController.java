@@ -1,9 +1,13 @@
 package io.wisoft.ignoa_api.user.controller;
 
 import io.wisoft.ignoa_api.global.common.ApiResponse;
+import io.wisoft.ignoa_api.global.common.CursorResponse;
 import io.wisoft.ignoa_api.item.dto.response.ItemPreview;
 import io.wisoft.ignoa_api.item.dto.response.PurchasePreview;
 import io.wisoft.ignoa_api.item.service.UserItemQueryService;
+import io.wisoft.ignoa_api.user.dto.request.MyBidCursorRequest;
+import io.wisoft.ignoa_api.user.dto.request.MyItemCursorRequest;
+import io.wisoft.ignoa_api.user.dto.request.MyPurchaseCursorRequest;
 import io.wisoft.ignoa_api.user.dto.request.UpdateUserRequest;
 import io.wisoft.ignoa_api.user.dto.response.MyProfile;
 import io.wisoft.ignoa_api.user.service.UserCommandService;
@@ -97,29 +101,32 @@ public class UserController {
     }
 
     @GetMapping("/me/items")
-    public ResponseEntity<ApiResponse<List<ItemPreview>>> getMyItems(
-        @AuthenticationPrincipal Long userId
+    public ResponseEntity<ApiResponse<CursorResponse<ItemPreview>>> getMyItems(
+            @AuthenticationPrincipal Long userId,
+            @Valid @ModelAttribute MyItemCursorRequest request
     ) {
-        List<ItemPreview> data = userItemQueryService.getMyItems(userId);
-        ApiResponse<List<ItemPreview>> response = ApiResponse.of(data, "내 상품 목록을 조회했습니다.");
+        CursorResponse<ItemPreview> data = userItemQueryService.getMyItems(userId, request);
+        ApiResponse<CursorResponse<ItemPreview>> response = ApiResponse.of(data, "내 상품 목록을 조회했습니다.");
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/me/bids")
-    public ResponseEntity<ApiResponse<List<ItemPreview>>> getMyBids(
-        @AuthenticationPrincipal Long userId
+    public ResponseEntity<ApiResponse<CursorResponse<ItemPreview>>> getMyBids(
+            @AuthenticationPrincipal Long userId,
+            @Valid @ModelAttribute MyBidCursorRequest request
     ) {
-        List<ItemPreview> data = userItemQueryService.getMyBidItems(userId);
-        ApiResponse<List<ItemPreview>> response = ApiResponse.of(data, "내 입찰 목록을 조회했습니다.");
+        CursorResponse<ItemPreview> data = userItemQueryService.getMyBidItems(userId, request);
+        ApiResponse<CursorResponse<ItemPreview>> response = ApiResponse.of(data, "내 입찰 목록을 조회했습니다.");
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/me/purchases")
-    public ResponseEntity<ApiResponse<List<PurchasePreview>>> getMyPurchases(
-        @AuthenticationPrincipal Long userId
+    public ResponseEntity<ApiResponse<CursorResponse<PurchasePreview>>> getMyPurchases(
+            @AuthenticationPrincipal Long userId,
+            @Valid @ModelAttribute MyPurchaseCursorRequest request
     ) {
-        List<PurchasePreview> data = userItemQueryService.getMyPurchases(userId);
-        ApiResponse<List<PurchasePreview>> response = ApiResponse.of(data, "내 구매 목록을 조회했습니다.");
+        CursorResponse<PurchasePreview> data = userItemQueryService.getMyPurchases(userId, request);
+        ApiResponse<CursorResponse<PurchasePreview>> response = ApiResponse.of(data, "내 구매 목록을 조회했습니다.");
         return ResponseEntity.ok(response);
     }
 }

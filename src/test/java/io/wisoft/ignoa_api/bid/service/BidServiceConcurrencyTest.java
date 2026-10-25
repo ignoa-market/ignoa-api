@@ -144,6 +144,63 @@ class BidServiceConcurrencyTest extends IntegrationTestSupport {
     }
 
     @Test
+    void 동일_입찰자가_서로_다른_가격으로_동시_입찰해도_입찰자_수는_한번만_증가한다() throws InterruptedException {
+        // Given
+        User seller = userRepository.save(newUser("seller@test.com", "판매자"));
+        User bidder = userRepository.save(newUser("bidder@test.com", "입찰자"));
+        Item item = itemRepository.save(newItem(seller));
+
+        int threadCount = 10;
+        ExecutorService executor = Executors.newFixedThreadPool(threadCount);
+        CountDownLatch startLatch = new CountDownLatch(1);
+        CountDownLatch doneLatch = new CountDownLatch(threadCount);
+
+        // When
+        for (int i = 0; i < threadCount; i++) {
+            long bidPrice = 1_100L + i * 100L;
+            executor.submit(() -> {
+                try {
+                    startLatch.await();
+                    bidService.placeBid(item.getId(), bidder.getId(), new BidCreateRequest(bidPrice));
+                } catch (Exception ignored) {
+                    // 낮은 가격 입찰의 BID_CONFLICT는 이 테스트의 검증 대상이 아님
+                } finally {
+                    doneLatch.countDown();
+                }
+            });
+        }
+        startLatch.countDown();
+        try {
+            assertThat(doneLatch.await(10, TimeUnit.SECONDS)).as("모든 입찰 완료").isTrue();
+        } finally {
+            executor.shutdownNow();
+        }
+
+        // Then
+        assertThat(bidRepository.findByItemId(item.getId())).isNotEmpty();
+        Item reloaded = itemRepository.findById(item.getId()).orElseThrow();
+        assertThat(reloaded.getBidderCount()).isEqualTo(1);
+    }
+
+    @Test
+    void 재입찰은_입찰자_수를_늘리지_않고_새_입찰자만_늘린다() {
+        // Given
+        User seller = userRepository.save(newUser("seller@test.com", "판매자"));
+        User firstBidder = userRepository.save(newUser("first@test.com", "첫입찰자"));
+        User secondBidder = userRepository.save(newUser("second@test.com", "두번째입찰자"));
+        Item item = itemRepository.save(newItem(seller));
+
+        // When
+        bidService.placeBid(item.getId(), firstBidder.getId(), new BidCreateRequest(1_100L));
+        bidService.placeBid(item.getId(), firstBidder.getId(), new BidCreateRequest(1_200L));
+        bidService.placeBid(item.getId(), secondBidder.getId(), new BidCreateRequest(1_300L));
+
+        // Then
+        Item reloaded = itemRepository.findById(item.getId()).orElseThrow();
+        assertThat(reloaded.getBidderCount()).isEqualTo(2);
+    }
+
+    @Test
     void 동일가나_낮은가로_입찰하면_INVALID_BID_PRICE_예외가_발생한다() {
         // Given
         User seller = userRepository.save(newUser("seller@test.com", "판매자"));

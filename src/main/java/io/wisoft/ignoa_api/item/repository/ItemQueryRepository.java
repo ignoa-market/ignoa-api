@@ -35,28 +35,22 @@ public interface ItemQueryRepository extends Repository<Item, Long> {
             SELECT i FROM Item i
             WHERE i.status = 'ACTIVE'
             ORDER BY
-                (SELECT COUNT(DISTINCT b.bidder.id) FROM Bid b WHERE b.item = i) DESC,
-                (SELECT COUNT(w) FROM Wish w WHERE w.item = i) DESC,
+                i.bidderCount DESC,
+                i.wishCount DESC,
                 i.id DESC
             """)
     Slice<Item> findPopularItems(Pageable pageable);
 
-    // 판매자별 등록 상품 조회 (등록 시각 내림차순)
+    // 판매자별 등록 상품 조회 (커서 ID 미만, ID 내림차순)
     @Query("""
-            SELECT i FROM Item i
+            SELECT i
+            FROM Item i
             WHERE i.seller.id = :sellerId
-            ORDER BY i.createdAt DESC
+                AND (:cursor IS NULL OR i.id < :cursor)
+            ORDER BY i.id DESC
             """)
-    List<Item> findItemsBySellerId(@Param("sellerId") Long sellerId);
-
-    // 사용자별 입찰 참여 상품 조회 (중복 제외, 등록 시각 내림차순)
-    @Query("""
-            SELECT DISTINCT i FROM Item i
-            JOIN Bid b ON b.item = i
-            WHERE b.bidder.id = :bidderId
-            ORDER BY i.createdAt DESC
-            """)
-    List<Item> findItemsByBidderId(@Param("bidderId") Long bidderId);
+    Slice<Item> findSellerItems(@Param("sellerId") Long sellerId, @Param("cursor") Long cursor,
+                                Pageable pageable);
 
     // 만료된 진행 중 상품의 ID·마감 시각 조회 (마감 시각·ID 오름차순)
     @Query("""
@@ -76,4 +70,6 @@ public interface ItemQueryRepository extends Repository<Item, Long> {
                 AND i.endAt <= :now
             """)
     long countExpiredActiveItems(@Param("now") LocalDateTime now);
+
+    List<Item> findAllByIdIn(List<Long> itemIds);
 }

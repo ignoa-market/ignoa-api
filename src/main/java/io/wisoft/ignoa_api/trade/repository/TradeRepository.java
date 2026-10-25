@@ -3,6 +3,7 @@ package io.wisoft.ignoa_api.trade.repository;
 import io.wisoft.ignoa_api.trade.entity.Trade;
 import io.wisoft.ignoa_api.trade.entity.enums.TradeStatus;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -76,12 +77,14 @@ public interface TradeRepository extends JpaRepository<Trade, Long> {
     @Query("""
             SELECT t
             FROM Trade t
-            JOIN FETCH t.item
+                JOIN FETCH t.item
             WHERE t.buyer.id = :buyerId
                 AND t.status IN ('PAYMENT_PENDING', 'PAYMENT_CONFIRMING', 'PAID')
+                AND (:cursor IS NULL OR t.id < :cursor)
             ORDER BY t.id DESC
             """)
-    List<Trade> findPurchasesByBuyerId(@Param("buyerId") Long buyerId);
+    Slice<Trade> findBuyerPurchases(@Param("buyerId") Long buyerId, @Param("cursor") Long cursor,
+                                    Pageable pageable);
 
     @Query("""
             SELECT COUNT(t) > 0

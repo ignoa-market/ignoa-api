@@ -19,9 +19,15 @@ import java.time.LocalDateTime;
 @SQLRestriction("status <> 'DELETED'")
 @Table(name = "items",
         indexes = {
-                @Index(name = "idx_items_status_created", columnList = "status, created_at"),
+                // 마감 임박순 목록, 만료 경매 조회·집계 (자동 마감)
                 @Index(name = "idx_items_status_end_at", columnList = "status, end_at"),
-                @Index(name = "idx_items_status_id", columnList = "status, id")
+
+                // 최신순 목록 (커서 이어 보기)
+                @Index(name = "idx_items_status_id", columnList = "status, id"),
+
+                // 인기순 목록 (입찰자 수 → 찜 수 → 최신)
+                @Index(name = "idx_items_status_bidder_count_wish_count_id", columnList = "status, bidder_count, wish_count, id")
+
         })
 public class Item extends BaseEntity {
 
@@ -72,12 +78,18 @@ public class Item extends BaseEntity {
     @Column(nullable = false)
     private int extensionCount;
 
+    @Column(nullable = false)
+    private int bidderCount;
+
+    @Column(nullable = false)
+    private int wishCount;
+
     public static Item create(User seller, String title, String description, String category, ItemCondition itemCondition, String brand, Long startPrice, Long buyNowPrice, LocalDateTime endAt) {
         return new Item(
                 null, seller, null,
                 title, description, category, itemCondition,
                 startPrice, startPrice, buyNowPrice,
-                brand, ItemStatus.ACTIVE, endAt, 0
+                brand, ItemStatus.ACTIVE, endAt, 0, 0, 0
         );
     }
 
