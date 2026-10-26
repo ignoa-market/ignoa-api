@@ -30,6 +30,11 @@ test('조회 RPS가 양의 정수가 아니면 실행 전에 거절한다', () =
     for (const rps of ['0', '-100', '12.5', 'abc']) {
         assert.throws(() => buildLoadPlan('browse', rps));
     }
+    // 방문자 0명으로 반올림되는 값은 조회 없이 입찰만 돌게 되므로 거절한다.
+    for (const rps of ['1', '5']) {
+        assert.throws(() => buildLoadPlan('browse-bid', rps), /6 이상/);
+    }
+    assert.equal(buildLoadPlan('browse-bid', '6').visitsPerSecond, 1);
 });
 
 test('스트레스 각 단계는 별도로 측정된다', () => {

@@ -14,7 +14,10 @@ export function buildLoadPlan(name, readRps) {
     if (readRps !== undefined && readRps !== '') {
         const rps = Number(readRps);
         if (!Number.isInteger(rps) || rps <= 0) throw new Error(`조회 RPS는 양의 정수여야 합니다: ${readRps}`);
-        base = {...base, visitsPerSecond: Math.round(rps / VISIT_REQUESTS)};
+        const visitsPerSecond = Math.round(rps / VISIT_REQUESTS);
+        // 방문자가 0명이 되면 조회 없이 입찰만 돌아 측정이 무의미해진다.
+        if (visitsPerSecond < 1) throw new Error(`조회 RPS는 ${Math.ceil(VISIT_REQUESTS / 2)} 이상이어야 합니다: ${readRps}`);
+        base = {...base, visitsPerSecond};
     }
     const stress = base.bid === 'ramp';
     const totalSeconds = stress ? 730 : 370;
