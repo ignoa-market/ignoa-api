@@ -22,18 +22,20 @@ function phaseAt(plan, elapsedSeconds) {
         || (elapsedSeconds >= plan.totalSeconds - 10 ? 'cooldown' : 'ramp');
 }
 
+// 실행 중에 VU를 만들면 생성이 늦어 방문을 놓치고, 따라잡을 때 요청이 한꺼번에 몰린다.
+// 그래서 처음부터 만들어 두되, PC 메모리를 생각해 1,000명까지만 미리 만든다.
 function arrival(execName, stages, maxVUs) {
     return {
         executor: 'ramping-arrival-rate', exec: execName,
         startRate: 0, timeUnit: '1s', stages,
-        preAllocatedVUs: Math.ceil(maxVUs * 0.3), maxVUs, gracefulStop: '30s',
+        preAllocatedVUs: Math.min(maxVUs, 1000), maxVUs, gracefulStop: '30s',
     };
 }
 
 export function createLoadTest(name) {
-    const plan = buildLoadPlan(name);
-    // 방문 하나가 쉬는 시간 포함 수십 초 걸려 동시에 수백 명이 머문다.
-    const scenarios = {browse: arrival('visit', plan.visitStages, 1000)};
+    const plan = buildLoadPlan(name, __ENV.READ_RPS);
+    // 방문 하나가 쉬는 시간 포함 수십 초 걸려 동시에 수백 명이 머문다(초당 방문자 × 약 25초).
+    const scenarios = {browse: arrival('visit', plan.visitStages, Math.max(1000, plan.visitsPerSecond * 25))};
     const thresholds = {
         read_errors: ['rate==0'], page_errors: ['rate==0'],
         dropped_iterations: ['count==0'],

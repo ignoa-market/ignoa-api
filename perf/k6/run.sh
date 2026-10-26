@@ -2,15 +2,24 @@
 set -euo pipefail
 
 # 예: ./perf/k6/run.sh browse        워밍업 1회 + 본 측정 3회
-#     ./perf/k6/run.sh target-load once   1회만 (마감 동시 테스트 등)
-usage='사용법: ./perf/k6/run.sh {browse|target-load|stress} [once]'
+#     ./perf/k6/run.sh browse-bid once   1회만 (마감 동시 테스트 등)
+#     ./perf/k6/run.sh browse 500 once    조회만 약 500 RPS로 1회
+usage='사용법: ./perf/k6/run.sh {browse|browse-bid|stress} [조회 RPS] [once]'
 scenario="${1:-}"
 case "$scenario" in
-  browse|target-load|stress) ;;
+  browse|browse-bid|stress) ;;
   *) echo "$usage" >&2; exit 1 ;;
 esac
-mode="${2:-}"
-if [[ -n "$mode" && "$mode" != once ]] || (( $# > 2 )); then
+shift
+read_rps=''
+rps_args=()
+if [[ "${1:-}" =~ ^[0-9]+$ ]]; then
+  read_rps="$1"
+  rps_args=(-e "READ_RPS=$read_rps")
+  shift
+fi
+mode="${1:-}"
+if [[ -n "$mode" && "$mode" != once ]] || (( $# > 1 )); then
   echo "$usage" >&2
   exit 1
 fi
@@ -24,14 +33,14 @@ set +a
 
 result_root="$(dirname -- "$k6_dir")/results/k6/$(date '+%F')"
 mkdir -p "$result_root"
-result_dir="$(mktemp -d "$result_root/${scenario}${mode:+-$mode}-$(date '+%H%M%S')-XXXXXX")"
+result_dir="$(mktemp -d "$result_root/${scenario}${read_rps:+-${read_rps}rps}${mode:+-$mode}-$(date '+%H%M%S')-XXXXXX")"
 echo "결과 경로: $result_dir"
 
 threshold_failed_runs=()
 for run_id in "${runs[@]}"; do
   echo "[$(date '+%F %T %Z')] 시작: $scenario / $run_id"
   set +e
-  SUMMARY_FILE="$result_dir/$run_id.json" k6 run "$k6_dir/scenarios/$scenario.js" 2>&1 | tee "$result_dir/$run_id.log"
+  SUMMARY_FILE="$result_dir/$run_id.json" k6 run ${rps_args[@]+"${rps_args[@]}"} "$k6_dir/scenarios/$scenario.js" 2>&1 | tee "$result_dir/$run_id.log"
   run_status=("${PIPESTATUS[@]}")
   set -e
   if (( run_status[1] != 0 )); then

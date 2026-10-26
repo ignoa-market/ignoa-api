@@ -1,14 +1,21 @@
 // 조회는 모든 시나리오가 같은 방문자 흐름(browse-flow.js)을 쓰고, 입찰 부하만 다르다.
-// 방문당 평균 약 10.7건이라 방문자 19명/초 ≈ 200 RPS다.
+// 방문당 평균 약 10.6건이라 방문자 19명/초 ≈ 200 RPS다. 조회 RPS를 넘기면 방문자 수로 바꾼다.
+const VISIT_REQUESTS = 10.6;
 const PLANS = {
     'browse': {visitsPerSecond: 19, bid: null},
-    'target-load': {visitsPerSecond: 19, bid: 'steady'},
+    'browse-bid': {visitsPerSecond: 19, bid: 'steady'},
     'stress': {visitsPerSecond: 19, bid: 'ramp'},
 };
 
-export function buildLoadPlan(name) {
-    const base = PLANS[name];
+// readRps가 비어 있으면 시나리오 기본 방문자 수를 쓴다.
+export function buildLoadPlan(name, readRps) {
+    let base = PLANS[name];
     if (!base) throw new Error(`지원하지 않는 시나리오: ${name}`);
+    if (readRps !== undefined && readRps !== '') {
+        const rps = Number(readRps);
+        if (!Number.isInteger(rps) || rps <= 0) throw new Error(`조회 RPS는 양의 정수여야 합니다: ${readRps}`);
+        base = {...base, visitsPerSecond: Math.round(rps / VISIT_REQUESTS)};
+    }
     const stress = base.bid === 'ramp';
     const totalSeconds = stress ? 730 : 370;
     const measurementWindows = stress

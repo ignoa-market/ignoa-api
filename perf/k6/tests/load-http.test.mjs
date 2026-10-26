@@ -5,7 +5,7 @@ import {spawn} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 
 // 요청 URL·커서·가격을 실제 k6로 실행해 확인한다. 외부 네트워크는 사용하지 않는다.
-test('target-load는 방문자 흐름으로 조회하고 여러 입찰자로 준비 가격 이후부터 입찰한다', async () => {
+test('browse-bid는 방문자 흐름으로 조회하고 여러 입찰자로 준비 가격 이후부터 입찰한다', async () => {
     // seed 데이터 대신 상품 60개를 둔다. 홀수 상품만 입찰 이력 25건이 있고 짝수 상품은 이력이 비어 있다.
     const items = [];
     const history = new Map();

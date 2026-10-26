@@ -1,7 +1,7 @@
 import {createLoadTest} from '../lib/load-test.js';
 
 // 실제 서버가 아닌 로컬 fixture API 전용. THINK_SCALE=0으로 쉬는 시간 없이 실행한다.
-const load = createLoadTest('target-load');
+const load = createLoadTest('browse-bid');
 export const {setup, visit, bid, teardown} = load;
 export const options = {
     ...load.options,

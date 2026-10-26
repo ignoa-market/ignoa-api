@@ -4,7 +4,7 @@ import {buildLoadPlan, readCursor} from '../lib/load-model.js';
 
 test('세 시나리오는 같은 방문자 흐름(19명/초)을 쓰고 입찰 부하만 다르다', () => {
     const browse = buildLoadPlan('browse');
-    const target = buildLoadPlan('target-load');
+    const target = buildLoadPlan('browse-bid');
     const stress = buildLoadPlan('stress');
     assert.equal(browse.visitsPerSecond, 19);
     assert.equal(browse.bidStages, null);
@@ -13,6 +13,23 @@ test('세 시나리오는 같은 방문자 흐름(19명/초)을 쓰고 입찰 �
     assert.deepEqual(target.measurementWindows, [{name: 'steady', start: 60, end: 360}]);
     assert.equal(stress.visitsPerSecond, 19);
     assert.equal(stress.peakBidRate, 400);
+});
+
+test('조회 RPS를 넘기면 방문자 수만 바뀌고 입찰 부하는 그대로다', () => {
+    for (const [rps, visits] of [['200', 19], ['400', 38], ['500', 47], ['600', 57]]) {
+        assert.equal(buildLoadPlan('browse', rps).visitsPerSecond, visits);
+    }
+    const target = buildLoadPlan('browse-bid');
+    const peak = buildLoadPlan('browse-bid', '400');
+    assert.deepEqual(peak.bidStages, target.bidStages);
+    assert.deepEqual(peak.measurementWindows, target.measurementWindows);
+    assert.equal(buildLoadPlan('browse', '').visitsPerSecond, 19);
+});
+
+test('조회 RPS가 양의 정수가 아니면 실행 전에 거절한다', () => {
+    for (const rps of ['0', '-100', '12.5', 'abc']) {
+        assert.throws(() => buildLoadPlan('browse', rps));
+    }
 });
 
 test('스트레스 각 단계는 별도로 측정된다', () => {
