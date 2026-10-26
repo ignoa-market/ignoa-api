@@ -470,7 +470,7 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 8,
+        "w": 6,
         "x": 0,
         "y": 15
       },
@@ -552,8 +552,8 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 8,
-        "x": 8,
+        "w": 6,
+        "x": 6,
         "y": 15
       },
       "fieldConfig": {
@@ -615,6 +615,68 @@
     },
     {
       "type": "timeseries",
+      "title": "커넥션 점유 시간 (평균 / 최대)",
+      "description": "요청이 풀에서 받은 커넥션을 반납하기까지 쥐고 있던 시간. 최대는 최근 약 2분 동안의 가장 긴 값이라, 한 번 튀면 그동안 유지된다.",
+      "id": 17,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "eg0q0rxkuivwgc"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 12,
+        "y": 15
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 10,
+            "showPoints": "never",
+            "spanNulls": true
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "eg0q0rxkuivwgc"
+          },
+          "refId": "A",
+          "expr": "sum(rate(hikaricp_connections_usage_seconds_sum{application=\"ignoa-api\"}[$__rate_interval])) / sum(rate(hikaricp_connections_usage_seconds_count{application=\"ignoa-api\"}[$__rate_interval]))",
+          "legendFormat": "avg",
+          "range": true
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "eg0q0rxkuivwgc"
+          },
+          "refId": "B",
+          "expr": "max(hikaricp_connections_usage_seconds_max{application=\"ignoa-api\"})",
+          "legendFormat": "max",
+          "range": true
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
       "title": "커넥션 획득 timeout (초당)",
       "description": "커넥션 풀 대기 제한을 초과한 횟수의 초당 증가율. DB 행 잠금 timeout과는 별개.",
       "id": 13,
@@ -624,8 +686,8 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 8,
-        "x": 16,
+        "w": 6,
+        "x": 18,
         "y": 15
       },
       "fieldConfig": {
