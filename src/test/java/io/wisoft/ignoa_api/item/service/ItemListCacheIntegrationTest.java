@@ -4,7 +4,6 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.wisoft.ignoa_api.auction.scheduler.AuctionCloseScheduler;
 import io.wisoft.ignoa_api.chat.service.ChatRoomService;
 import io.wisoft.ignoa_api.global.common.CursorResponse;
-import io.wisoft.ignoa_api.global.config.CacheConfig;
 import io.wisoft.ignoa_api.item.dto.request.ItemPreviewCursorRequest;
 import io.wisoft.ignoa_api.item.dto.response.ItemPreview;
 import io.wisoft.ignoa_api.item.entity.Item;
@@ -19,7 +18,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.CacheManager;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
@@ -45,9 +43,6 @@ class ItemListCacheIntegrationTest extends IntegrationTestSupport {
     ItemFacade itemFacade;
 
     @Autowired
-    CacheManager cacheManager;
-
-    @Autowired
     ItemRepository itemRepository;
 
     @Autowired
@@ -59,9 +54,9 @@ class ItemListCacheIntegrationTest extends IntegrationTestSupport {
     @Autowired
     MeterRegistry meterRegistry;
 
+    // 캐시는 컨텍스트 동안 유지되므로, 테스트마다 다른 키(view, size)를 써서 서로 영향을 주지 않게 한다.
     @BeforeEach
     void setUp() {
-        cacheManager.getCache(CacheConfig.ITEM_LIST).clear();
         clearInvocations(itemQueryService);
     }
 
@@ -95,7 +90,7 @@ class ItemListCacheIntegrationTest extends IntegrationTestSupport {
         User other = userRepository.save(newUser("other@test.com", "다른사람"));
         Item item = itemRepository.save(newItem(seller));
         wishRepository.save(Wish.create(wisher, item));
-        ItemPreviewCursorRequest request = new ItemPreviewCursorRequest(ItemViewType.LATEST, null, 20);
+        ItemPreviewCursorRequest request = new ItemPreviewCursorRequest(ItemViewType.LATEST, null, 19);
 
         // When
         CursorResponse<ItemPreview> wisherPage = itemFacade.getItems(request, wisher.getId());
@@ -145,7 +140,7 @@ class ItemListCacheIntegrationTest extends IntegrationTestSupport {
 
     private double cacheGets(String result) {
         return meterRegistry.get("cache.gets")
-                .tags("cache", CacheConfig.ITEM_LIST, "result", result)
+                .tags("cache", ItemListCache.CACHE_NAME, "result", result)
                 .functionCounter()
                 .count();
     }
