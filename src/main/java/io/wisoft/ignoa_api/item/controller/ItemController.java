@@ -38,7 +38,7 @@ public class ItemController {
             @Valid @ModelAttribute ItemPreviewCursorRequest request,
             @AuthenticationPrincipal Long userId
     ) {
-        CursorResponse<ItemPreview> data = itemQueryService.getItems(request, userId);
+        CursorResponse<ItemPreview> data = itemFacade.getItems(request, userId);
         ApiResponse<CursorResponse<ItemPreview>> response = ApiResponse.of(data, "상품 리스트를 조회했습니다.");
         return ResponseEntity.ok(response);
     }
