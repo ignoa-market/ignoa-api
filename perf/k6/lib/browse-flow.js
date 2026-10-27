@@ -72,7 +72,9 @@ export function browse(baseUrl, token, phase) {
         return requests.map(([kind], i) => record(kind, responses[i], current));
     }
 
-    const seen = [];
+    // 화면에 여러 번 뜬 상품도 한 번만 담아, 본 상품 중에서 고르게 누른다.
+    const seen = new Set();
+    const addSeen = page => itemIds(page).forEach(id => seen.add(id));
     // 메인 진입·복귀: 인기순·마감 임박·최신순 첫 페이지
     function openMain() {
         const [popular, ending, latest] = fetchAll([
@@ -80,7 +82,7 @@ export function browse(baseUrl, token, phase) {
             ['ending', '/api/items?view=ENDING_SOON&size=5'],
             ['latest', '/api/items?view=LATEST&size=20'],
         ]);
-        seen.push(...itemIds(popular), ...itemIds(ending), ...itemIds(latest));
+        [popular, ending, latest].forEach(addSeen);
         return latest ? readCursor(latest) : null;
     }
 
@@ -102,15 +104,16 @@ export function browse(baseUrl, token, phase) {
     for (let i = 0; i < pages && cursor !== null; i++) {
         think();
         const [page] = fetchAll([['latest_next', `/api/items?view=LATEST&size=20&cursor=${cursor}`]]);
-        seen.push(...itemIds(page));
+        addSeen(page);
         cursor = page ? readCursor(page) : null;
     }
 
-    if (!seen.length || Math.random() >= CLICK_RATE) return;
+    if (!seen.size || Math.random() >= CLICK_RATE) return;
     const clicks = randomInt(1, MAX_CLICKS);
     for (let i = 0; i < clicks; i++) {
         think();
-        openItem(seen[Math.floor(Math.random() * seen.length)]);
+        const candidates = [...seen];
+        openItem(candidates[Math.floor(Math.random() * candidates.length)]);
         if (i < clicks - 1) {
             think();
             openMain();
