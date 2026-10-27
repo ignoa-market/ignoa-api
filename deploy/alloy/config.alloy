@@ -108,22 +108,36 @@ otelcol.processor.tail_sampling "default" {
     }
   }
 
-  // 사용자 HTTP 요청: 항상 보냄
+  // 사용자 HTTP 요청: 10%만 보냄. 전부 보내면 부하 테스트 때 Tempo 수집 한도(500KB/s)를 넘음
   policy {
     name = "http-requests"
-    type = "ottl_condition"
-    ottl_condition {
-      error_mode = "ignore"
-      span       = ["attributes[\"http.request.method\"] != nil"]
+    type = "and"
+    and {
+      and_sub_policy {
+        name = "http"
+        type = "ottl_condition"
+        ottl_condition {
+          error_mode = "ignore"
+          span       = ["attributes[\"http.request.method\"] != nil"]
+        }
+      }
+      and_sub_policy {
+        name = "ratio"
+        type = "probabilistic"
+        probabilistic {
+          sampling_percentage = 10
+        }
+      }
     }
   }
 
-  // 그 외(스케줄러, 단독 PING 등): 느리거나 에러일 때만 보냄
+  // 느리거나 에러인 트레이스(HTTP 요청, 스케줄러, 단독 PING 등): 항상 보냄
+  //  기준은 부하 중 조회 p95(약 100ms)보다 높게 잡아 꼬리 지연만 남김
   policy {
     name = "slow"
     type = "latency"
     latency {
-      threshold_ms = 100
+      threshold_ms = 300
     }
   }
   policy {
