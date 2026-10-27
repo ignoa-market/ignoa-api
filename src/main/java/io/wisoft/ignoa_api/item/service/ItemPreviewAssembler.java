@@ -44,4 +44,20 @@ public class ItemPreviewAssembler {
                 ))
                 .toList();
     }
+
+    public List<ItemPreview> applyWished(Long userId, List<ItemPreview> previews) {
+        if (userId == null || previews.isEmpty()) {
+            return previews;
+        }
+
+        List<Long> itemIds = previews.stream()
+                .map(ItemPreview::itemId)
+                .toList();
+
+        Set<Long> wishedItemIds = new HashSet<>(wishRepository.findWishedItemIds(userId, itemIds));
+
+        return previews.stream().map(
+                preview -> preview.withIsWished(wishedItemIds.contains(preview.itemId()))
+        ).toList();
+    }
 }
