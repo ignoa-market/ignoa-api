@@ -2,6 +2,7 @@ package io.wisoft.ignoa_api.item.dto.response;
 
 import io.wisoft.ignoa_api.item.entity.Item;
 import io.wisoft.ignoa_api.item.entity.enums.ItemStatus;
+import lombok.With;
 
 import java.time.LocalDateTime;
 
@@ -11,7 +12,7 @@ public record ItemPreview(
         String title,
         String mediaUrl,
         Long currentPrice,
-        Boolean isWished,
+        @With Boolean isWished,
         Integer wishCount,
         ItemStatus status,
         LocalDateTime endAt,

@@ -1,5 +1,6 @@
 package io.wisoft.ignoa_api.item.service;
 
+import io.wisoft.ignoa_api.global.common.CursorResponse;
 import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
 import io.wisoft.ignoa_api.global.infra.storage.ObjectKeyPrefix;
@@ -9,10 +10,12 @@ import io.wisoft.ignoa_api.global.outbox.entity.OutboxEventType;
 import io.wisoft.ignoa_api.global.outbox.service.OutboxAppender;
 import io.wisoft.ignoa_api.item.dto.request.ItemBuyNowRequest;
 import io.wisoft.ignoa_api.item.dto.request.ItemCreateRequest;
+import io.wisoft.ignoa_api.item.dto.request.ItemPreviewCursorRequest;
 import io.wisoft.ignoa_api.item.dto.request.ItemUpdateRequest;
 import io.wisoft.ignoa_api.item.dto.response.BuyNowResponse;
 import io.wisoft.ignoa_api.item.dto.response.ItemDetail;
 import io.wisoft.ignoa_api.item.dto.response.ItemIdResponse;
+import io.wisoft.ignoa_api.item.dto.response.ItemPreview;
 import io.wisoft.ignoa_api.item.entity.enums.ItemMediaType;
 import io.wisoft.ignoa_api.item.service.dto.UploadedMedia;
 import lombok.RequiredArgsConstructor;
@@ -33,7 +36,21 @@ public class ItemFacade {
 
     private final StorageService storageService;
     private final ItemCommandService itemCommandService;
+    private final ItemQueryService itemQueryService;
+    private final ItemPreviewAssembler itemPreviewAssembler;
+    private final ItemListCache itemListCache;
     private final OutboxAppender outboxAppender;
+
+    public CursorResponse<ItemPreview> getItems(ItemPreviewCursorRequest request, Long userId) {
+        if (request.cursor() != null) {
+            return itemQueryService.getItems(request, userId);
+        }
+
+        CursorResponse<ItemPreview> firstPage = itemListCache.getFirstPage(request.view(), request.size());
+        List<ItemPreview> itemPreviews = itemPreviewAssembler.applyWished(userId, firstPage.content());
+
+        return CursorResponse.of(itemPreviews, firstPage.nextCursor(), firstPage.hasNext());
+    }
 
     public ItemIdResponse createItem(Long sellerId, ItemCreateRequest request, List<MultipartFile> files) {
         validateMediaComposition(files);
