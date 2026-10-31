@@ -10,6 +10,7 @@ import io.wisoft.ignoa_api.auth.oauth.KakaoLoginRequest;
 import io.wisoft.ignoa_api.auth.service.AuthService;
 import io.wisoft.ignoa_api.auth.service.EmailService;
 import io.wisoft.ignoa_api.auth.oauth.KakaoAuthService;
+import io.wisoft.ignoa_api.auth.support.RefreshTokenCookieProvider;
 import io.wisoft.ignoa_api.global.common.ApiResponse;
 import io.wisoft.ignoa_api.global.exception.BusinessException;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
@@ -19,9 +20,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
-
-import static io.wisoft.ignoa_api.global.common.CookieUtils.createClearRefreshTokenCookie;
-import static io.wisoft.ignoa_api.global.common.CookieUtils.createRefreshTokenCookie;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -33,6 +31,7 @@ public class AuthController {
     private final AuthService authService;
     private final KakaoAuthService kakaoAuthService;
     private final EmailService emailService;
+    private final RefreshTokenCookieProvider refreshTokenCookieProvider;
 
     @PostMapping("/signup")
     public ResponseEntity<ApiResponse<SignupResponse>> signup(
@@ -41,7 +40,7 @@ public class AuthController {
     ) {
         AuthTokens tokens = authService.signup(request);
 
-        ResponseCookie cookie = createRefreshTokenCookie(tokens.refreshToken());
+        ResponseCookie cookie = refreshTokenCookieProvider.create(tokens.refreshToken());
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
         SignupResponse data = new SignupResponse(tokens.userId(), tokens.accessToken());
@@ -57,7 +56,7 @@ public class AuthController {
     ) {
         AuthTokens tokens = authService.login(request);
 
-        ResponseCookie cookie = createRefreshTokenCookie(tokens.refreshToken());
+        ResponseCookie cookie = refreshTokenCookieProvider.create(tokens.refreshToken());
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
         LoginResponse data = new LoginResponse(tokens.userId(), tokens.accessToken());
@@ -72,7 +71,7 @@ public class AuthController {
     ) {
         extractAccessToken(authHeader);
 
-        ResponseCookie clearCookie = createClearRefreshTokenCookie();
+        ResponseCookie clearCookie = refreshTokenCookieProvider.expire();
         response.addHeader(HttpHeaders.SET_COOKIE, clearCookie.toString());
 
         authService.logout(refreshToken);
@@ -87,7 +86,7 @@ public class AuthController {
     ) {
         AuthTokens tokens = authService.refresh(refreshToken);
 
-        ResponseCookie cookie = createRefreshTokenCookie(tokens.refreshToken());
+        ResponseCookie cookie = refreshTokenCookieProvider.create(tokens.refreshToken());
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
         RefreshResponse data = new RefreshResponse(tokens.accessToken());
@@ -101,7 +100,7 @@ public class AuthController {
     ) {
         AuthTokens tokens = authService.recover(request);
 
-        ResponseCookie cookie = createRefreshTokenCookie(tokens.refreshToken());
+        ResponseCookie cookie = refreshTokenCookieProvider.create(tokens.refreshToken());
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
         LoginResponse data = new LoginResponse(tokens.userId(), tokens.accessToken());
@@ -131,7 +130,7 @@ public class AuthController {
     ) {
         AuthTokens tokens = kakaoAuthService.login(request.code());
 
-        ResponseCookie cookie = createRefreshTokenCookie(tokens.refreshToken());
+        ResponseCookie cookie = refreshTokenCookieProvider.create(tokens.refreshToken());
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
         LoginResponse data = new LoginResponse(tokens.userId(), tokens.accessToken());
