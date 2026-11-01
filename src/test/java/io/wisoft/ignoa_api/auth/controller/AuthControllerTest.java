@@ -1,8 +1,10 @@
 package io.wisoft.ignoa_api.auth.controller;
 
+import io.wisoft.ignoa_api.auth.jwt.JwtProperties;
 import io.wisoft.ignoa_api.auth.oauth.KakaoAuthService;
 import io.wisoft.ignoa_api.auth.service.AuthService;
 import io.wisoft.ignoa_api.auth.service.EmailService;
+import io.wisoft.ignoa_api.auth.support.RefreshTokenCookieProvider;
 import io.wisoft.ignoa_api.global.exception.ErrorCode;
 import io.wisoft.ignoa_api.global.exception.GlobalExceptionHandler;
 import org.junit.jupiter.api.BeforeEach;
@@ -10,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.http.HttpHeaders;
@@ -36,6 +39,10 @@ class AuthControllerTest {
 
     @Mock
     EmailService emailService;
+
+    @Spy
+    RefreshTokenCookieProvider refreshTokenCookieProvider =
+            new RefreshTokenCookieProvider(new JwtProperties("secret", 1_000L, 604_800_000L));
 
     @InjectMocks
     AuthController authController;

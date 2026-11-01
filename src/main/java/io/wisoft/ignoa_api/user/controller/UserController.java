@@ -1,5 +1,6 @@
 package io.wisoft.ignoa_api.user.controller;
 
+import io.wisoft.ignoa_api.auth.support.RefreshTokenCookieProvider;
 import io.wisoft.ignoa_api.global.common.ApiResponse;
 import io.wisoft.ignoa_api.global.common.CursorResponse;
 import io.wisoft.ignoa_api.item.dto.response.ItemPreview;
@@ -24,10 +25,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List;
-
-import static io.wisoft.ignoa_api.global.common.CookieUtils.createClearRefreshTokenCookie;
-
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
@@ -37,6 +34,7 @@ public class UserController {
     private final UserQueryService userQueryService;
     private final UserItemQueryService userItemQueryService;
     private final UserFacade userFacade;
+    private final RefreshTokenCookieProvider refreshTokenCookieProvider;
 
     @GetMapping("/email/duplicate")
     public ResponseEntity<ApiResponse<Void>> checkDuplicateEmail(@RequestParam String email) {
@@ -94,7 +92,7 @@ public class UserController {
     ) {
         userFacade.deleteMe(userId, refreshToken);
 
-        ResponseCookie clearCookie = createClearRefreshTokenCookie();
+        ResponseCookie clearCookie = refreshTokenCookieProvider.expire();
         response.addHeader(HttpHeaders.SET_COOKIE, clearCookie.toString());
 
         return ResponseEntity.ok(ApiResponse.of(null, "회원 탈퇴가 되었습니다."));
