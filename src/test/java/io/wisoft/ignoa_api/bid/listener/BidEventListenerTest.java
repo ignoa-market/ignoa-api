@@ -8,12 +8,16 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.messaging.MessageDeliveryException;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 
 import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -38,5 +42,16 @@ class BidEventListenerTest {
         ArgumentCaptor<BidBroadcast> captor = ArgumentCaptor.forClass(BidBroadcast.class);
         verify(messagingTemplate).convertAndSend(eq("/topic/items/1"), captor.capture());
         assertThat(captor.getValue()).isEqualTo(new BidBroadcast(1L, 10L, 98_000L, "입찰자", createdAt));
+    }
+
+    @Test
+    void 입찰가_전송이_실패해도_예외를_던지지_않는다() {
+        // Given
+        BidPlaceEvent event = new BidPlaceEvent(1L, 10L, 98_000L, "입찰자", LocalDateTime.of(2026, 10, 18, 14, 32));
+        willThrow(new MessageDeliveryException("전송 실패"))
+                .given(messagingTemplate).convertAndSend(eq("/topic/items/1"), any(BidBroadcast.class));
+
+        // When & Then
+        assertThatCode(() -> bidEventListener.onBidPlaced(event)).doesNotThrowAnyException();
     }
 }
